@@ -78,6 +78,7 @@ import tv.own.owntv.mobile.R
 import tv.own.owntv.mobile.ui.components.ChannelLogoImage
 import tv.own.owntv.mobile.ui.components.MobileBottomSheet
 import tv.own.owntv.mobile.ui.components.MobileIcons
+import tv.own.owntv.mobile.ui.components.peekOrNull
 import tv.own.owntv.mobile.ui.components.rememberClockTick
 import tv.own.owntv.mobile.ui.components.sheetOpen
 import tv.own.owntv.mobile.ui.player.VideoStage
@@ -851,7 +852,7 @@ private fun OnNowList(
     LaunchedEffect(listState, channels, revision, nowMs) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.map { it.index } }
             .distinctUntilChanged()
-            .collect { indices -> vm.loadOnNow(indices.mapNotNull { channels.peek(it) }) }
+            .collect { indices -> vm.loadOnNow(indices.mapNotNull { channels.peekOrNull(it) }) }
     }
 
     LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 6.dp)) {

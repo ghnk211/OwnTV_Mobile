@@ -66,6 +66,7 @@ import tv.own.owntv.mobile.ui.screens.home.groupedCountText
 import tv.own.owntv.mobile.ui.components.MobileBottomSheet
 import tv.own.owntv.mobile.ui.components.MobileIcons
 import tv.own.owntv.mobile.ui.components.TwoPane
+import tv.own.owntv.mobile.ui.components.peekOrNull
 import tv.own.owntv.mobile.ui.nav.isExpandedWidth
 import tv.own.owntv.mobile.ui.screens.ObeyScrollToTop
 import tv.own.owntv.mobile.ui.screens.home.durationText
@@ -208,7 +209,7 @@ fun LibraryScreen(
         LaunchedEffect(listState, items) {
             snapshotFlow { listState.layoutInfo.visibleItemsInfo.map { it.index } }
                 .distinctUntilChanged()
-                .collect { indices -> vm.loadSeasonCounts(indices.mapNotNull { items.peek(it)?.id }) }
+                .collect { indices -> vm.loadSeasonCounts(indices.mapNotNull { items.peekOrNull(it)?.id }) }
         }
     }
 

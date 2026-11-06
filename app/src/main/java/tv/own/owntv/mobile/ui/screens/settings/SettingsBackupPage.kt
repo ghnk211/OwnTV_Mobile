@@ -1,7 +1,10 @@
 package tv.own.owntv.mobile.ui.screens.settings
 
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.provider.OpenableColumns
 import android.text.format.DateUtils
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -82,6 +85,16 @@ import tv.own.owntv.mobile.ui.stage.StageButtonStyle
 private const val BACKUP_MIME = "application/octet-stream"
 private const val BACKUP_FILE_NAME = "owntv-backup.own"
 
+/**
+ * What the save picker's document is actually called after the user has had it — the suggestion
+ * [BACKUP_FILE_NAME] only covers the case where the provider refuses to answer.
+ */
+private fun savedFileName(context: Context, uri: Uri): String = runCatching {
+    context.contentResolver
+        .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+        ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+}.getOrNull()?.takeIf { it.isNotBlank() } ?: BACKUP_FILE_NAME
+
 /** Where a backup goes once its contents are chosen: a picked file, another device by Remote, or the share sheet. */
 private enum class BackupTarget { FILE, REMOTE, SHARE }
 
@@ -121,7 +134,9 @@ fun SettingsBackupPage(
         val request = vm.pendingFileExport
         vm.pendingFileExport = null
         if (uri != null && request != null) {
-            vm.export(uri, BACKUP_FILE_NAME, request.sections, request.password)
+            // The picker lets the file be renamed, and that new name is what lands on disk — so the
+            // confirmation reads it back instead of repeating the name we suggested.
+            vm.export(uri, savedFileName(context, uri), request.sections, request.password)
         }
     }
     val pickBackup = rememberBackupFilePicker { uri ->
@@ -456,11 +471,18 @@ private fun ExportSheet(
     val palette = LocalStagePalette.current
 
     MobileBottomSheet(onDismissRequest = onDismiss, title = stringResource(R.string.settings_backup_export_title)) {
-        StageSheetHeader(
-            title = stringResource(R.string.settings_backup_export_title),
-            subtitle = stringResource(R.string.mobile_backup_single_profile_note),
-        )
-        Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+        // Everything above the buttons scrolls as one block. The header used to sit outside the
+        // scrolling part, so at a large font the section rows ate the whole height, the weighted
+        // column was left with nothing, and the password field it carries could not be reached at all.
+        Column(
+            Modifier
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            StageSheetHeader(
+                title = stringResource(R.string.settings_backup_export_title),
+                subtitle = stringResource(R.string.mobile_backup_single_profile_note),
+            )
             StageGroupLabel(stringResource(R.string.settings_backup_what_backup))
             BackupManager.Section.entries.forEach { section ->
                 SwitchRow(

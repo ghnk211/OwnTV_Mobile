@@ -58,6 +58,7 @@ import tv.own.owntv.core.sync.ImportFinalizer
 import tv.own.owntv.core.sync.SyncCounts
 import tv.own.owntv.core.sync.TrendingActivityTracker
 import tv.own.owntv.core.sync.work.CatalogSyncScheduler
+import tv.own.owntv.mobile.sync.LocalPlaylistSync
 import tv.own.owntv.core.sync.work.CatalogSyncState
 import tv.own.owntv.core.trending.TrendingAvailability
 import tv.own.owntv.core.trending.trendingAvailability
@@ -251,7 +252,13 @@ class SettingsViewModel(
      * default.
      */
     fun resync(source: SourceEntity, removeMissing: Boolean = false) {
-        catalogSync.enqueueSync(source.id, reason = "manual", forcePrune = removeMissing)
+        // A playlist on this phone needs no network, and core's CONNECTED constraint (INTERNET +
+        // TRUSTED + VALIDATED) would park the job forever on a device without validated internet.
+        if (LocalPlaylistSync.isLocal(source)) {
+            LocalPlaylistSync.enqueue(context, source.id, reason = "manual", forcePrune = removeMissing)
+        } else {
+            catalogSync.enqueueSync(source.id, reason = "manual", forcePrune = removeMissing)
+        }
     }
 
     /**

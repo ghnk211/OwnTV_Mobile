@@ -11,6 +11,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
@@ -84,6 +85,10 @@ internal fun PinEntrySheet(title: String, onSubmit: (String) -> Unit, onDismiss:
         description = description,
         allowBlank = false,
         confirmLabel = stringResource(R.string.common_ok),
+        // A PIN is not a name: it is masked as it is typed, and the field asks for a number pad. Left
+        // as a plain prompt, the category lock and the Settings door printed the digits on screen.
+        password = true,
+        keyboardType = KeyboardType.NumberPassword,
         onConfirm = onSubmit,
         onDismiss = onDismiss,
     )

@@ -57,3 +57,11 @@ replay_pid*.log
 
 # Local-only archive (old detailed changelogs etc.), never committed
 /archive/
+
+# Local Gradle/AGP homes used when building on this machine
+.gradle-home/
+.android-home/
+.tmp/
+
+# WorkBuddy local project data, never committed
+.workbuddy/

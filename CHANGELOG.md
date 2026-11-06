@@ -80,6 +80,12 @@
 - **A channel from Search opens Live TV on its own category, scrolled to it** (community PR #75 by @saltimbanco)
 - **Series whose episodes carry two dates load their episodes again**
 - **A guide download cut off midway no longer deletes the rest of the guide**
+- **A playlist saved on this phone re-syncs without waiting for the internet**
+- **A renamed backup says the name it was actually saved under**
+- **The Home screen row count matches the rows the page lists**
+- **The backup password field is reachable at a large text size**
+- **Category lock and Settings PIN fields mask the digits as they are typed**
+- **Opening a locked category no longer crashes the app**
 
 ## v1.1.1 — 2026-10-21
 

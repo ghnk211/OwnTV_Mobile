@@ -1,5 +1,6 @@
 package tv.own.owntv.mobile.ui.screens.live
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -72,6 +73,7 @@ import tv.own.owntv.core.stalker.StreamUrlResolver
 import tv.own.owntv.core.sync.work.CatalogSyncScheduler
 import tv.own.owntv.core.ui.stage.PlaylistMark
 import tv.own.owntv.core.util.throttleLatest
+import tv.own.owntv.mobile.sync.LocalPlaylistSync
 import tv.own.owntv.mobile.ui.components.ReorderItem
 import tv.own.owntv.mobile.ui.shell.StartupLiveSelection
 
@@ -101,6 +103,7 @@ data class LiveCategory(
  */
 @OptIn(ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
 class LiveViewModel(
+    private val context: Context,
     private val channelDao: ChannelDao,
     private val categoryDao: CategoryDao,
     private val customCategoryDao: CustomCategoryDao,
@@ -792,7 +795,15 @@ class LiveViewModel(
     fun refresh() {
         viewModelScope.launch {
             _refreshing.value = true
-            ctx.value.sources.forEach { syncScheduler.enqueueSync(it.id, reason = "manual") }
+            ctx.value.sources.forEach { source ->
+                // A playlist on this phone has nothing to fetch over the network, and core's
+                // CONNECTED constraint would never let the job start without validated internet.
+                if (LocalPlaylistSync.isLocal(source)) {
+                    LocalPlaylistSync.enqueue(context, source.id, reason = "manual")
+                } else {
+                    syncScheduler.enqueueSync(source.id, reason = "manual")
+                }
+            }
             kotlinx.coroutines.delay(REFRESH_SPINNER_MS)
             _refreshing.value = false
         }

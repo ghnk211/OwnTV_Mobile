@@ -17,6 +17,7 @@ import tv.own.owntv.core.live.ProviderTags
 import tv.own.owntv.core.parser.XtEpgEntry
 import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.core.ui.stage.PlaylistMark
+import tv.own.owntv.mobile.ui.components.peekOrNull
 import tv.own.owntv.mobile.ui.components.rememberClockTick
 import tv.own.owntv.mobile.ui.screens.home.timeLeftText
 import tv.own.owntv.mobile.ui.shell.ProvidePageCrumb
@@ -196,14 +197,14 @@ fun LiveScreen(
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.map { it.index } }
             .distinctUntilChanged()
             .collect { indices ->
-                vm.loadNowPlaying(indices.mapNotNull { channels.peek(it) })
+                vm.loadNowPlaying(indices.mapNotNull { channels.peekOrNull(it) })
             }
     }
 
     val nowMs by rememberClockTick()
     // Each clock tick re-reads the rows whose programme has just ended.
     LaunchedEffect(nowMs) {
-        vm.loadNowPlaying(listState.layoutInfo.visibleItemsInfo.mapNotNull { channels.peek(it.index) })
+        vm.loadNowPlaying(listState.layoutInfo.visibleItemsInfo.mapNotNull { channels.peekOrNull(it.index) })
     }
 
     // Changing category scrolls back to the top: the position of the old list means nothing in the new one.

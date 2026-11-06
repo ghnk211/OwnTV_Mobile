@@ -30,6 +30,7 @@ import tv.own.owntv.core.model.MediaType
 import tv.own.owntv.core.metadata.MetadataConfig
 import tv.own.owntv.core.metadata.MetadataMode
 import tv.own.owntv.core.model.HomeConfig
+import tv.own.owntv.core.model.HomeRow
 import tv.own.owntv.core.reminder.ReminderSchedule
 import tv.own.owntv.core.settings.GuideRetention
 import tv.own.owntv.core.settings.SettingsRepository
@@ -320,7 +321,10 @@ private fun layoutSections(vm: SettingsViewModel): List<SettingSection> {
     val density = s.guideDensityPct.pref(100)
     val profileId = s.activeProfileId.pref(-1L)
     val home = remember(profileId) { if (profileId < 0) flowOf(HomeConfig()) else s.homeConfig(profileId) }.pref(HomeConfig())
-    val shownRows = home.order.count { it !in home.hidden }
+    // Exactly the rows the Home screen page lists: Trending is not one of the toggleable rows, and the
+    // sports row this app dropped still sits in an older config's order. Hidden rows still count —
+    // they are on that page, switched off — so the badge and the page can never disagree.
+    val shownRows = home.settingsRows.count { it != HomeRow.LIVE_SPORTS }
     val remember = listOf(
         s.rememberCategoryLive.pref(true), s.rememberCategoryMovies.pref(true), s.rememberCategorySeries.pref(true),
         s.rememberLastLive.pref(false), s.rememberLastMovies.pref(false), s.rememberLastSeries.pref(false),

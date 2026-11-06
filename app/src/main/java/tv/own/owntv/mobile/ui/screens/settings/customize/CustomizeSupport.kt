@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import tv.own.owntv.mobile.ui.components.MobileBottomSheet
 import tv.own.owntv.mobile.ui.screens.settings.SettingsChoice
 import tv.own.owntv.mobile.ui.screens.settings.SheetText
@@ -59,6 +60,9 @@ fun TextPromptDialog(
     hint: String? = null,
     allowBlank: Boolean = true,
     confirmLabel: String = stringResource(R.string.common_save),
+    /** A PIN: masked on screen, digits on the keyboard, and no autofill suggestions. */
+    password: Boolean = false,
+    keyboardType: KeyboardType = KeyboardType.Text,
     extraButton: (@Composable () -> Unit)? = null,
 ) {
     var text by remember { mutableStateOf(initial) }
@@ -71,7 +75,9 @@ fun TextPromptDialog(
             onValueChange = { text = it },
             placeholder = title,
             icon = null,
+            keyboardType = keyboardType,
             imeAction = ImeAction.Done,
+            password = password,
             onSearch = { if (enabled) onConfirm(text) },
             modifier = Modifier.padding(horizontal = 6.dp),
         )
