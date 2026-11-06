@@ -34,8 +34,6 @@ import tv.own.owntv.mobile.ui.stage.stageGlass
 import tv.own.owntv.mobile.ui.stage.stageText
 import tv.own.owntv.core.recording.RecordingActivityTracker
 import tv.own.owntv.core.network.ConnectivityObserver
-import tv.own.owntv.core.sports.RebuildState
-import tv.own.owntv.core.sports.SportsActivityTracker
 import tv.own.owntv.core.sync.EpgActivityTracker
 import tv.own.owntv.core.sync.SyncActivityTracker
 import tv.own.owntv.core.sync.SyncProgressCounts
@@ -85,20 +83,6 @@ fun SyncStatusPill(
     val activeRecordings by recordingTracker.active.collectAsStateWithLifecycle()
     val lastCompleted by catalogTracker.lastCompleted.collectAsStateWithLifecycle()
     val lastTrendingCompleted by trendingTracker.lastCompleted.collectAsStateWithLifecycle()
-    val sportsTracker: SportsActivityTracker = koinInject()
-    val sportsRebuild by sportsTracker.rebuild.collectAsStateWithLifecycle()
-    // A failed Sports rebuild is said once, for as long as a finished sync stays, when it happens.
-    var sportsSeen by remember { mutableStateOf(sportsRebuild) }
-    var sportsFailed by remember { mutableStateOf(false) }
-    LaunchedEffect(sportsRebuild) {
-        val was = sportsSeen
-        sportsSeen = sportsRebuild
-        if (sportsRebuild == RebuildState.Failed && was is RebuildState.Running) {
-            sportsFailed = true
-            delay(COMPLETED_MS)
-            sportsFailed = false
-        }
-    }
 
     // Two syncs finishing together must not replace one another before either has been read, so
     // completions queue and are shown one at a time.
@@ -134,7 +118,7 @@ fun SyncStatusPill(
     // Sorted once per progress change, not once per emission per row: the trackers emit at Hz
     // rates while a sync runs, and the sort has nothing new to say between two emissions of the
     // same maps.
-    val rows = remember(activeCatalog, activeEpg, activeTrending, activeDownload, activeRecordings, recordingsOnly, sportsRebuild) {
+    val rows = remember(activeCatalog, activeEpg, activeTrending, activeDownload, activeRecordings, recordingsOnly) {
         buildList {
         // Recordings first, always: they are time-critical and unrecoverable, so they are never
         // the line that gets collapsed into "+N more". Then downloads, which the user also started
@@ -145,14 +129,13 @@ fun SyncStatusPill(
         activeCatalog.values.sortedBy { it.sourceId }.forEach { add(SyncLine.Catalog(it)) }
         activeTrending.values.sortedBy { it.sourceId }.forEach { add(SyncLine.Trending(it)) }
         activeEpg.values.sortedBy { it.sourceId }.forEach { add(SyncLine.Epg(it)) }
-        if (sportsRebuild is RebuildState.Running) add(SyncLine.Sports)
         }
     }
     val shown = rows.take(MAX_ROWS)
     val hidden = rows.size - shown.size
 
     AnimatedVisibility(
-        visible = shown.isNotEmpty() || currentCompleted != null || currentTrending != null || (sportsFailed && !recordingsOnly),
+        visible = shown.isNotEmpty() || currentCompleted != null || currentTrending != null,
         enter = fadeIn(),
         exit = fadeOut(),
         modifier = modifier,
@@ -195,7 +178,6 @@ fun SyncStatusPill(
             if (hidden > 0) {
                 PillText(res.getQuantityString(R.plurals.sync_status_more, hidden, hidden))
             }
-            if (sportsFailed && !recordingsOnly) PillText(res.getString(R.string.sports_rebuild_failed))
             currentCompleted?.let {
                 PillText(completedLine(res, it, connectivity.isOnlineNow()))
             }
@@ -235,7 +217,6 @@ private sealed interface SyncLine {
     data class Recording(val recording: tv.own.owntv.core.recording.RecordingProgress) : SyncLine
     data class Trending(val build: TrendingActivityTracker.ActiveBuild) : SyncLine
     data class Epg(val sync: EpgActivityTracker.ActiveEpgSync) : SyncLine
-    data object Sports : SyncLine
 }
 
 /**
@@ -243,7 +224,6 @@ private sealed interface SyncLine {
  * active flag when it moves on, and without this a finished phase's count would vanish mid-sync.
  */
 private fun SyncLine.text(res: android.content.res.Resources): String = when (this) {
-    SyncLine.Sports -> res.getString(R.string.sports_rebuilding)
     is SyncLine.Catalog -> {
         val counts = sync.stage?.let {
             SyncProgressCounts(

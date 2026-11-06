@@ -34,11 +34,12 @@ $aapt2 = "$env:LOCALAPPDATA\Android\Sdk\build-tools\37.0.0\aapt2.exe"
 python tools\i18n\check_pseudo_locales.py --apk app\build\outputs\apk\standard\debug\app-standard-debug.apk --mode debug --aapt2 $aapt2
 ```
 
-`locales.json` is kept here too, but only because the Gradle build reads its `packaged` entries to
-set `localeFilters` before any dependency is resolved. **The core repo's copy is the authoritative
-one**, and the automated "Pin core" pull request refreshes this copy alongside `owntvCore` — never
-edit one of those two files without the other, or a new language is silently stripped out of the APK
-while the build stays green.
+`locales.json` is kept here too, but only as the catalogue the localization scripts and CI compare
+with core's authoritative copy — **the app build no longer reads it**. What this app actually ships is
+the three-language whitelist in `app/src/main/java/tv/own/owntv/mobile/i18n/AppLocales.kt`, mirrored
+by `localeFilters` in `app/build.gradle.kts` (`en`, `zh-rCN`, `zh-rTW`, plus the debug pseudolocales).
+Edit the two together, and never assume a row added to `locales.json` reaches the APK: core still
+carries every translation, the whitelist is what decides what ships here.
 
 ### Clearing a literal-inventory failure
 

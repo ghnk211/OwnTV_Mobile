@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Text this app owns and core does not: the single-profile app lock, the wording the multi-profile
+  removal left behind, and the backup / sync refusals a slimmed app has to explain itself.
+
+  App-local because the alternatives were worse: adding keys to core means a pin bump this phase
+  ruled out, and leaving the strings in Kotlin fails the hardcoded-text gate. Three files, three
+  languages — the whitelist in AppLocales — and MobileStringsParityTest fails the build if their key
+  sets ever drift apart.
+-->
+<resources>
+    <string name="mobile_app_lock">App lock</string>
+    <string name="mobile_app_lock_description">Ask for a PIN when the app opens</string>
+    <string name="mobile_app_lock_set">Set app lock</string>
+    <string name="mobile_app_lock_new">New PIN</string>
+    <string name="mobile_app_lock_confirm">Confirm PIN</string>
+    <string name="mobile_app_lock_change">Change PIN</string>
+    <string name="mobile_app_lock_remove">Remove app lock</string>
+    <string name="mobile_app_lock_warning">The same PIN also protects locked categories and the Settings PIN. If you forget it, the only way back in is to clear the app’s data.</string>
+    <string name="mobile_unlock">Unlock</string>
+    <plurals name="mobile_unlock_too_many_attempts">
+        <item quantity="one">Too many attempts. Try again in %1$d second.</item>
+        <item quantity="other">Too many attempts. Try again in %1$d seconds.</item>
+    </plurals>
+    <string name="mobile_kids_mode_description">Keeps browsing to child-friendly categories. Set an app lock so it cannot be turned off.</string>
+    <string name="mobile_multi_profile_import">This backup contains more than one profile. This app keeps a single profile, so it cannot be restored.</string>
+    <string name="mobile_multi_profile_sync">The other device sent more than one profile. This app keeps a single profile, so it cannot be merged.</string>
+    <string name="mobile_hidden_profile_import">This backup’s profile has the same name as another profile stored on this device. Rename it on the other device, or restore on a fresh install.</string>
+    <string name="mobile_hidden_profile_sync">The incoming profile has the same name as another profile stored on this device. Rename it on the other device and sync again.</string>
+    <string name="mobile_nameless_profile_import">This backup’s profile has no name, so it cannot be matched. Name the profile on the other device and export again.</string>
+    <string name="mobile_nameless_profile_sync">The incoming profile has no name, so it cannot be matched. Name it on the other device and sync again.</string>
+    <string name="mobile_profile_rename_notice">This backup’s profile is “%1$s”. This device’s profile will be renamed to match before restoring.</string>
+    <string name="mobile_profile_rename_notice_sync">The incoming profile is “%1$s”. This device’s profile will be renamed to match before merging.</string>
+    <string name="mobile_restore_pin_notice">A sealed backup can carry a profile PIN. If it does, the PIN you use to open this app will change after restoring.</string>
+    <string name="mobile_sync_pin_notice">A synced profile can carry a PIN. If it does, the PIN you use to open this app will change after syncing.</string>
+    <string name="mobile_restore_from_settings">This backup’s profile has a different name from this device’s profile. Open Settings › Backup &amp; Restore to restore it, where the rename can be confirmed.</string>
+    <string name="mobile_start_fresh">Start fresh</string>
+    <string name="mobile_start_fresh_description">Add a playlist now, or skip and add one later.</string>
+    <string name="mobile_restore_backup_description">Restore a backup from this phone or another device.</string>
+    <string name="mobile_backup_single_profile_note">This backup contains the current profile only.</string>
+</resources>

@@ -37,11 +37,6 @@ import tv.own.owntv.mobile.ui.screens.library.LibraryScreen
 import tv.own.owntv.mobile.ui.screens.library.LibraryTab
 import tv.own.owntv.mobile.ui.screens.live.LiveScreen
 import tv.own.owntv.mobile.ui.screens.search.SearchScreen
-import tv.own.owntv.mobile.ui.screens.sports.SportsMatchScreen
-import tv.own.owntv.mobile.ui.screens.sports.SportsPlayback
-import tv.own.owntv.mobile.ui.screens.sports.SportsScreen
-import tv.own.owntv.mobile.ui.screens.sports.SportsTeamScreen
-import tv.own.owntv.mobile.ui.screens.sports.TeamRef
 import tv.own.owntv.mobile.ui.screens.settings.SettingsGroup
 import tv.own.owntv.mobile.ui.screens.settings.SettingsGroupScreen
 import tv.own.owntv.mobile.ui.screens.settings.LocalSettingsNav
@@ -69,7 +64,6 @@ import tv.own.owntv.mobile.ui.theme.LocalMobileMotion
 fun MobileNavHost(
     navController: NavHostController,
     scrollToTop: SharedFlow<String>,
-    onSwitchProfile: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // One layout around the whole graph: it is what lets a poster tile on one screen and the header
@@ -78,8 +72,6 @@ fun MobileNavHost(
     // A channel opened from Home, Favourites or History plays full screen, as on the television.
     val playChannel = { channelId: Long -> tuner.tune(channelId); navController.navigate(PLAYER_ROUTE) }
     val previewOn by koinInject<SettingsRepository>().livePreviewEnabled.collectAsStateWithLifecycle(true)
-    // A goal alert, reminder or live score card was tapped: open that match (MainActivity reads the extra).
-    val sportsPlayback: SportsPlayback = koinInject()
     // The Settings PIN asks once per visit: a route outside the guarded pages ends the visit.
     // A relock stopped what the player showed: its page closes rather than staying up empty.
     val sealedHost: tv.own.owntv.mobile.ui.categorylock.SealedPlaybackHost = koinInject()
@@ -96,13 +88,6 @@ fun MobileNavHost(
     }
     // Cancel on the PIN: back where the user came from, or Home when Settings was opened as a tab.
     val leaveGuarded: () -> Unit = { if (!navController.popBackStack()) navController.navigateToTab(MobileDestination.HOME) }
-    androidx.compose.runtime.LaunchedEffect(sportsPlayback) {
-        sportsPlayback.openMatchKey.collect { key ->
-            if (key == null) return@collect
-            sportsPlayback.openMatchKey.value = null
-            navController.navigate(sportsMatchRoute(key)) { launchSingleTop = true }
-        }
-    }
     SharedTransitionLayout(modifier = modifier) {
         CompositionLocalProvider(LocalSharedTransition provides this) {
     // Navigation's own default is a 700 ms crossfade that ignores the reduce-motion setting. The
@@ -130,8 +115,6 @@ fun MobileNavHost(
                             navController.navigate(it.route) { launchSingleTop = true }
                         },
                         onOpenLeaf = { navController.navigate(it.route) { launchSingleTop = true } },
-                        onOpenProfiles = { navController.navigate(SettingsGroup.PROFILE.route) { launchSingleTop = true } },
-                        onSwitchProfile = onSwitchProfile,
                     )
                     MobileDestination.HOME -> HomeScreen(
                         scrollToTop = scrollToTop,
@@ -144,7 +127,6 @@ fun MobileNavHost(
                         },
                         onPlayerOpened = { navController.navigate(PLAYER_ROUTE) },
                         onOpenSearch = { query -> navController.navigate(searchRoute(query)) },
-                        onOpenMatch = { sportsPlayback.opening = it; navController.navigate(sportsMatchRoute(it.key)) },
                     )
                     MobileDestination.GUIDE -> GuideScreen(
                         scrollToTop = scrollToTop,
@@ -158,14 +140,6 @@ fun MobileNavHost(
                     MobileDestination.DOWNLOADS -> DownloadsScreen(
                         onPlayerOpened = { navController.navigate(PLAYER_ROUTE) },
                         onOpenGuide = { navController.navigateToTab(MobileDestination.GUIDE) },
-                    )
-                    MobileDestination.SPORTS -> SportsScreen(
-                        scrollToTop = scrollToTop,
-                        route = destination.route,
-                        onOpenMatch = { sportsPlayback.opening = it; navController.navigate(sportsMatchRoute(it.key)) },
-                        onOpenTeam = { navController.navigate(sportsTeamRoute(it)) },
-                        onPlayChannel = playChannel,
-                        onChooseSports = { navController.navigate(SettingsLeaf.SPORTS_LEAGUES.route) },
                     )
                     MobileDestination.MOVIES, MobileDestination.SERIES, MobileDestination.LIBRARY ->
                         LibraryScreen(
@@ -206,43 +180,6 @@ fun MobileNavHost(
                     )
                 }
             }
-        }
-        // A league opens in the Sports page's Leagues tab: back down to the page when it is under this one,
-        // else to the Sports tab itself.
-        val openLeague = { key: String ->
-            sportsPlayback.chooseLeague(key)
-            if (!navController.popBackStack(MobileDestination.SPORTS.route, inclusive = false)) navController.navigateToTab(MobileDestination.SPORTS)
-        }
-        // Sports: a match and a team, pushed over the page, so Back from the player lands on the match.
-        page(SPORTS_MATCH_PATTERN, arguments = listOf(navArgument(ARG_KEY) { type = NavType.StringType })) { entry ->
-            SportsMatchScreen(
-                matchKey = entry.arguments?.getString(ARG_KEY).orEmpty(),
-                onPlayChannel = playChannel,
-                onOpenLeague = openLeague,
-                onOpenTeam = { navController.navigate(sportsTeamRoute(it)) },
-                onAddPlaylist = { navController.navigate(setupRoute(SetupEntry.ADD_CONTENT)) },
-            )
-        }
-        page(
-            SPORTS_TEAM_PATTERN,
-            arguments = listOf(ARG_LEAGUE, ARG_KEY, ARG_NAME, ARG_ABBR, ARG_LOGO).map { a ->
-                navArgument(a) { type = NavType.StringType; defaultValue = "" }
-            },
-        ) { entry ->
-            val args = entry.arguments
-            val league = tv.own.owntv.core.sports.SportsCatalog.league(args?.getString(ARG_LEAGUE).orEmpty()) ?: return@page
-            val team = tv.own.owntv.core.sports.model.Team(
-                id = args?.getString(ARG_KEY).orEmpty(),
-                name = args?.getString(ARG_NAME).orEmpty(),
-                abbreviation = args?.getString(ARG_ABBR).orEmpty(),
-                logoUrl = args?.getString(ARG_LOGO)?.ifBlank { null },
-            )
-            SportsTeamScreen(
-                ref = TeamRef(league, team),
-                onOpenMatch = { sportsPlayback.opening = it; navController.navigate(sportsMatchRoute(it.key)) },
-                onOpenTeam = { navController.navigate(sportsTeamRoute(it)) },
-                onOpenLeague = openLeague,
-            )
         }
         page(
             route = SEARCH_ROUTE_PATTERN,
@@ -400,24 +337,6 @@ fun isTitleRoute(route: String?): Boolean = route?.endsWith("/{$ARG_TAB}/{$ARG_I
 
 private const val ARG_TAB = "tab"
 private const val ARG_ITEM_ID = "itemId"
-
-private const val ARG_KEY = "key"
-private const val ARG_LEAGUE = "league"
-private const val ARG_NAME = "name"
-private const val ARG_ABBR = "abbr"
-private const val ARG_LOGO = "logo"
-private const val SPORTS_MATCH = "sports/match"
-private const val SPORTS_TEAM = "sports/team"
-private const val SPORTS_MATCH_PATTERN = "$SPORTS_MATCH/{$ARG_KEY}"
-private const val SPORTS_TEAM_PATTERN = "$SPORTS_TEAM/{$ARG_LEAGUE}/{$ARG_KEY}?$ARG_NAME={$ARG_NAME}&$ARG_ABBR={$ARG_ABBR}&$ARG_LOGO={$ARG_LOGO}"
-
-/** A match's page; its key carries slashes ("soccer/ger.1/…"), so it is encoded. */
-fun sportsMatchRoute(key: String): String = "$SPORTS_MATCH/${Uri.encode(key)}"
-
-/** A team's page: the league it is fetched in, its ESPN id, and what the header shows of it. */
-fun sportsTeamRoute(ref: TeamRef): String =
-    "$SPORTS_TEAM/${Uri.encode(ref.league.key)}/${Uri.encode(ref.team.id)}" +
-        "?$ARG_NAME=${Uri.encode(ref.team.name)}&$ARG_ABBR=${Uri.encode(ref.team.abbreviation)}&$ARG_LOGO=${Uri.encode(ref.team.logoUrl.orEmpty())}"
 
 /**
  * The full screen player. A route of its own, outside the tabs, because it is the one destination

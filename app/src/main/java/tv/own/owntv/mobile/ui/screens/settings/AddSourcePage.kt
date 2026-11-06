@@ -36,15 +36,13 @@ import tv.own.owntv.mobile.ui.stage.stageText
 
 /**
  * Settings › Playlists › Add a source, the TV wizard's own choices as cards: Remote (fill the form in a
- * browser on another device), Type it here, Import (a backup file), Existing (another profile's playlists, only
- * when there are any). Remote opens the companion server; what the other device sends fills the form, and the
- * user still presses Start import — as on the TV.
+ * browser on another device), Type it here, Import (a backup file). Remote opens the companion server;
+ * what the other device sends fills the form, and the user still presses Start import — as on the TV.
+ * There is no "another profile's playlists" card: one profile now holds everything.
  */
 @Composable
 fun AddSourcePage(onSetup: (SetupEntry) -> Unit, modifier: Modifier = Modifier, vm: SetupViewModel = koinViewModel()) {
     var remote by remember { mutableStateOf(false) }
-    var hasExisting by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { hasExisting = runCatching { vm.availableExistingSources().isNotEmpty() }.getOrDefault(false) }
 
     SettingsStagePage(modifier) {
         item(key = "remote") {
@@ -63,13 +61,6 @@ fun AddSourcePage(onSetup: (SetupEntry) -> Unit, modifier: Modifier = Modifier, 
         item(key = "import") {
             SourceCard(MobileIcons.Folder, stringResource(R.string.setup_import), stringResource(R.string.setup_restore_backup_file)) {
                 onSetup(SetupEntry.IMPORT)
-            }
-        }
-        if (hasExisting) {
-            item(key = "existing") {
-                SourceCard(MobileIcons.Layers, stringResource(R.string.setup_existing), stringResource(R.string.setup_use_other_profile_playlists)) {
-                    onSetup(SetupEntry.EXISTING)
-                }
             }
         }
     }

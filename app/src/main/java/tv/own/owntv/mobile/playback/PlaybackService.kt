@@ -146,7 +146,8 @@ class PlaybackService : Service() {
 
     /** The app's own language, which is not necessarily the phone's — the same rule core's download
      *  notification follows. */
-    private fun localized(): Context = AppLocale.wrap(this, localeStore.currentTag.value)
+    private fun localized(): Context =
+        AppLocale.wrap(this, tv.own.owntv.mobile.i18n.AppLocales.normalize(localeStore.currentTag.value))
 
     private fun build(shown: Shown): Notification {
         val (meta, playing, audioOnly, live, castingTo) = shown

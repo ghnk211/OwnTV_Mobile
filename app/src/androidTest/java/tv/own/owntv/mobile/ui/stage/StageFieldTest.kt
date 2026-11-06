@@ -13,11 +13,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
@@ -41,6 +40,12 @@ class StageFieldTest {
     @get:Rule
     val rule = createComposeRule()
 
+    // A field's caller modifiers land on the label-plus-input Column, so that wrapper never carries
+    // the editable semantics (RequestFocus, PerformImeAction, Focused); select the text node.
+    private fun field() = rule.onNode(hasSetTextAction())
+
+    private fun fieldAt(index: Int) = rule.onAllNodes(hasSetTextAction())[index]
+
     @Test
     fun tappingFieldFocusesIt() {
         rule.setContent {
@@ -49,12 +54,11 @@ class StageFieldTest {
                     value = "",
                     onValueChange = {},
                     label = "Name",
-                    modifier = Modifier.testTag("field"),
                 )
             }
         }
-        rule.onNodeWithTag("field").performClick()
-        rule.onNodeWithTag("field").assertIsFocused()
+        field().performClick()
+        field().assertIsFocused()
     }
 
     @Test
@@ -66,19 +70,18 @@ class StageFieldTest {
                     value = text,
                     onValueChange = { text = it },
                     label = "Name",
-                    modifier = Modifier.testTag("field"),
                 )
             }
         }
         // Typed.
-        rule.onNodeWithTag("field").performTextInput("Hello")
+        field().performTextInput("Hello")
         rule.runOnIdle { assert(text == "Hello") }
         // Pasted (a multi-word replacement behaves like a paste).
-        rule.onNodeWithTag("field").performTextClearance()
-        rule.onNodeWithTag("field").performTextInput("Hello World pasted")
+        field().performTextClearance()
+        field().performTextInput("Hello World pasted")
         rule.runOnIdle { assert(text == "Hello World pasted") }
         // Deleted.
-        rule.onNodeWithTag("field").performTextClearance()
+        field().performTextClearance()
         rule.runOnIdle { assert(text.isEmpty()) }
     }
 
@@ -96,16 +99,15 @@ class StageFieldTest {
                     keyboardType = KeyboardType.NumberPassword,
                     password = true,
                     imeAction = ImeAction.Done,
-                    modifier = Modifier.testTag("pin"),
                 )
             }
         }
         // Digits are accepted, exactly as a numeric IME sends them.
-        rule.onNodeWithTag("pin").performTextInput("1234")
+        field().performTextInput("1234")
         rule.runOnIdle { assert(pin == "1234") }
         // A non-digit edit is rejected whole rather than partially applied.
-        rule.onNodeWithTag("pin").performTextClearance()
-        rule.onNodeWithTag("pin").performTextInput("12ab")
+        field().performTextClearance()
+        field().performTextInput("12ab")
         rule.runOnIdle { assert(pin.isEmpty()) }
     }
 
@@ -120,12 +122,11 @@ class StageFieldTest {
                     label = "Search",
                     imeAction = ImeAction.Search,
                     onImeDone = { searched = true },
-                    modifier = Modifier.testTag("search"),
                 )
             }
         }
-        rule.onNodeWithTag("search").performClick()
-        rule.onNodeWithTag("search").performImeAction()
+        field().performClick()
+        field().performImeAction()
         rule.runOnIdle { assert(searched) }
     }
 
@@ -141,26 +142,22 @@ class StageFieldTest {
                         onValueChange = {},
                         label = "First",
                         imeAction = ImeAction.Next,
-                        modifier = Modifier
-                            .testTag("first")
-                            .focusRequester(first),
+                        modifier = Modifier.focusRequester(first),
                     )
                     StageField(
                         value = "",
                         onValueChange = {},
                         label = "Second",
                         imeAction = ImeAction.Done,
-                        modifier = Modifier
-                            .testTag("second")
-                            .focusRequester(second),
+                        modifier = Modifier.focusRequester(second),
                     )
                 }
             }
         }
-        rule.onNodeWithTag("first").performClick()
-        rule.onNodeWithTag("first").assertIsFocused()
-        rule.onNodeWithTag("first").performImeAction()
-        rule.onNodeWithTag("second").assertIsFocused()
+        fieldAt(0).performClick()
+        fieldAt(0).assertIsFocused()
+        fieldAt(0).performImeAction()
+        fieldAt(1).assertIsFocused()
     }
 
     @Test
@@ -179,19 +176,17 @@ class StageFieldTest {
                             onValueChange = {},
                             label = "Field $it",
                             imeAction = if (it < 19) ImeAction.Next else ImeAction.Done,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("field-$it"),
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
             }
         }
         // Scrolling forms keep every field reachable and focusable with the keyboard up.
-        rule.onNodeWithTag("field-19").performScrollTo()
-        rule.onNodeWithTag("field-19").performClick()
-        rule.onNodeWithTag("field-19").assertIsFocused()
-        rule.onNodeWithTag("field-19").assertIsDisplayed()
+        fieldAt(19).performScrollTo()
+        fieldAt(19).performClick()
+        fieldAt(19).assertIsFocused()
+        fieldAt(19).assertIsDisplayed()
         rule.onNodeWithText("Field 19").assertIsDisplayed()
     }
 }

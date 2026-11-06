@@ -14,12 +14,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -27,12 +25,7 @@ import tv.own.owntv.core.menu.MenuLayout
 import tv.own.owntv.core.menu.applyMenuOrder
 import tv.own.owntv.core.menu.catalogue
 import tv.own.owntv.core.model.ContentMenu
-import tv.own.owntv.core.theme.AccentColor
-import tv.own.owntv.core.theme.ThemeMode
-import tv.own.owntv.core.theme.parseAccentHex
-import tv.own.owntv.core.theme.roles
 import tv.own.owntv.mobile.R
-import tv.own.owntv.mobile.ui.components.ColorPickerSheet
 import tv.own.owntv.mobile.ui.components.MobileBottomSheet
 import tv.own.owntv.mobile.ui.components.MobileIcons
 import tv.own.owntv.mobile.ui.stage.LocalStagePalette
@@ -40,80 +33,6 @@ import tv.own.owntv.mobile.ui.stage.StageButton
 import tv.own.owntv.mobile.ui.stage.StageButtonStyle
 import tv.own.owntv.mobile.ui.stage.StageMenuItem
 import tv.own.owntv.mobile.ui.stage.StageSheetHeader
-import tv.own.owntv.mobile.ui.stage.StageStepper
-import tv.own.owntv.mobile.ui.stage.stageAccent
-import tv.own.owntv.mobile.ui.theme.labelRes
-
-/**
- * Appearance › Selection highlight: the ring's thickness as a stepper, then its colour — the accent, each
- * preset, or any colour from the picker. Blank colour means "follow the accent", the default.
- */
-@Composable
-fun SettingsHighlightPage(modifier: Modifier = Modifier, vm: SettingsViewModel = koinViewModel()) {
-    val isDark = vm.settings.themeMode.pref(ThemeMode.DARK) != ThemeMode.LIGHT
-    val current = vm.settings.focusHighlight.pref("")
-    val width = vm.settings.focusHighlightWidth.pref(2)
-    var picker by remember { mutableStateOf(false) }
-    val hexes = AccentColor.entries.map { "#%06X".format(it.roles(isDark).primary and 0xFFFFFF) }
-    val accent = stageAccent.accent
-    SettingsStagePage(modifier) {
-        item(key = "width") {
-            SettingItemRow(
-                SettingItem(
-                    "focus_width", MobileIcons.AutoAwesome, stringResource(R.string.settings_focus_thickness), focusWidthLabel(width),
-                    SettingValue.Custom {
-                        StageStepper(
-                            focusWidthLabel(width),
-                            { vm.edit { setFocusHighlightWidth((width - 1).coerceAtLeast(1)) } },
-                            { vm.edit { setFocusHighlightWidth((width + 1).coerceAtMost(6)) } },
-                            minusEnabled = width > 1, plusEnabled = width < 6,
-                        )
-                    },
-                ),
-                {}, null,
-            )
-        }
-        item(key = "shd") { tv.own.owntv.mobile.ui.stage.StageSectionHead(stringResource(R.string.settings_panel_choices)) }
-        item(key = "accent") { ColourRow(stringResource(R.string.settings_accent), accent, current.isBlank()) { vm.edit { setFocusHighlight("") } } }
-        AccentColor.entries.forEachIndexed { i, color ->
-            item(key = color.name) {
-                ColourRow(stringResource(color.labelRes), Color(color.roles(isDark).primary), current.equals(hexes[i], true)) { vm.edit { setFocusHighlight(hexes[i]) } }
-            }
-        }
-        item(key = "picker") {
-            val custom = current.isNotBlank() && hexes.none { it.equals(current, true) }
-            ColourRow(
-                stringResource(R.string.settings_color_picker),
-                parseAccentHex(current)?.let { Color(it) }.takeIf { custom },
-                custom,
-            ) { picker = true }
-        }
-    }
-    if (picker) {
-        ColorPickerSheet(
-            title = stringResource(R.string.settings_selection_highlight),
-            eyebrow = stringResource(SettingsGroup.APPEARANCE.titleRes),
-            // Gold and white lead: what people ask for when they want the ring to shout.
-            presets = listOf("#F5B400", "#FFFFFF") + hexes,
-            initial = current,
-            onPick = { hex -> vm.edit { setFocusHighlight(hex) } },
-            onDismiss = { picker = false },
-        )
-    }
-}
-
-/** A radio row with the colour as a dot. */
-@Composable
-private fun ColourRow(label: String, color: Color?, on: Boolean, onClick: () -> Unit) {
-    StageMenuItem(
-        label,
-        onClick = onClick,
-        selected = on,
-        leading = { tv.own.owntv.mobile.ui.stage.StageRadio(on) },
-        tags = color?.let { { Box(Modifier.size(14.dp).background(it, CircleShape)) } },
-        role = androidx.compose.ui.semantics.Role.RadioButton,
-    )
-}
 
 /**
  * Layout › Browsing & lists: for Live TV, Movies and Series, whether a section reopens on the category and

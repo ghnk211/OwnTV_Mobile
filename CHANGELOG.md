@@ -7,6 +7,27 @@
 > Issue numbers that are part of a title are fine; explanatory parentheticals are not. The detail —
 > what, why, files and verification — belongs in the commit message, never here.
 
+## Mobile slimming — 2026-11-06
+
+### New features
+- **🔐 App lock: set, change or remove it in Settings → App → App lock**
+- **🧒 Kids Mode as one app-wide switch in Settings → Content**
+- **⬇️ Allow downloads moved to Settings → App → Downloads**
+- **🌐 Three languages: English, 简体中文 and 繁體中文, or follow the phone**
+
+### Fixes
+- **Upgrading cancels the saved match reminders and stops the live score card**
+- **A stored language this build cannot serve ticks the row it really shows**
+- **Home drops a saved Sports row instead of leaving an empty one**
+
+### Migration notes
+- **🌐 A language outside the three now follows the phone; British English becomes en-US**
+- **🏆 Sports has no entry point any more, in the app, in Settings or on Home**
+- **👤 Profiles beyond the current one stay on the device, dormant and untouched, and are not shown**
+- **📦 A backup or a sync container holding more than one profile is refused with a reason**
+- **🔑 One PIN: the app lock, the locked categories and the Settings gate all use it**
+- **🧭 No database schema, backup format, sync protocol or permission changed**
+
 ## Unreleased
 
 ### New features
@@ -16,12 +37,6 @@
 - **🔒 Lock a category with the Customize PIN**
 - **🔐 Ask for the PIN to open Settings**
 - **🔑 Stalker portals: an optional username and password**
-- **🏆 Sports: Scores | Calendar | Leagues tabs**
-- **📅 Sports Calendar: the month of every followed league, with the day's matches**
-- **🗂️ Sports Leagues: tables, fixtures and results; F1 drivers, constructors and races; tennis rankings**
-- **👕 Team pages: fixtures, results, next match, last five and table place**
-- **🆕 54 more leagues, with Volleyball and Lacrosse**
-- **🔄 Calendar refresh setting**
 - **📚 Home says the library is still loading, with the titles so far**
 - **👁️ Long-press menus: hide actions, and the default order matches the menus**
 - **📺 Hide All channels or Catch-up from the Live TV categories**
@@ -32,7 +47,7 @@
 - **🔓 Ignore connection limit, per playlist**
 - **🔀 Sources: switch to another version of the channel playing**
 - **🧭 TV Guide follows Live TV's category, as a switch in Browsing & lists**
-- **👤 Each profile remembers its own last category and channel**
+- **👤 The last category and channel are remembered, and followed without a restart**
 
 ### Fixes
 - **Deleting a download or recording asks first**

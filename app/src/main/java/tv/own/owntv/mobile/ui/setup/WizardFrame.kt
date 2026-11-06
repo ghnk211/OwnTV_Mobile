@@ -51,8 +51,8 @@ import tv.own.owntv.mobile.ui.stage.stageFx
 import tv.own.owntv.mobile.ui.stage.stageGlass
 import tv.own.owntv.mobile.ui.stage.stageText
 
-/** The five steps the dots show, the TV's `WizardStep`. */
-internal enum class WizardStep { LANGUAGE, DISPLAY, PROFILE, PLAYLIST, READY }
+/** The five steps the dots show, the TV's `WizardStep`. No profile step: this app has one, and the wizard makes it. */
+internal enum class WizardStep { LANGUAGE, DISPLAY, CONTENT, PLAYLIST, READY }
 
 /**
  * Every setup step's frame: the Stage page, the app's mark and wordmark top left, the step dots top

@@ -29,6 +29,7 @@ import tv.own.owntv.core.database.entity.SourceEntity
 import tv.own.owntv.core.database.entity.WatchHistoryEntity
 import tv.own.owntv.core.metadata.MetadataRepository
 import tv.own.owntv.core.model.MediaType
+import tv.own.owntv.core.player.EnginePreference
 import tv.own.owntv.core.player.ExternalPlayerLauncher
 import tv.own.owntv.core.player.enginePinKey
 import tv.own.owntv.core.database.dao.resolveExistingProfileId
@@ -250,7 +251,9 @@ class VodTuner(
                 manifestType = movie.manifestType,
                 contentKey = enginePinKey(movie.sourceId, "MOVIE", movie.remoteId),
                 reconnectProvider = reconnectFor(source, movie.streamUrl),
-                vodEngineOverride = SourceOverrides.vodEngineOf(source),
+                // Slim: films and series always start on mpv and ignore the playlist's override —
+                // both settings rows are gone from this app.
+                vodEngineOverride = EnginePreference.MPV_FIRST,
             )
         }
         began(pid, VodPlayback(MediaType.MOVIE, movie.id, movie.name, posterUrl = movie.posterUrl, sourceId = movie.sourceId, categoryId = movie.categoryId), handedOver)
@@ -335,7 +338,8 @@ class VodTuner(
             startIndex = startIndex,
             startPositionMs = startPositionMs,
             userAgent = source?.userAgent,
-            vodEngineOverride = SourceOverrides.vodEngineOf(source),
+            // Slim: same fixed MPV_FIRST default as play(movie) above.
+            vodEngineOverride = EnginePreference.MPV_FIRST,
         )
         began(pid, VodPlayback(MediaType.EPISODE, episode.id, title, subtitle, show.posterUrl, show.id, show.sourceId, show.categoryId), handedOver)
         val parentTmdbId = runCatching { metadata.resolveSeries(show)?.tmdbId?.toLong() }.getOrNull()

@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -39,6 +41,29 @@ class ShellViewModel(
     private val settings: SettingsRepository,
     private val customize: CustomizationStore,
 ) : ViewModel() {
+
+    /**
+     * True until Room and the preference have both answered, so the shell waits instead of guessing.
+     *
+     * On the way it fixes the one thing an upgrade can break: a stored active profile that no longer
+     * names a row. Falling back to the first profile keeps that person's library, favorites and
+     * history — the rows are all still on the device, only the pointer was lost — and it means the
+     * shell never mistakes a half-second of loading for a fresh install and opens Setup over them.
+     */
+    private val _recovering = MutableStateFlow(true)
+
+    val recovering: StateFlow<Boolean> = _recovering.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            runCatching {
+                val all = profileDao.getAllOnce()
+                val active = settings.activeProfileId.first()
+                if (all.isNotEmpty() && all.none { it.id == active }) settings.setActiveProfile(all.first().id)
+            }
+            _recovering.value = false
+        }
+    }
 
     /** Core's rule, unchanged — the same set the TV app's rail is built from. */
     val visibleSections: StateFlow<Set<MainSection>> = navVisibility.visibleSections()

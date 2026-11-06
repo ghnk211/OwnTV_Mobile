@@ -2,27 +2,18 @@ package tv.own.owntv.mobile.ui.screens.settings
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -34,7 +25,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import tv.own.owntv.core.database.entity.ChannelEntity
 import tv.own.owntv.core.i18n.LocaleStore
-import tv.own.owntv.core.i18n.SupportedLocales
+import tv.own.owntv.mobile.i18n.AppLocales
 import tv.own.owntv.core.model.MediaType
 import tv.own.owntv.core.metadata.MetadataConfig
 import tv.own.owntv.core.metadata.MetadataMode
@@ -43,33 +34,23 @@ import tv.own.owntv.core.reminder.ReminderSchedule
 import tv.own.owntv.core.settings.GuideRetention
 import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.core.settings.StartupMode
-import tv.own.owntv.core.theme.AccentColor
-import tv.own.owntv.core.theme.AnimationLevel
 import tv.own.owntv.core.theme.AppFontFamily
 import tv.own.owntv.core.theme.BackgroundConfig
 import tv.own.owntv.core.theme.BackgroundStyle
 import tv.own.owntv.core.theme.FontCustomization
 import tv.own.owntv.core.theme.GlassConfig
 import tv.own.owntv.core.theme.PictureLook
-import tv.own.owntv.core.theme.PopupSizeScale
 import tv.own.owntv.core.theme.ThemeMode
-import tv.own.owntv.core.theme.UiZoom
-import tv.own.owntv.core.theme.roles
 import tv.own.owntv.mobile.R
-import tv.own.owntv.mobile.ui.components.ColorPickerSheet
 import tv.own.owntv.mobile.ui.components.MobileBottomSheet
 import tv.own.owntv.mobile.ui.components.MobileIcons
-import tv.own.owntv.core.theme.parseAccentHex
 import tv.own.owntv.mobile.ui.nav.MobileDestination
+import tv.own.owntv.mobile.ui.profiles.ProfilePinSheet
 import tv.own.owntv.mobile.ui.screens.downloads.volumeName
-import tv.own.owntv.mobile.ui.stage.StageChevron
 import tv.own.owntv.mobile.ui.stage.StageGroupLabel
 import tv.own.owntv.mobile.ui.stage.StageMenuItem
-import tv.own.owntv.mobile.ui.stage.StageRowValue
 import tv.own.owntv.mobile.ui.stage.StageSearchField
 import tv.own.owntv.mobile.ui.stage.StageSheetHeader
-import tv.own.owntv.mobile.ui.stage.stageAccent
-import tv.own.owntv.mobile.ui.theme.labelRes
 
 /** Where a row that opens a page goes: navigation on a phone. Provided by the nav host around every settings route. */
 val LocalSettingsNav = staticCompositionLocalOf<(String) -> Unit> { {} }
@@ -78,7 +59,6 @@ val LocalSettingsNav = staticCompositionLocalOf<(String) -> Unit> { {} }
 @Composable
 fun groupSections(group: SettingsGroup, vm: SettingsViewModel): List<SettingSection> = when (group) {
     SettingsGroup.QUICK -> emptyList()
-    SettingsGroup.PROFILE -> profileSections()
     SettingsGroup.SOURCES -> sourcesSections(vm)
     SettingsGroup.APPEARANCE -> appearanceSections(vm)
     SettingsGroup.LAYOUT -> layoutSections(vm)
@@ -280,67 +260,21 @@ private fun CatchupSheet(vm: SettingsViewModel, onDismiss: () -> Unit) {
 
 @Composable
 private fun appearanceSections(vm: SettingsViewModel): List<SettingSection> {
-    val g = SettingsGroup.APPEARANCE
     val s = vm.settings
     val themeMode = s.themeMode.pref(ThemeMode.DARK)
     val glass = s.glassConfig.pref(GlassConfig())
     val background = s.backgroundConfig.pref(BackgroundConfig())
-    val zoom = s.uiZoomPercent.pref(UiZoom.DEFAULT)
-    val animations = s.animationLevel.pref(AnimationLevel.FULL)
     val fonts = s.fontCustomization.pref(FontCustomization())
-    val highlight = s.focusHighlight.pref("")
-    val highlightWidth = s.focusHighlightWidth.pref(2)
-    val accent = stageAccent.accent
-    val isDark = themeMode != ThemeMode.LIGHT
     val sep = stringResource(R.string.content_epg_bits_separator)
-    val nav = LocalSettingsNav.current
-
-    // The zoom a step below the low-memory point is waiting on; asked once a visit.
-    var pendingZoom by remember { mutableStateOf<Int?>(null) }
-    var lowZoomAccepted by remember { mutableStateOf(false) }
-    pendingZoom?.let { target ->
-        StageConfirmSheet(
-            title = stringResource(R.string.settings_low_zoom_warning_title),
-            text = stringResource(R.string.settings_low_zoom_warning_mobile, UiZoom.LOW_RAM_WARN, UiZoom.LOW_RAM_WARN),
-            confirm = stringResource(R.string.settings_low_zoom_accept),
-            onConfirm = { lowZoomAccepted = true; vm.edit { setUiZoomPercent(target) } },
-            onDismiss = { pendingZoom = null },
-        )
-    }
-    val setZoom = { pct: Int ->
-        val next = UiZoom.clamp(pct)
-        if (next < UiZoom.LOW_RAM_WARN && zoom >= UiZoom.LOW_RAM_WARN && !lowZoomAccepted) pendingZoom = next
-        else vm.edit { setUiZoomPercent(next) }
-    }
-    val setPopup = { pct: Int -> vm.edit { setFontCustomization(fonts.copy(popupSizePercent = PopupSizeScale.clamp(pct))) } }
 
     val themes = ThemeMode.entries
-    // The presets' own (dark) colours in both themes; only the colour in force follows the theme.
-    val presets = AccentColor.entries.map { Color(it.roles(true).primary) }
     return listOf(
         SettingSection(
             null,
-            listOfNotNull(
+            listOf(
                 SettingItem(
                     "theme", MobileIcons.WbSunny, stringResource(R.string.settings_theme), stringResource(R.string.settings_theme_description),
                     SettingValue.Segmented(themes.map { stringResource(it.themeLabel()) }, themes.indexOf(themeMode)) { i -> vm.edit { setThemeMode(themes[i]) } },
-                ),
-                SettingItem(
-                    "accent", MobileIcons.Palette, stringResource(R.string.settings_accent), stringResource(R.string.settings_line_accent_mobile),
-                    SettingValue.Custom { AccentSwatches(presets, accent) },
-                    sheet = { dismiss -> AccentSheet(vm, isDark, dismiss) },
-                ),
-                SettingItem(
-                    "focus_highlight", MobileIcons.AutoAwesome, stringResource(R.string.settings_selection_highlight),
-                    stringResource(R.string.settings_selection_highlight_description),
-                    // "● Normal ›": the ring's colour as a dot, then its width.
-                    SettingValue.Custom {
-                        Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(7.dp).background(parseAccentHex(highlight)?.let { Color(it) } ?: stageAccent.focus, CircleShape))
-                            StageRowValue(focusWidthLabel(highlightWidth), StageChevron.FORWARD)
-                        }
-                    },
-                    onClick = { nav(SettingsLeaf.HIGHLIGHT.route) },
                 ),
                 pageItem(
                     "tab_GLASS_EFFECT", MobileIcons.Layers, stringResource(R.string.settings_glass_bg_title),
@@ -351,71 +285,8 @@ private fun appearanceSections(vm: SettingsViewModel): List<SettingSection> {
                     stringResource(fonts.mainFamily.labelRes()) + sep + stringResource(R.string.common_percent, fonts.sizePercent),
                     SettingsLeaf.FONTS.route,
                 ),
-                SettingItem(
-                    "popup_size", MobileIcons.OpenInFull, stringResource(R.string.settings_popup_size), stringResource(R.string.settings_line_popup_size_mobile),
-                    SettingValue.Stepper(
-                        stringResource(R.string.common_percent, fonts.popupSizePercent),
-                        { setPopup(fonts.popupSizePercent - PopupSizeScale.STEP) }, { setPopup(fonts.popupSizePercent + PopupSizeScale.STEP) },
-                        fonts.popupSizePercent > PopupSizeScale.MIN, fonts.popupSizePercent < PopupSizeScale.MAX,
-                    ),
-                ),
-                SettingItem(
-                    "ui_zoom", MobileIcons.OpenInFull, stringResource(R.string.settings_ui_zoom), stringResource(R.string.settings_ui_zoom_description),
-                    SettingValue.Stepper(
-                        stringResource(R.string.common_percent, zoom),
-                        { setZoom(zoom - UiZoom.STEP) }, { setZoom(zoom + UiZoom.STEP) },
-                        zoom > UiZoom.MIN, zoom < UiZoom.MAX,
-                    ),
-                ),
-                // The glow is a light behind solid panels, so it only means anything on a dark theme that is not
-                // already showing a picture through them — the same condition the TV app uses.
-                if (themeMode == ThemeMode.DARK && !glass.enabled) switchItem(
-                    "ambient_glow", MobileIcons.AutoAwesome, stringResource(R.string.settings_ambient_glow),
-                    stringResource(R.string.settings_ambient_glow_description), s.ambientGlowEnabled.pref(false),
-                ) { vm.edit { setAmbientGlowEnabled(it) } } else null,
-                if (themeMode == ThemeMode.DARK && !glass.enabled) switchItem(
-                    "ambient_glow_pulse", MobileIcons.AutoAwesome, stringResource(R.string.settings_ambient_glow_pulse), null,
-                    s.ambientGlowPulse.pref(false),
-                ) { vm.edit { setAmbientGlowPulse(it) } } else null,
-                switchItem(
-                    "animations", MobileIcons.Refresh, stringResource(R.string.settings_animations),
-                    stringResource(R.string.settings_line_animations_mobile), animations == AnimationLevel.FULL,
-                ) { on -> vm.edit { setAnimationLevel(if (on) AnimationLevel.FULL else AnimationLevel.OFF) } },
             ),
         ),
-    )
-}
-
-/** `acc`: the five presets as 14 dp dots, then the colour in force ringed in white. */
-@Composable
-private fun AccentSwatches(presets: List<Color>, current: Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        presets.forEach { Box(Modifier.size(14.dp).background(it, CircleShape)) }
-        Box(
-            Modifier
-                .size(14.dp)
-                .background(current, CircleShape)
-                .drawBehind { drawCircle(Color.White, size.minDimension / 2f + 2.dp.toPx(), style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx())) },
-        )
-    }
-}
-
-/** The presets with their names and Yours, then the picker — Cancel or Use this colour. */
-@Composable
-private fun AccentSheet(vm: SettingsViewModel, isDark: Boolean, onDismiss: () -> Unit) {
-    val custom = vm.settings.customAccent.pref("")
-    val preset = vm.settings.accent.pref(AccentColor.TEAL)
-    val hexes = AccentColor.entries.map { "#%06X".format(it.roles(isDark).primary and 0xFFFFFF) }
-    ColorPickerSheet(
-        title = stringResource(R.string.settings_accent),
-        eyebrow = stringResource(SettingsGroup.APPEARANCE.titleRes),
-        presets = hexes,
-        presetNames = AccentColor.entries.map { stringResource(it.labelRes) },
-        initial = custom.ifBlank { hexes[preset.ordinal] },
-        // A preset and a custom hex answer the same question; a preset clears the hex, or the hex keeps winning.
-        onPickPreset = { i -> vm.edit { setCustomAccent(""); setAccent(AccentColor.entries[i]) } },
-        onPick = { hex -> vm.edit { setCustomAccent(hex) } },
-        onDismiss = onDismiss,
     )
 }
 
@@ -530,10 +401,29 @@ private fun contentSections(vm: SettingsViewModel): List<SettingSection> {
         val c = androidx.compose.runtime.key(type) { remember(type) { vm.customizations(type) }.pref(null) }
         hidden += (c?.hiddenCategories?.size ?: 0) + (c?.hiddenItems?.size ?: 0)
     }
+    // Kids mode is a flag on the one profile this app keeps. Opening it costs nothing; closing it in
+    // front of an app lock asks for that lock first, so the switch a child reaches for is not the way
+    // around it.
+    val active by vm.activeProfile.collectAsStateWithLifecycle()
+    var kidsOff by remember { mutableStateOf(false) }
+    val who = active
+    if (kidsOff && who != null) {
+        ProfilePinSheet(
+            profileName = who.name,
+            onSubmit = { pin ->
+                vm.verifyPin(who, pin).also { if (it) { vm.setKidsMode(false); kidsOff = false } }
+            },
+            onDismiss = { kidsOff = false },
+        )
+    }
     return listOf(
         SettingSection(
             null,
             listOf(
+                switchItem(
+                    "kids_mode", MobileIcons.Person, stringResource(R.string.settings_profile_kids),
+                    stringResource(R.string.mobile_kids_mode_description), active?.isKids == true,
+                ) { on -> if (!on && active?.pinHash != null) kidsOff = true else vm.setKidsMode(on) },
                 pageItem(
                     "tab_CUSTOMIZE", MobileIcons.Edit, stringResource(R.string.settings_customize), stringResource(R.string.settings_line_customize),
                     if (hidden > 0) pluralStringResource(R.plurals.settings_customize_hidden_count, hidden, hidden) else null,
@@ -578,6 +468,9 @@ private fun appSections(vm: SettingsViewModel): List<SettingSection> {
     val dns = s.dnsConfig.pref(tv.own.owntv.core.network.DnsConfig())
     val root = s.downloadRoot.pref("")
     val wifiOnly = s.downloadsWifiOnly.pref(false)
+    val downloadsAllowed = s.activeDownloadsAllowed.pref(true)
+    // The row says what the lock does: a PIN on this profile is asked for when the app opens.
+    val appLockOn = vm.activeProfile.pref(null)?.pinHash != null
     val context = LocalContext.current
     val nav = LocalSettingsNav.current
     val on = stringResource(R.string.common_on)
@@ -594,12 +487,14 @@ private fun appSections(vm: SettingsViewModel): List<SettingSection> {
             stringResource(R.string.settings_app_group),
             listOf(
                 pageItem(
-                    "tab_SPORTS", MobileIcons.Sports, stringResource(R.string.sports_title), stringResource(R.string.sports_leagues),
-                    null, SettingsLeaf.SPORTS.route,
-                ),
-                pageItem(
                     "tab_LANGUAGE", MobileIcons.Translate, stringResource(R.string.settings_language), stringResource(R.string.settings_language_description),
                     localeLabel(tag), SettingsLeaf.LANGUAGE.route,
+                ),
+                pageItem(
+                    "tab_APP_LOCK", MobileIcons.Lock, stringResource(R.string.mobile_app_lock),
+                    stringResource(R.string.mobile_app_lock_description),
+                    stringResource(if (appLockOn) R.string.settings_profile_pin_lock else R.string.settings_profile_no_lock),
+                    SettingsLeaf.APP_LOCK.route,
                 ),
                 SettingItem(
                     "app_icon", MobileIcons.Palette, stringResource(R.string.settings_app_icon), stringResource(R.string.settings_line_app_icon),
@@ -646,6 +541,12 @@ private fun appSections(vm: SettingsViewModel): List<SettingSection> {
         SettingSection(
             stringResource(R.string.common_nav_downloads),
             listOf(
+                // Moved here when the profile editor went: the permission is still stored per profile,
+                // the switch is just no longer sitting next to the profile it belongs to.
+                switchItem(
+                    "downloads_allowed", MobileIcons.Download, stringResource(R.string.profiles_allow_downloads),
+                    stringResource(R.string.profiles_allow_downloads_description), downloadsAllowed,
+                ) { vm.setDownloadsAllowed(it) },
                 // The folder is chosen on Downloads (its folder tool), where it is shown; this row goes there.
                 SettingItem(
                     "download_folder", MobileIcons.Folder, stringResource(R.string.settings_download_folder),
@@ -724,17 +625,6 @@ private fun ThemeMode.themeLabel(): Int = when (this) {
     ThemeMode.LIGHT -> R.string.settings_theme_light
 }
 
-/** The ring's width as a word, the way the TV app names it: Thin, Normal, Thick, Extra thick. */
-@Composable
-internal fun focusWidthLabel(dp: Int): String = stringResource(
-    when (dp) {
-        1 -> R.string.settings_focus_width_thin
-        4, 5 -> R.string.settings_focus_width_thick
-        6 -> R.string.settings_focus_width_extra
-        else -> R.string.settings_focus_width_normal
-    },
-)
-
 internal fun AppFontFamily.labelRes(): Int = when (this) {
     AppFontFamily.LORA -> R.string.settings_font_lora
     AppFontFamily.SYSTEM_SANS -> R.string.settings_font_system_sans
@@ -748,7 +638,7 @@ internal fun AppFontFamily.labelRes(): Int = when (this) {
 @Composable
 private fun localeLabel(tag: String): String =
     if (tag.isBlank()) stringResource(R.string.settings_language_device)
-    else SupportedLocales.pickerRows.firstOrNull { it.languageTag == tag }?.endonym ?: tag
+    else AppLocales.rows.firstOrNull { it.languageTag == tag }?.endonym ?: tag
 
 private fun StartupMode.startupLabel() = when (this) {
     StartupMode.HOME -> R.string.settings_startup_home

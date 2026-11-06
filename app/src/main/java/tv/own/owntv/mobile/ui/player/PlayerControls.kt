@@ -152,10 +152,6 @@ fun PlayerControls(
     // Live only, and only once "Record what I'm watching" is switched on. Null hides it.
     onRecordThis: (() -> Unit)? = null,
     recordingThis: Boolean = false,
-    /** Sports Hub: the match's score under the channel name, only for a channel started from a match. */
-    matchLine: (@Composable () -> Unit)? = null,
-    /** Sports Hub: the other channels showing that match; null hides the button. */
-    onOtherChannels: (() -> Unit)? = null,
     /** Live only: the channel's other versions (Sources); null hides the button. */
     onSources: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -192,7 +188,6 @@ fun PlayerControls(
                         showClock = showClock,
                         watchingWallMs = watchingWallMs,
                         onBack = onBack,
-                        matchLine = matchLine,
                     )
                     // Under the identity rather than beside it: the guide line is the longest text on
                     // the dock, and a phone has no width to spare on the row the title is already in.
@@ -256,7 +251,6 @@ fun PlayerControls(
                         recordingThis = recordingThis,
                         liveOnExo = liveOnExo,
                         onToggleLiveEngine = onToggleLiveEngine,
-                        onOtherChannels = onOtherChannels,
                         onSources = onSources,
                     )
                 }
@@ -275,7 +269,6 @@ private fun TopRow(
     showClock: Boolean,
     watchingWallMs: State<Long?>,
     onBack: () -> Unit,
-    matchLine: (@Composable () -> Unit)? = null,
 ) {
     val engine by player.engineChip.collectAsStateWithLifecycle()
     val resolution by player.videoRes.collectAsStateWithLifecycle()
@@ -303,7 +296,6 @@ private fun TopRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            matchLine?.invoke()
         }
         if (showClock) {
             MobilePlayerClock(
@@ -520,7 +512,6 @@ private fun ToolBar(
     recordingThis: Boolean = false,
     liveOnExo: Boolean = false,
     onToggleLiveEngine: (() -> Unit)? = null,
-    onOtherChannels: (() -> Unit)? = null,
     onSources: (() -> Unit)? = null,
     sleepTimer: SleepTimer = koinInject(),
 ) {
@@ -600,12 +591,9 @@ private fun ToolBar(
             PlayerControl.PREVIOUS_CHANNEL -> if (onPreviousChannel != null) {
                 CtrlButton(MobileIcons.History, stringResource(R.string.player_previous_channel), onPreviousChannel)
             }
-            // Sports Hub: the other channels showing the match this one was started from, once Find
-            // channels found them. No Match button on either app; Back returns to the match page.
-            PlayerControl.OTHER_CHANNELS -> if (onOtherChannels != null) {
-                CtrlButton(MobileIcons.Sports, stringResource(R.string.sports_other_channels), onOtherChannels)
-            }
-            PlayerControl.MATCH -> Unit
+            // The two sports buttons went out with the Sports module, but core still lists them in the
+            // shared control order the television renders from.
+            PlayerControl.OTHER_CHANNELS, PlayerControl.MATCH -> Unit
             // The same channel in another quality, category or playlist; the list is read when it opens.
             PlayerControl.SOURCES -> if (onSources != null) {
                 CtrlButton(MobileIcons.PlaylistPlay, stringResource(R.string.player_tool_sources), onSources)

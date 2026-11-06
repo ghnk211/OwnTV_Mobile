@@ -1,211 +1,197 @@
 package tv.own.owntv.mobile.ui.profiles
 
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import tv.own.owntv.mobile.ui.components.BrandMark
-import tv.own.owntv.mobile.ui.components.Wordmark
-import tv.own.owntv.mobile.ui.components.rememberAppliedIcon
-import tv.own.owntv.mobile.ui.shell.ShellAvatar
-import tv.own.owntv.mobile.ui.stage.LocalStagePalette
-import tv.own.owntv.mobile.ui.stage.StageIcon
-import tv.own.owntv.mobile.ui.stage.StageTag
-import tv.own.owntv.mobile.ui.stage.stageAccent
-import tv.own.owntv.mobile.ui.stage.stageBackground
-import tv.own.owntv.mobile.ui.stage.stageClickable
-import tv.own.owntv.mobile.ui.stage.stageText
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalAutofillManager
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import tv.own.owntv.core.database.entity.ProfileEntity
 import tv.own.owntv.mobile.R
-import tv.own.owntv.mobile.ui.components.MobileIcons
+import tv.own.owntv.mobile.ui.components.BrandMark
+import tv.own.owntv.mobile.ui.components.Wordmark
+import tv.own.owntv.mobile.ui.components.rememberAppliedIcon
+import tv.own.owntv.mobile.ui.shell.ShellAvatar
+import tv.own.owntv.mobile.ui.stage.LocalStagePalette
+import tv.own.owntv.mobile.ui.stage.StageButton
+import tv.own.owntv.mobile.ui.stage.StageField
+import tv.own.owntv.mobile.ui.stage.stageAccent
+import tv.own.owntv.mobile.ui.stage.stageBackground
+import tv.own.owntv.mobile.ui.stage.stageText
 
+/** The ring the chooser drew around the current profile, kept for the lock screen's avatar. */
 private val AVATAR_SIZE = 104.dp
 
+/** Five wrong digits and the button waits this long, so a 4–6 digit PIN is not a 10-second brute force. */
+private const val FAILURE_LIMIT = 5
+private const val COOLDOWN_SECONDS = 30
+
 /**
- * "Who's watching?" — the chooser the app opens with when more than one person uses it, or when the
- * only profile is PIN-locked.
+ * The app lock: one profile, one PIN, and no way past it.
  *
- * There is no way past it: it is shown instead of the app, not over it, so there is no back gesture
- * that reveals somebody else's library behind it. Choosing an unlocked profile enters immediately;
- * a locked one asks for its PIN first.
+ * This replaced the "Who's watching?" chooser when multi-profile management went. What it still is:
+ * a screen shown *instead of* the app rather than over it, so there is no back gesture, no deep link
+ * and no notification tap that can reveal a library behind a dialog. What it no longer is: a picker.
+ * The name and the avatar are only here to say whose lock this is, and there is no "add profile",
+ * no other face to tap, and no link to a forgotten PIN — the plan's one known gap (see §5.12.6).
+ *
+ * The PIN is verified off the main thread: it is a salted hash, and hashing inside composition would
+ * put the frame the user is watching right where they typed.
  */
 @Composable
 fun ProfileGate(
-    profiles: List<ProfileEntity>,
-    onEntered: (ProfileEntity) -> Unit,
+    profile: ProfileEntity,
+    onUnlocked: () -> Unit,
     modifier: Modifier = Modifier,
     vm: ProfilesViewModel,
 ) {
-    var pinFor by remember { mutableStateOf<ProfileEntity?>(null) }
-    var addProfile by remember { mutableStateOf(false) }
-    val fallbackName = stringResource(R.string.profiles_default_name)
-
-    fun enter(profile: ProfileEntity) = vm.switchTo(profile) { onEntered(profile) }
-
-    // The brand on top, the question and its line, then two columns of 104 dp avatars — the
-    // current profile ringed — and the outlined Add profile, on the Stage background.
+    var pin by remember { mutableStateOf("") }
+    var wrong by remember { mutableStateOf(false) }
+    var failures by remember { mutableIntStateOf(0) }
+    var cooling by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+    val keyboard = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val autofill = LocalAutofillManager.current
     val palette = LocalStagePalette.current
-    val activeProfileId by vm.activeProfileId.collectAsStateWithLifecycle()
+    val accent = stageAccent
+
+    LaunchedEffect(cooling) {
+        if (cooling > 0) {
+            delay(1_000)
+            cooling -= 1
+        }
+    }
+
+    fun submit(entry: String) {
+        if (entry.length !in PIN_MIN..PIN_MAX || cooling > 0) return
+        scope.launch {
+            val ok = withContext(Dispatchers.Default) { vm.verifyPin(profile, entry) }
+            if (ok) {
+                // A PIN is not a password to keep, and the digits must not outlive the screen.
+                autofill?.cancel()
+                pin = ""
+                keyboard?.hide()
+                focusManager.clearFocus()
+                onUnlocked()
+            } else {
+                pin = ""
+                wrong = true
+                failures += 1
+                if (failures >= FAILURE_LIMIT) {
+                    cooling = COOLDOWN_SECONDS
+                    failures = 0
+                }
+            }
+        }
+    }
+
+    val heading = stringResource(R.string.profiles_enter_pin, profile.name)
     Column(
         modifier = modifier
             .fillMaxSize()
             .stageBackground()
             .statusBarsPadding()
             .verticalScroll(rememberScrollState())
-            .padding(start = 34.dp, end = 34.dp, top = 72.dp, bottom = 24.dp),
+            .padding(start = 34.dp, end = 34.dp, top = 64.dp, bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF0B1216)),
+                Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(palette.ink),
                 contentAlignment = Alignment.Center,
             ) { BrandMark(rememberAppliedIcon(), 28.dp) }
             Wordmark(110.dp)
         }
-        Text(
-            text = stringResource(R.string.profiles_gate_title),
-            style = stageText(28f, 800),
-            color = palette.text,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 44.dp),
-        )
-        Text(
-            text = stringResource(R.string.profiles_gate_subtitle),
-            style = stageText(12.5f, 500),
-            color = palette.muted,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp, bottom = 82.dp),
-        )
-        val tiles: List<ProfileEntity?> = profiles + null
-        tiles.chunked(2).forEach { pair ->
-            Row(Modifier.fillMaxWidth().padding(bottom = 26.dp), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                pair.forEach { profile ->
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.TopCenter) {
-                        if (profile == null) {
-                            AddProfileTile(onClick = { addProfile = true })
-                        } else {
-                            ProfileTile(
-                                profile = profile,
-                                current = profile.id == activeProfileId,
-                                onClick = { if (profile.pinHash == null) enter(profile) else pinFor = profile },
-                            )
-                        }
-                    }
-                }
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
-            }
-        }
-    }
-
-    pinFor?.let { locked ->
-        ProfilePinSheet(
-            profileName = locked.name,
-            onSubmit = { pin ->
-                vm.verifyPin(locked, pin).also { if (it) { pinFor = null; enter(locked) } }
-            },
-            onDismiss = { pinFor = null },
-        )
-    }
-    if (addProfile) {
-        ProfileEditorSheet(
-            initial = null,
-            takenNames = profiles.map { it.name.lowercase() }.toSet(),
-            onConfirm = { name, avatarId, isKids, pin, picture ->
-                vm.create(name, avatarId, isKids, pin, fallbackName, picture)
-            },
-            onDismiss = { addProfile = false },
-        )
-    }
-}
-
-/** One person's tile: the 104 dp avatar (ringed when it is the current profile), the name, KIDS or 🔒 PIN. */
-@Composable
-private fun ProfileTile(profile: ProfileEntity, current: Boolean, onClick: () -> Unit) {
-    val palette = LocalStagePalette.current
-    val accent = stageAccent
-    val interaction = remember { MutableInteractionSource() }
-    Column(Modifier.stageClickable(interaction, onClick, null), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
-            Modifier.then(
-                if (current) {
-                    Modifier.drawBehind {
-                        val r = size.minDimension / 2
-                        drawCircle(accent.accent.copy(alpha = 0.3f), r + 7.dp.toPx())
-                        drawCircle(accent.focus, r + 3.dp.toPx())
-                    }
-                } else Modifier,
-            ),
+            Modifier
+                .padding(top = 56.dp)
+                .drawBehind {
+                    val r = size.minDimension / 2
+                    drawCircle(accent.accent.copy(alpha = 0.3f), r + 7.dp.toPx())
+                    drawCircle(accent.focus, r + 3.dp.toPx(), style = Stroke(2.dp.toPx()))
+                },
         ) {
             ShellAvatar(profile, onClick = null, diameter = AVATAR_SIZE)
         }
         Text(
             text = profile.name,
-            style = stageText(15f, 700),
+            style = stageText(19f, 800),
             color = palette.text,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 10.dp),
+            modifier = Modifier.padding(top = 18.dp),
         )
-        when {
-            profile.isKids -> StageTag(stringResource(R.string.profiles_kids_badge), Modifier.padding(top = 4.dp))
-            profile.pinHash != null -> StageTag(stringResource(R.string.profiles_pin), Modifier.padding(top = 4.dp), icon = MobileIcons.Lock)
-        }
-    }
-}
-
-/** The outlined circle with + and Add profile in the muted colour. */
-@Composable
-private fun AddProfileTile(onClick: () -> Unit) {
-    val palette = LocalStagePalette.current
-    val interaction = remember { MutableInteractionSource() }
-    Column(Modifier.stageClickable(interaction, onClick, null), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            Modifier
-                .size(AVATAR_SIZE)
-                .clip(CircleShape)
-                .drawBehind { drawCircle(palette.ink.copy(alpha = 0.2f), size.minDimension / 2 - 1.dp.toPx(), style = Stroke(2.dp.toPx())) },
-            contentAlignment = Alignment.Center,
-        ) {
-            StageIcon(MobileIcons.Add, 30.dp, palette.muted)
-        }
         Text(
-            text = stringResource(R.string.profiles_add),
-            style = stageText(15f, 700),
+            text = heading,
+            style = stageText(12.5f, 500),
             color = palette.muted,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 10.dp),
+            modifier = Modifier.padding(top = 4.dp, bottom = 26.dp),
+        )
+        StageField(
+            value = pin,
+            onValueChange = {
+                if (it.length <= PIN_MAX && it.all(Char::isDigit)) {
+                    pin = it
+                    wrong = false
+                }
+            },
+            label = stringResource(R.string.profiles_pin),
+            placeholder = stringResource(R.string.profiles_pin_placeholder),
+            password = true,
+            keyboardType = KeyboardType.NumberPassword,
+            imeAction = ImeAction.Done,
+            isError = wrong,
+            supportingText = when {
+                cooling > 0 -> pluralStringResource(R.plurals.mobile_unlock_too_many_attempts, cooling, cooling)
+                wrong -> stringResource(R.string.profiles_wrong_pin)
+                else -> null
+            },
+            onImeDone = { submit(pin) },
+            modifier = Modifier.padding(horizontal = 8.dp),
+        )
+        StageButton(
+            text = stringResource(R.string.mobile_unlock),
+            onClick = { submit(pin) },
+            enabled = cooling == 0 && pin.length >= PIN_MIN,
+            modifier = Modifier.fillMaxWidth().padding(top = 18.dp),
         )
     }
 }

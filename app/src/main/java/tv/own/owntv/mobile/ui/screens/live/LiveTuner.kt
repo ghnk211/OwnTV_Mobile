@@ -53,6 +53,7 @@ import tv.own.owntv.mobile.cast.CastRequest
 import tv.own.owntv.mobile.R
 import tv.own.owntv.mobile.playback.DataSaverGate
 import tv.own.owntv.mobile.playback.PlaybackService
+import tv.own.owntv.mobile.playback.SlimLiveHost
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import tv.own.owntv.player.LiveProgramme
@@ -243,14 +244,18 @@ class LiveTuner(
     private val live = LiveTuneController(
         scope = scope,
         engines = EnginePair(exo, player),
-        host = LiveTuneController.CoreHost(
-            context = context,
-            settings = settings,
-            sourceDao = sourceDao,
-            resolver = streamUrlResolver,
-            forceMpvStore = forceMpvStore,
-            engineStarted = { publishToSystem() },
-            downloadHolds = downloadWatchGuard::holdsOnlyStream,
+        // Slim: live always starts on ExoPlayer and ignores per-playlist engine overrides — the
+        // settings rows for both are gone from this app (see SlimLiveHost).
+        host = SlimLiveHost(
+            LiveTuneController.CoreHost(
+                context = context,
+                settings = settings,
+                sourceDao = sourceDao,
+                resolver = streamUrlResolver,
+                forceMpvStore = forceMpvStore,
+                engineStarted = { publishToSystem() },
+                downloadHolds = downloadWatchGuard::holdsOnlyStream,
+            ),
         ),
     )
 

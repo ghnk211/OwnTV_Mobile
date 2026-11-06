@@ -10,7 +10,6 @@ import org.koin.androidx.compose.koinViewModel
 import tv.own.owntv.core.theme.AppFontFamily
 import tv.own.owntv.core.theme.FontCustomization
 import tv.own.owntv.core.theme.PopupFontScale
-import tv.own.owntv.core.theme.PopupSizeScale
 import tv.own.owntv.core.theme.UiFontScale
 import tv.own.owntv.mobile.R
 import tv.own.owntv.mobile.ui.theme.MobileDimens
@@ -65,20 +64,6 @@ fun SettingsFontsPage(
                     vm.edit {
                         setFontCustomization(
                             fonts.copy(popupFontSizePercent = PopupFontScale.clamp(pct)),
-                        )
-                    }
-                },
-            )
-            SettingsSlider(
-                title = stringResource(R.string.settings_popup_size),
-                subtitle = stringResource(R.string.settings_popup_size_description),
-                value = fonts.popupSizePercent,
-                range = PopupSizeScale.MIN..PopupSizeScale.MAX,
-                steps = stepsFor(PopupSizeScale.MIN, PopupSizeScale.MAX, PopupSizeScale.STEP),
-                onValueChange = { pct ->
-                    vm.edit {
-                        setFontCustomization(
-                            fonts.copy(popupSizePercent = PopupSizeScale.clamp(pct)),
                         )
                     }
                 },

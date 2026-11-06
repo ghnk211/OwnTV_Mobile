@@ -17,22 +17,22 @@ stop where something looks useful.
 A fresh install walks you through the same steps as the television:
 
 ```
-Welcome  →  Display  →  Disclaimer  →  Set up OwnTV  →  Profile  →  Add a playlist  →  Import  →  All set
+Welcome  →  Display  →  Disclaimer  →  Set up OwnTV  →  Add a playlist · Restore a backup · From another device  →  All set
 ```
 
-1. **Welcome** — the language picker is on this screen: one of 26, or **System default**. Tap
-   **Get started**.
+1. **Welcome** — the language picker is on this screen: **English**, **简体中文**, **繁体中文**, or
+   **System default** (the phone's own language). Tap **Get started**.
 2. **Display** — interface zoom and font size, with a sample that resizes as you adjust, the
    **App icon**, and whether Live TV shows a preview.
 3. **Disclaimer** — OwnTV is a player; you bring the sources.
-4. **Set up OwnTV** — **New profile**, **Restore a backup**, or **From another device** (copy
-   everything off a television you already have — see below).
-5. **Profile** — name, avatar, and optionally a **Kids** profile or a PIN.
-6. **Add a playlist** — **Remote** (type it on a computer or another device's browser), **Type it
-   here** (Xtream, M3U or Stalker), **Import** a backup file, or **Existing** (only when another
-   profile already has one). **Skip for now** is a valid answer.
-7. **Import** runs, counting channels, films and series as they arrive.
-8. **All set** — **Add a TV guide** goes straight to
+4. **Set up OwnTV** — **Start fresh**, **Restore a backup**, or **From another device** (copy
+   everything off a television you already have — see below). There is no profile to make: the app
+   keeps the one profile it opens with, and whichever of these lands first is the one it is made for.
+5. **Start fresh** → **Add a playlist** — **Remote** (type it on a computer or another device's browser), **Type it
+   here** (Xtream, M3U or Stalker), or **Import** a backup file. **Skip for now** is a valid answer,
+   and you can add a playlist later in Settings → Sources & guide.
+6. **Import** runs, counting channels, films and series as they arrive.
+7. **All set** — **Add a TV guide** goes straight to
    [Settings → Sources & guide → EPG sources](#-add-guide-data); the guide is never added for you.
 
 ### 📺 Coming from the television?
@@ -43,7 +43,14 @@ code, you type the 6-digit PIN once, tick what to bring across, and see exactly 
 before it changes. A phone being set up only ever *receives* — nothing on the television is altered.
 A backup made on the TV also restores here, encrypted ones included — and **Restore a backup** asks
 what to bring back before it applies anything, so you can take the playlists and leave the old
-device's settings behind. The app opens once the restore is complete and starts downloading the
+device's settings behind. One rule covers both routes: this phone keeps a single profile, so a file
+or a sync that carries **more than one profile** is refused, with the reason on the screen, and your
+file is left exactly as it is — run it on the television. While you are still in the setup wizard, a
+backup whose single profile has *another name* is refused too, and the app tells you to open
+**Settings → Backup & Restore**, where that rename can be confirmed. Once you are in the app, such a
+file is applied by renaming this phone's profile to match — the app says so and asks first, on the
+screen where you confirm, and puts the old name back if the restore fails.
+The app opens once the restore is complete and starts downloading the
 restored playlists straight away. An Xtream playlist whose password was not in the backup waits
 instead: the last screen names it, and typing the password in that playlist's **Edit** form loads it.
 Later on, the full two-way version lives at
@@ -53,17 +60,21 @@ More → [Local sync](#-local-sync-with-your-tv).
 
 ## 🧭 Getting around
 
-**On a phone** — a bottom bar: Home · Live TV · Sports · TV Guide · Library (Movies | Series at its top).
+**On a phone** — a bottom bar of four: Home · Live TV · TV Guide · Library (Movies | Series at its top).
 **On a tablet, or a phone held sideways** — the bar becomes a floating rail down the left (with
 Downloads and More too), Live TV puts the preview beside the list, and Movies and Series show the
 picked title on a card beside the posters.
+
+If you are upgrading from an older build, the phone has no **Sports** tab any more, and any match
+reminders or goal alerts it had saved are cancelled the first time this version opens.
 
 Each page has its title and, under it, where you are — **"‹ Sky Cinema · 9 channels"**. Tap that line
 to change category. Top right: the **playlist** button, **search** and **your avatar**, which opens **More**.
 
 - **Tap the tab you are already on** — or long-press it — to jump that list back to the top.
-- **More** (tap your avatar) holds your profile and **Switch**, **Settings**, Downloads, Favourites,
-  History, Backup, Local sync, the error log and About.
+- **More** (tap your avatar) shows your profile and holds **Settings**, Downloads, Favourites,
+  History, **Backup & Restore**, Local sync, the error log and About. There is no profile list and
+  nothing to switch to — this is the only profile (see [Your profile & App lock](#-your-profile--app-lock)).
 - The **playlist button** at the top right switches which playlist the whole app is showing.
 
 ---
@@ -88,55 +99,6 @@ moves per centimetre of finger, without changing how far you must travel to star
 
 ---
 
-## 🏆 Sports
-
-**Where:** the **Sports** tab. Nothing is followed at first: tap **Sports and leagues** (or go to
-**Settings → App → Sports → Sports and leagues**), tap a sport and switch on its leagues.
-**Sport buttons → All sports** fetches every league instead, which takes longer.
-
-- **The Sports page** — three tabs under the title: **Scores · Calendar · Leagues**. Two rows of
-  buttons filter all three: sports (and ★ My teams), then that sport's leagues; the choice stays when
-  you switch tab. **⟳** at the end rebuilds the sports data (the status pill says **Rebuilding
-  sports…**). Opening Sports from the bottom bar starts on Scores.
-- **Scores** — **Live now**, **Sport on your channels** (from your guide) and **Starting soon**.
-  Tap a match to open it; **long-press** for the sheet: tap a team's name for its team page, **Follow**
-  on the right, and **Remind me**.
-- **Calendar** — the month on top, the chosen day's matches below, grouped by league. Each day shows
-  up to three sport icons, ★ when one of your teams plays and a red dot while something is live; with
-  one league chosen, how many of its matches are on. Tap a day; **swipe** the month or tap **‹ ›**;
-  **Today** jumps back (the arrows stop at the season's start). Scroll the day's list and the month
-  folds into its week — swipe it for another week, tap the month name to open it again. Tap a league
-  heading to open it in Leagues; the bell sets a reminder. Past days show results; with
-  **Spoiler-free** on, a score shows as **• – •** until you tap it. Offline, what was saved is shown
-  with the time it was saved.
-- **Leagues** — a card per league you follow: who leads, what is next (long-press to follow or
-  unfollow). Tap a card, or choose one league, and it opens here: **Table · Fixtures · Results**
-  (fixtures and results by round, beyond today). Formula 1 has **Drivers · Constructors · Races**
-  with the next race weekend and every session in your time; other racing **Drivers · Races**;
-  ATP / WTA **Rankings · Matches**.
-- **Team pages** — tap a team on a match page, in a table, in the long-press sheet or in **Settings →
-  Sports → My teams**: the next match (Match page, Remind me), the last five, the table place (tap it
-  for the table), then **Fixtures · Results** by month, cups included, with W / D / L.
-- **A match** — the league name at the top opens that league in Leagues; score, venue, and the tabs **Watch live · Timeline · Stats · Line-ups · Table · Form ·
-  Broadcasts**. In **Watch live**, **Find channels** lists the channels in your guide that show it, from
-  30 minutes before kick-off. **Filter channels** narrows them by language, country, picture and
-  playlist; **Strict filtering** hides the rest, and **Remember for every match** keeps the choice.
-  Tap a channel to watch full screen; **Back** returns to the match. **Long-press** a channel for
-  **Always use for …**. **Broadcasts** lists the channels found, one per row by country.
-- **Live score card** on a match keeps its score in your notifications until full time.
-- **In the player** — the score shows under the channel name while the controls are up, and
-  **Other channels** switches to another channel showing the same match.
-- **Your own order** — in Sports and leagues, **long-press** a sport or a switched-on league →
-  **Move**, then the arrows and **Save**. The Sports page and the Home row follow it.
-- **Settings → App → Sports** — auto rebuild, **Calendar refresh** (how often saved months of this
-  season and later are fetched again: every 1–30 days, 7 at first; past months never are), live
-  refresh, **Refresh sports data now** (also marks the saved months out of date), filters, My teams, **Goal alerts** (also
-  when OwnTV is closed: goals, kick-off and full time, half time, red cards; for My teams or every
-  followed league) and match reminders. A reminder with a channel found shows OwnTV's own prompt while
-  the app is open.
-
----
-
 ## 📥 Playlists & sources
 
 ### ➕ Add a playlist
@@ -157,6 +119,9 @@ Typing an Xtream password with a TV remote is miserable, so the television can h
 phone. It shows a QR code and a 6-digit PIN; scan it, fill the form in your browser, and press
 **Send to TV** — then press **Start Import** on the television. It is a web page served by the TV, so
 it works from any phone on the same Wi-Fi, this app installed or not.
+A backup you take from this phone always carries the current profile only, so the television can
+always open it. A television backup that carries several profiles cannot be restored here — see
+[Backup & restore](#-backup--restore).
 
 ### ℹ️ Info & Re-test
 **Where:** Settings → Sources & guide → Playlists → tap a playlist → **Info**
@@ -214,7 +179,7 @@ rearranges each menu with ↑ ↓, hides an action with the eye, and **Reset** b
 **Tap the line under the title** for the categories sheet: Favourites, Recently watched, Catch-up,
 All channels, then your provider's groups with counts and a search field. **Settings → Layout → Browsing &
 lists** can leave out **Catch-up** or **All channels**; Live TV then opens on your first category. The
-last category is remembered per profile (only the ones you pick); **TV Guide follows Live TV** makes the
+last category is remembered (only the ones you pick); **TV Guide follows Live TV** makes the
 TV Guide open on it and share it. A channel tapped in **Search** opens Live TV on that channel's own
 category, scrolled to it.
 **Long-press a category** to hide or move it, or **Restore to playlist default** — hidden channels
@@ -424,7 +389,9 @@ says so.
 
 ### 📶 Wi-Fi only
 **Where:** Settings → App → **Download over Wi-Fi only**, and Settings → Player → **Data saver**, which
-refuses to start a stream on mobile data.
+refuses to start a stream on mobile data. Downloads as a whole are switched on and off by
+**Allow downloads**, under the **Downloads** heading on the **Settings → App** page; off removes every
+**Download** button.
 
 ---
 
@@ -491,8 +458,8 @@ the phone's lock screen and notification then drive *it*.
 ## 🔄 Local sync with your TV
 
 **Where:** More → **Local sync**
-Swap playlists, profiles, favourites, history and resume positions with the television over your own
-Wi-Fi. No account, no cloud, no file.
+Swap playlists, settings, favourites, history and resume positions with the television over your own
+Wi-Fi. No account, no cloud, no file. Everything that arrives lands on this phone's one profile.
 
 ```
 Both devices open Local sync  →  pair (scan the QR, or pick from the list)
@@ -505,18 +472,49 @@ Both devices open Local sync  →  pair (scan the QR, or pick from the list)
   only receives, so only the *other* device needs Sync mode on.
 - **Nothing is applied on arrival** — you see what will change first.
 - **A deletion stays deleted** on both devices, rather than being undone by the merge.
+- **More than one profile cannot come across.** A sync that offers several profiles is refused and
+  says so — this phone holds one. Nothing is applied and nothing on the other device is touched, so
+  you can change your mind and try again.
+- **A single profile under another name** is applied by renaming this phone's profile to match. You
+  are told that on the screen where you confirm, before anything changes, and the old name comes back
+  if the sync fails.
+- If that incoming name belongs to a profile an older version left behind here, the sync is refused
+  rather than quietly relabelling it; rename it on the other device and sync again.
 
 ---
 
-## 👥 Profiles
+## 👤 Your profile & App lock
 
-**Where:** More → **Profiles**
-Each has its own favourites, history, resume points and layout. Add a **PIN**, or make it a **kids
-profile** to hide adult content everywhere. Pick one of ten drawn avatars — or **a photo of your
-own**, already while creating the profile. Editing a profile also has **Allow downloads**: off removes
-every Download button for it. Downloading a whole show or season first asks "Download N episodes?".
+**One profile per phone.** Its favourites, history, resume points and layout are simply the app's
+own. There is no "who is watching" screen: nothing to add, rename or delete, and nothing to switch
+between. The name and the face at the top right are this phone's profile.
+**Where:** More — your profile is shown there, with **Settings**, Downloads, Favourites and History.
 
-**Where a profile opens:** Settings → App → **App startup** — Home, the last channel (full screen),
+Profiles an older version left behind are **not deleted and not shown**: they stay in the app's
+storage, invisible to this version, and an older build installed again would still see them. Nothing
+here throws away your data or your backup files.
+
+### 🔒 App lock
+A 4–6 digit PIN that opens the app itself — the screen you answer before Home appears.
+**Where:** Settings → App → **App lock** → **Set app lock**. Once set, the same page offers
+**Change PIN** and **Remove app lock**, and both ask for the digits you have first.
+- **Five wrong PINs in a row** and the button waits about 30 seconds before the next try.
+- It is **one PIN, not three**: the same digits open a locked category and answer the Settings PIN.
+- **Kids mode** (Settings → Content & metadata → **Kids mode**) is one switch for the whole app, and
+  switching it off while a lock is set asks for the PIN first.
+- **Forget the PIN and there is no way back in from inside the app.** The only answer is to clear the
+  app's data, which starts OwnTV over and takes everything saved with it — favourites, history, the
+  downloads list. The **App lock** page says so, in plain words, above the buttons.
+- Turning the lock on does not interrupt what you are watching: it takes effect the next time the app
+  opens.
+
+### 📥 Allow downloads
+**Where:** **Settings → App**, under the **Downloads** heading — **Allow downloads** (it moved out of the
+old profile editor). Off removes every **Download** button. Downloading a whole show or season first asks
+"Download N episodes?".
+
+### 🚪 Where the app opens
+**Where:** Settings → App → **App startup** — Home, the last channel (full screen),
 **Last channel · TV Guide** or **Last channel · Live TV** (that tab opens on the channel's category with
 the channel in the preview), Favourites, or one chosen channel.
 
@@ -544,19 +542,26 @@ with its opacity. Real frost needs Android 12+.
 **Where:** Settings → Appearance → **Fonts & text size**, **Popup size** and **UI zoom**
 Six font families for the interface and for popups, and interface zoom.
 
+### 🗣️ Language
+**Where:** Settings → App → **Language**
+Three to choose from — **English**, **简体中文**, **繁体中文** — plus **System default**, which follows
+the language the phone itself is set to. A language an older version had saved that is not one of
+these becomes **System default**, and any English variant becomes **English**.
+
 ### 🗂️ Customize
 **Where:** Settings → Content & metadata → **Customize categories & items**
 Hide, rename, reorder and regroup categories and items, with **bulk rename** (rules, automatic
 cleanup, a review step and restore-originals — for category names too, from the categories page),
 **custom categories**, span selection, and an optional
 **PIN lock**. With a PIN set, **⋯ → Ask for PIN to open Settings** makes Settings, Backup & Restore and
-Local sync ask for the same PIN, on this profile. Removing the PIN turns it off.
+Local sync ask for the same PIN — which is also the PIN that opens the app when **App lock** is on.
+Removing the PIN turns it off.
 
 **Lock a category with a PIN** — in the categories sheet of Live TV, the TV Guide, Movies or Series,
 hold a playlist category → **Lock with PIN**. It uses the Customize PIN (the first lock asks you to set
 one). The category stays in the list with a lock; its channels, films and shows stay out of everything
 else (search, Guide, Home, favourites, history, Downloads, recordings) until you open it with
-**Enter PIN**. It stays open until you leave the app or switch profile — leaving also stops anything
+**Enter PIN**. It stays open until you leave the app — leaving also stops anything
 playing from it, the floating window included. **Remove lock** in the same menu asks the PIN, and
 removing the Customize PIN unlocks every category. 5 wrong PINs → a 30 s wait.
 
@@ -570,7 +575,8 @@ Trending is the detailed hero or a plain poster row.
 
 ## ⚙️ Settings worth knowing
 
-Settings is twelve group cards, each opening its own page. There's a **search box** at the top that
+Settings is eleven group cards — Quick among them, and no **Profiles** card any more. There's a
+**search box** at the top that
 finds any setting by its name, and **Quick** holds the rows you pin yourself by **long-pressing a row**.
 
 | Setting | Where | Why |
@@ -594,18 +600,26 @@ finds any setting by its name, and **Quick** holds the rows you pin yourself by 
 | **Maximum video quality** · **Maximum quality on mobile data** | Picture | The highest picture played when a stream offers several; the mobile-data limit follows a Wi-Fi ⇄ mobile switch while playing |
 | **Software decoding above 1080p** | Picture | Off. Lets 4K play in software when hardware decoding is off or fails; only for a fast phone |
 | **Tunneled playback** | Picture | Experimental, off. Only on phones that support it; turns itself off after a failure |
-| **Preferred audio / subtitle language** | Sound & subtitles | Per profile, 50 languages. **Original language** (audio) plays a film or series in the language it was made in, when the stream has it |
+| **Preferred audio / subtitle language** | Sound & subtitles | For the whole app, 50 languages. **Original language** (audio) plays a film or series in the language it was made in, when the stream has it |
 | **Subtitle appearance** | Sound & subtitles | Size, **font**, colour, position, background |
 | **Gesture sensitivity** | Watching & recording | How far a value moves per centimetre of finger |
 | **Background playback** | Watching & recording | Keep the sound when the app leaves the screen |
 | **Data saver** | Player | Refuse to stream on mobile data |
+| **Language** | App | Three languages, or **System default** |
+| **App lock** | App | The PIN that opens the app — the same PIN locked categories and the Settings PIN use |
+| **Kids mode** | Content & metadata | One switch for the whole app; off asks the PIN when a lock is set |
+| **Allow downloads** | App, under Downloads | Off removes every **Download** button |
 | **Check for updates** | App | On startup, or on demand |
 | **Error log** | More → Error log | Recent playback failures, exportable |
 
 ### 💾 Backup & restore
 **Where:** More → **Backup & Restore**
-One `.own` file with your profiles, sources, settings and downloaded subtitles, **optionally
-encrypted with your own password**. Choose which profiles travel. Restores a television backup too.
+One `.own` file with this phone's profile, sources, settings and downloaded subtitles, **optionally
+encrypted with your own password**. The export always carries the **current profile only**, so a phone
+backup opens fine on the television. Restores a television backup too — but a TV file that carries
+**several profiles** is refused, the reason given on the screen, and the file is left untouched so you
+can run it there instead. A file whose one profile has a different name renames this phone's profile to
+match, and says so on the screen where you confirm.
 
 ---
 
@@ -620,7 +634,11 @@ encrypted with your own password**. Choose which profiles travel. Restores a tel
 | Stalker portal refuses the login | Re-check the MAC and your phone's **date & time** |
 | Guide is blank | Settings → Sources & guide → **EPG sources** — add a feed, sync it, then **Auto-match** |
 | A series says "Could not load the episodes" | The provider refused the episode list; the code in brackets (e.g. HTTP 407) says why. Stop any other stream on the account and open the series again |
-| Downloads won't start | Settings → App — **Download over Wi-Fi only** may be on |
+| Downloads won't start | Settings → App — **Download over Wi-Fi only** may be on, or **Allow downloads** (same page, Downloads section) may be off |
+| Locked out by the app PIN | There is no reset inside the app. Clearing the app's data starts OwnTV over and takes favourites, history and the downloads list with it |
+| A TV backup refuses to restore | It carries more than one profile and this phone keeps one. Your file is not changed — restore it on the television |
+| The backup's profile has another name | Confirm on the screen that says so: this phone's profile is renamed to match, and the old name comes back if the restore fails |
+| No **Sports** tab | The phone app no longer has it. Match reminders and goal alerts an older version saved are cancelled the first time this one opens |
 | Nothing casts | The receiver has to decode it; raw MPEG-TS channels cannot be cast |
 | Update won't install | Android asks you to allow installs from OwnTV the first time |
 

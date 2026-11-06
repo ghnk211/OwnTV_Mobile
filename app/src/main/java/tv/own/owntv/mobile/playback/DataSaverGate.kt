@@ -33,7 +33,7 @@ class DataSaverGate(
         if (!settings.dataSaverNow()) return true
         if (!isMetered()) return true
         withContext(Dispatchers.Main) {
-            val ctx = AppLocale.wrap(context, localeStore.currentTag.value)
+            val ctx = AppLocale.wrap(context, tv.own.owntv.mobile.i18n.AppLocales.normalize(localeStore.currentTag.value))
             Toast.makeText(ctx, R.string.player_error_data_saver, Toast.LENGTH_LONG).show()
         }
         return false

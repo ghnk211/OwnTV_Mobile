@@ -35,7 +35,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import tv.own.owntv.core.backup.BackupManager
-import tv.own.owntv.core.database.entity.SourceEntity
 import tv.own.owntv.core.setup.SourceImporter
 import tv.own.owntv.core.setup.displayText
 import tv.own.owntv.core.sync.ImportStage
@@ -68,9 +67,9 @@ import tv.own.owntv.mobile.ui.stage.stageText
 
 /**
  * Where an "Add a source" from Settings enters the flow (Add a source picks the way there itself): the form ("Type it
- * here", pre-filled when Remote sent one), the backup picker, or another profile's playlists.
+ * here", pre-filled when Remote sent one) or the backup picker.
  */
-enum class SetupEntry { ADD_CONTENT, FORM, IMPORT, EXISTING }
+enum class SetupEntry { ADD_CONTENT, FORM, IMPORT }
 
 /** What the finished wizard leaves for the shell (the TV's `PendingShellRequest`): the last step's Add a TV guide. */
 object SetupHandoff {
@@ -84,15 +83,19 @@ object SetupHandoff {
 }
 
 private enum class Step {
-    WELCOME, DISPLAY_SIZE, DISCLAIMER, CHOICE, SYNC_DEVICE, CREATE_PROFILE, ADD_CONTENT, EXISTING, FORM, IMPORTING, RESTORE
+    WELCOME, DISPLAY_SIZE, DISCLAIMER, CHOICE, SYNC_DEVICE, ADD_CONTENT, FORM, IMPORTING, RESTORE
 }
 
 /**
  * Getting content onto the phone: type a playlist in, or bring everything back from a backup.
  *
  * **The first run is the television's wizard**, in its order and with its words — Welcome, Display,
- * the disclaimer, start-fresh-or-restore, the profile, then where the content comes from, Importing and All set.
+ * the disclaimer, start-fresh-or-restore, then where the content comes from, Importing and All set.
  * Opening the same flow later from Settings' Add a source starts at the way that page chose instead.
+ *
+ * There is no "who is watching" step any more. One profile per app means the wizard creates it
+ * itself — the importer's, or a default when the user skips — and the profile step, its avatar strip
+ * and its optional PIN left with it.
  */
 @Composable
 fun SetupFlow(
@@ -104,27 +107,20 @@ fun SetupFlow(
     val vm: SetupViewModel = koinViewModel()
     val state by vm.state.collectAsStateWithLifecycle()
     val progress by vm.progress.collectAsStateWithLifecycle()
+    // A backup this app will not restore, and why — shown rather than swallowed (§5.8.3).
+    val blocked by vm.blocked.collectAsStateWithLifecycle()
     // No way to cancel means there is nothing behind this flow, which is exactly what a first run is.
     val firstRun = onCancel == null
     val entryStep = when {
         firstRun -> Step.WELCOME
         entry == SetupEntry.FORM -> Step.FORM
         entry == SetupEntry.IMPORT -> Step.RESTORE
-        entry == SetupEntry.EXISTING -> Step.EXISTING
         else -> Step.ADD_CONTENT
     }
     var step by rememberSaveable(firstRun) { mutableStateOf(entryStep) }
     // A submission from Remote, read once by the form it pre-fills.
     val remotePayload by vm.remotePayload.collectAsStateWithLifecycle()
     val remoteInitial = remember(remotePayload) { remotePayload?.toFormValues() }
-    // Refreshed on every arrival at Add content, because restoring a backup on the way here can
-    // create the very profiles whose playlists this step offers to share.
-    var existing by remember { mutableStateOf<List<SourceEntity>>(emptyList()) }
-    LaunchedEffect(step) {
-        if (step == Step.ADD_CONTENT) {
-            existing = runCatching { vm.availableExistingSources() }.getOrDefault(emptyList())
-        }
-    }
     // Where "Try again" and "Cancel" return to: the form for a new playlist, the list for a shared one.
     var importOrigin by rememberSaveable { mutableStateOf(Step.FORM) }
     // The playlist being imported, for "Importing <name>"; null when linking existing playlists.
@@ -143,7 +139,6 @@ fun SetupFlow(
 
     // The name field is optional, and the television has always filled a blank one in rather than
     // storing an empty string. Without this the playlist has no name anywhere it is shown.
-    val defaultProfileName = stringResource(R.string.setup_default_profile)
     val defaultIptvName = stringResource(R.string.setup_default_iptv)
     val defaultPlaylistName = stringResource(R.string.setup_name_default_playlist)
     val defaultPortalName = stringResource(R.string.setup_default_portal)
@@ -180,11 +175,9 @@ fun SetupFlow(
             // The step owns its own Back: it has sheets to dismiss first, and once the data has
             // landed there is nothing to go back to.
             Step.SYNC_DEVICE -> Unit
-            Step.CREATE_PROFILE -> step = Step.CHOICE
             // Not `onCancel?.invoke()`: `firstRun` IS `onCancel == null`, so this branch is only
             // reached when there is one, and the compiler knows it.
-            Step.ADD_CONTENT -> if (firstRun) step = Step.CREATE_PROFILE else onCancel()
-            Step.EXISTING -> if (entryStep == Step.EXISTING) leave() else step = Step.ADD_CONTENT
+            Step.ADD_CONTENT -> if (firstRun) step = Step.CHOICE else onCancel()
             Step.FORM -> backFromForm()
             Step.RESTORE -> backFromRestore()
             Step.IMPORTING -> Unit // the buttons on that screen decide; a stray swipe must not abandon a sync
@@ -193,7 +186,6 @@ fun SetupFlow(
 
     LaunchedEffect(Unit) {
         if (entryStep == Step.RESTORE && !openedPicker) { openedPicker = true; pickBackup() }
-        if (entryStep == Step.EXISTING) existing = runCatching { vm.availableExistingSources() }.getOrDefault(emptyList())
     }
     // Read once: a later "Type it here" must not be filled from an old submission.
     LaunchedEffect(step) { if (step != Step.FORM && remotePayload != null) vm.consumeRemotePayload() }
@@ -206,39 +198,21 @@ fun SetupFlow(
             Step.DISPLAY_SIZE -> DisplaySizeStep(onNext = { step = Step.DISCLAIMER }, onBack = { step = Step.WELCOME })
             Step.DISCLAIMER -> DisclaimerStep(onAgree = { step = Step.CHOICE }, onBack = { step = Step.DISPLAY_SIZE })
             Step.CHOICE -> SetupChoiceStep(
-                onCreateProfile = { step = Step.CREATE_PROFILE },
+                onStartFresh = { step = Step.ADD_CONTENT },
                 onRestore = { backupOrigin = Step.CHOICE; step = Step.RESTORE; pickBackup() },
                 onSyncDevice = { step = Step.SYNC_DEVICE },
                 onBack = { step = Step.DISCLAIMER },
             )
-            // A sync brings whole profiles with it, exactly as a restored backup does, so it finishes
-            // the same way the RESTORE step does rather than inventing a second ending.
+            // A sync brings profiles with it, which this app no longer keeps: the step says so and
+            // refuses rather than inventing a second ending (§5.10).
             Step.SYNC_DEVICE -> SetupLocalSyncStep(onRestored = { vm.finish(onDone) }, onBack = { step = Step.CHOICE })
-            Step.CREATE_PROFILE -> ProfileStep(
-                onCreate = { name, avatar, kids, pin, picture ->
-                    vm.createProfile(name.ifBlank { defaultProfileName }, avatar, kids, pin, picture) { step = Step.ADD_CONTENT }
-                },
-                onBack = { step = Step.CHOICE },
-            )
             Step.ADD_CONTENT -> AddContentStep(
                 vm = vm,
-                hasExisting = existing.isNotEmpty(),
                 onRemoteReceived = { importOrigin = Step.FORM; step = Step.FORM },
                 onNew = { importOrigin = Step.FORM; step = Step.FORM },
-                onExisting = { step = Step.EXISTING },
                 onImport = { backupOrigin = Step.ADD_CONTENT; step = Step.RESTORE; pickBackup() },
                 onSkip = { vm.finish(onDone) },
-                onBack = if (firstRun) ({ step = Step.CREATE_PROFILE }) else onCancel,
-            )
-            Step.EXISTING -> ExistingSourcesStep(
-                sources = existing,
-                onAdd = { ids ->
-                    vm.linkExisting(ids)
-                    importName = null
-                    importOrigin = Step.EXISTING
-                    step = Step.IMPORTING
-                },
-                onBack = { if (entryStep == Step.EXISTING) leave() else step = Step.ADD_CONTENT },
+                onBack = if (firstRun) ({ step = Step.CHOICE }) else onCancel,
             )
             Step.FORM -> Column(Modifier.fillMaxSize().then(if (firstRun) Modifier.stageBackground() else Modifier).statusBarsPadding()) {
                 // "Type it here", from the wizard or Settings' Add a source: the page's own title and the way back.
@@ -276,7 +250,7 @@ fun SetupFlow(
             Step.RESTORE -> {
                 RestoreBackup(
                     state = state,
-                    wizardStep = if (backupOrigin == Step.CHOICE) WizardStep.PROFILE else WizardStep.PLAYLIST,
+                    wizardStep = if (backupOrigin == Step.CHOICE) WizardStep.CONTENT else WizardStep.PLAYLIST,
                     // The same choice the sheet took, carried across the password question: a sealed
                     // file is chosen from before it can be opened, so the answer has to outlive it.
                     onPassword = { file, password ->
@@ -299,6 +273,28 @@ fun SetupFlow(
                     )
                 }
             }
+        }
+    }
+
+    // Setup cannot show what a backup holds before restoring it, nor undo a rename half-way through,
+    // so a backup it cannot take safely is refused here instead — in one sentence that says why, with
+    // the file left picked so it can be tried again from Settings, where the questions can be asked.
+    blocked?.let { reason ->
+        MobileBottomSheet(onDismissRequest = vm::dismissBlocked, title = stringResource(R.string.settings_backup_restore_title)) {
+            StageSheetHeader(stringResource(R.string.settings_backup_restore_title))
+            Text(
+                text = stringResource(reason),
+                style = stageText(13f, 500),
+                color = LocalStagePalette.current.muted,
+                modifier = Modifier.padding(horizontal = 12.dp),
+            )
+            StageMenuItem(
+                stringResource(R.string.common_ok),
+                onClick = vm::dismissBlocked,
+                icon = MobileIcons.Check,
+                filled = true,
+                modifier = Modifier.padding(top = 10.dp),
+            )
         }
     }
 }

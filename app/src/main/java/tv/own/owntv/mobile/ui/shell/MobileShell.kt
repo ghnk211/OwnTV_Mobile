@@ -1,8 +1,6 @@
 package tv.own.owntv.mobile.ui.shell
 
 import tv.own.owntv.mobile.ui.screens.MoreLeaf
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.Dialog
 import android.app.Activity
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
@@ -84,8 +82,6 @@ import tv.own.owntv.mobile.ui.nav.isTitleRoute
 import tv.own.owntv.mobile.ui.nav.SEARCH_ROUTE
 import tv.own.owntv.mobile.ui.nav.SEARCH_ROUTE_PATTERN
 import tv.own.owntv.mobile.ui.nav.SETUP_ROUTE_PATTERN
-import tv.own.owntv.core.profile.profileGateRequired
-import tv.own.owntv.core.profile.shellMayCompose
 import tv.own.owntv.mobile.ui.profiles.ProfileGate
 import tv.own.owntv.mobile.ui.profiles.ProfileGateSession
 import tv.own.owntv.mobile.ui.profiles.ProfilesViewModel
@@ -100,8 +96,6 @@ import tv.own.owntv.mobile.ui.screens.live.LiveTuner
 import tv.own.owntv.mobile.ui.screens.morePageTitleRes
 import tv.own.owntv.mobile.ui.screens.settings.settingsPageTitleRes
 import tv.own.owntv.mobile.ui.screens.settings.isSettingsPage
-import tv.own.owntv.mobile.ui.screens.sports.SportsPlayback
-import tv.own.owntv.mobile.ui.screens.sports.SportsTab
 
 /**
  * The frame every screen sits in (Stage): the Stage page background, the page header with the
@@ -120,84 +114,54 @@ fun MobileShell(
     navController: NavHostController = rememberNavController(),
 ) {
     val shellViewModel: ShellViewModel = koinViewModel()
-    val sportsPlayback: SportsPlayback = koinInject()
     val sections by shellViewModel.visibleSections.collectAsStateWithLifecycle()
+    // Room and the active-profile preference both have to answer before this frame can say anything.
+    // On the way, the view model points the stored id at a real row if it no longer does.
+    val recovering by shellViewModel.recovering.collectAsStateWithLifecycle()
+    if (recovering) return
 
     val profilesViewModel: ProfilesViewModel = koinViewModel()
     val gateSession: ProfileGateSession = koinViewModel()
     val profiles by profilesViewModel.profiles.collectAsStateWithLifecycle()
     val activeProfileId by profilesViewModel.activeProfileId.collectAsStateWithLifecycle()
-    // Authentication is profile-bound: invalidate an old unlock before a changed active id can turn
-    // into a shell destination, whether it changed by a deletion, a restore, or another writer.
-    LaunchedEffect(activeProfileId) { gateSession.invalidateIfNotProfile(activeProfileId) }
 
     /*
-     * What the app shows before the app itself — **the television's own `when`, branch for branch**
-     * (see `MainActivity.kt`). The order is the whole of the rule, and getting it wrong is what put
-     * "Who is watching?" on screen for a frame after the wizard:
+     * What the app shows before the app itself, in the one order that is correct:
      *
      *  - Nothing at all while either answer is still missing. A blank frame is the price of never
      *    showing the wrong person's library, and of never guessing from half the inputs.
-     *  - **No active profile is the setup flow, not the chooser.** This is the branch mobile did not
-     *    have. Mobile decided setup from "are there any playlists", so the moment the wizard imported
-     *    one it handed over to the shell — while the active id was still unset — and the shell had
-     *    nowhere to go but the gate. The television asks about the *profile*, so its onboarding stays
-     *    up until one is active and the gate never gets a turn. It also means **Skip for now** works:
-     *    finishing with no playlist at all is a legitimate end to the wizard, where the old rule
-     *    would have dropped the user straight back into it.
-     *  - A stale id — a list that does not contain the active profile — is recovery, so setup again.
-     *  - Only then "Who is watching?", and only when the gate is genuinely required: more than one
-     *    profile, or a single one with a PIN.
+     *  - **No active profile is the setup flow, not a lock screen.** The wizard asks about the
+     *    *profile*, the same way the television does, so its onboarding stays up until one is active
+     *    and the lock never gets a turn on the way past. **Skip for now** is a legitimate end:
+     *    finishing with no playlist at all still lands in the app.
+     *  - Then the app lock — one profile, one PIN, and only when that profile has one. It is shown
+     *    *instead of* the app, never over it, so no back gesture, deep link or notification tap can
+     *    reveal a library behind a dialog.
      */
     val loadedProfiles = profiles ?: return
     val activeId = activeProfileId ?: return
-    if (activeId < 0L || loadedProfiles.none { it.id == activeId }) {
-        // The wizard reports the profile it activated, and that is the unlock — the same handover the
-        // television does. Without it the shell would have a valid active profile and no session for
-        // it, which is the one state that shows the chooser.
-        SetupFlow(
-            onDone = { profileId -> profileId?.let(gateSession::unlock) },
-            modifier = modifier,
-        )
+    val activeProfile = loadedProfiles.firstOrNull { it.id == activeId }
+    if (activeId < 0L || activeProfile == null) {
+        // Deliberately not an unlock: the wizard may have recovered a profile that carries a PIN, and
+        // `pinHash` below is the only thing that decides whether the app is locked.
+        SetupFlow(onDone = { _ -> }, modifier = modifier)
         return
     }
-    val gateRequired = profileGateRequired(loadedProfiles)
-    // With no chooser needed (one profile, no PIN) the person using the app has entered as that profile;
-    // so adding a second profile keeps them in rather than throwing them to "Who's watching?".
-    LaunchedEffect(gateRequired, activeId) { if (!gateRequired) gateSession.unlock(activeId) }
-    if (!shellMayCompose(
-            profiles = loadedProfiles,
-            activeProfileId = activeId,
-            authenticatedProfileId = gateSession.unlockedProfileId,
-            gateRequired = gateRequired,
-        )
-    ) {
+    // Authentication is profile-bound: invalidate an old unlock before a changed active id can turn
+    // into a shell destination, whether it changed by a deletion, a restore, or another writer.
+    LaunchedEffect(activeId) { gateSession.invalidateIfNotProfile(activeId) }
+    val locked = activeProfile.pinHash != null
+    // An unlock on a profile with no PIN is not a choice the user has to make; nobody locks this app
+    // by accident, and the session is what the rest of the frame checks.
+    LaunchedEffect(activeId, locked) { if (!locked) gateSession.unlock(activeId) }
+    if (locked && gateSession.unlockedProfileId != activeId) {
         ProfileGate(
-            profiles = loadedProfiles,
-            onEntered = { gateSession.unlock(it.id) },
+            profile = activeProfile,
+            onUnlocked = { gateSession.unlock(activeId) },
             modifier = modifier,
             vm = profilesViewModel,
         )
         return
-    }
-    // More › Switch: the same chooser, over the app rather than instead of it, so Back leaves
-    // it and the page you were on is still there. Choosing someone unlocks them in this session.
-    var choosingProfile by remember { mutableStateOf(false) }
-    if (choosingProfile) {
-        Dialog(
-            onDismissRequest = { choosingProfile = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
-        ) {
-            ProfileGate(
-                profiles = loadedProfiles,
-                onEntered = {
-                    gateSession.unlock(it.id)
-                    choosingProfile = false
-                },
-                modifier = Modifier.fillMaxSize(),
-                vm = profilesViewModel,
-            )
-        }
     }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -446,7 +410,7 @@ fun MobileShell(
         )
         else -> null
     }
-    val activeProfile = loadedProfiles.firstOrNull { it.id == activeId }
+    // `activeProfile` is the shell's own, decided above — one profile, and it has passed the lock.
     // The Stage palette decides the theme everywhere else in the shell, so the cast icon follows it too.
     val onSurfaceLight = !LocalStagePalette.current.isLight
 
@@ -490,7 +454,7 @@ fun MobileShell(
                 current = current,
                 compact = compactRail,
                 profile = loadedProfiles.firstOrNull { it.id == activeId },
-                onClick = { navController.onNavClick(it, current, shellViewModel, sportsPlayback) },
+                onClick = { navController.onNavClick(it, current, shellViewModel) },
                 onSearch = { navController.navigate(SEARCH_ROUTE) { launchSingleTop = true } },
                 onAvatar = { navController.navigate(MobileDestination.MORE.route) { launchSingleTop = true } },
                 modifier = Modifier.align(Alignment.CenterStart),
@@ -575,7 +539,7 @@ fun MobileShell(
                             destinations = destinations,
                             current = current,
                             labels = navLabels,
-                            onClick = { navController.onNavClick(it, current, shellViewModel, sportsPlayback) },
+                            onClick = { navController.onNavClick(it, current, shellViewModel) },
                             onLongClick = { shellViewModel.requestScrollToTop(it.route) },
                         )
                     }
@@ -595,7 +559,6 @@ fun MobileShell(
                         MobileNavHost(
                             navController = navController,
                             scrollToTop = shellViewModel.scrollToTop,
-                            onSwitchProfile = { choosingProfile = true },
                         )
                     }
                     // Low over the page, under the mini player: a sync running while the user browses is
@@ -805,7 +768,6 @@ private fun NavHostController.onNavClick(
     destination: MobileDestination,
     current: MobileDestination?,
     shell: ShellViewModel,
-    sportsPlayback: SportsPlayback,
 ) {
     when {
         // A film or a channel opened under this tab: back to the tab's own list first (only the list
@@ -817,11 +779,7 @@ private fun NavHostController.onNavClick(
         // A More or Settings page pushed on top of this tab: back down to the tab itself. Restoring the
         // tab's saved stack instead restored the very page on screen, so the tap did nothing.
         current == null && popBackStack(destination.route, inclusive = false) -> Unit
-        else -> {
-            // Sports opened from another place starts on Scores; Back from its match pages keeps the tab.
-            if (destination == MobileDestination.SPORTS) sportsPlayback.tab.value = SportsTab.SCORES
-            navigateToTab(destination)
-        }
+        else -> navigateToTab(destination)
     }
 }
 

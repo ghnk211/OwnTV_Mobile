@@ -94,12 +94,7 @@ fun SettingsScreen(
             return@SettingsStagePage
         }
         val counts = SettingsGroup.entries.associateWith { group ->
-            when (group) {
-                SettingsGroup.QUICK -> quickCount
-                // Profiles, not the Add row.
-                SettingsGroup.PROFILE -> all.getValue(group).sumOf { s -> s.items.count { it.key != "profile_add" } }
-                else -> all.getValue(group).sumOf { it.items.size }
-            }
+            if (group == SettingsGroup.QUICK) quickCount else all.getValue(group).sumOf { it.items.size }
         }
         SettingsGroup.entries.chunked(2).forEachIndexed { r, pair ->
             item(key = "cards-$r") {
@@ -199,13 +194,11 @@ private val LEAF_ROWS: List<Pair<SettingsLeaf, Int>> = listOf(
     SettingsLeaf.FONTS to R.string.settings_popup_font_size,
     SettingsLeaf.FONTS to R.string.settings_main_interface_font,
     SettingsLeaf.FONTS to R.string.settings_popup_font,
-    SettingsLeaf.HIGHLIGHT to R.string.settings_focus_thickness,
     SettingsLeaf.GLASS_EFFECT to R.string.settings_bg_background,
     SettingsLeaf.GLASS_EFFECT to R.string.settings_bg_picture,
     SettingsLeaf.GLASS_EFFECT to R.string.settings_bg_look,
     SettingsLeaf.GLASS_EFFECT to R.string.settings_bg_darken,
     SettingsLeaf.GLASS_EFFECT to R.string.settings_bg_blur,
-    SettingsLeaf.GLASS_EFFECT to R.string.settings_bg_accent_light,
     SettingsLeaf.GLASS_EFFECT to R.string.settings_glass_opacity,
     SettingsLeaf.HOME to R.string.home_row_now_trending,
     SettingsLeaf.HOME to R.string.home_trending_style,
@@ -254,9 +247,6 @@ private fun quickRows(all: Map<SettingsGroup, List<SettingSection>>, pins: Quick
 
 /** Quick's own title and line for the pins it starts with, by their stored (TV) key. */
 private val QUICK_WORDS: Map<String, Pair<Int, Int>> = mapOf(
-    "quick_live_preview" to (R.string.settings_quick_live_preview to R.string.settings_line_live_preview_mobile),
-    "quick_preview_sound" to (R.string.settings_quick_preview_sound to R.string.settings_line_preview_sound),
-    "quick_channel_numbers" to (R.string.settings_quick_channel_numbers to R.string.settings_line_quick_channel_numbers_mobile),
     "quick_hdr" to (R.string.settings_quick_prefer_sdr to R.string.settings_line_prefer_sdr),
     "quick_autoplay" to (R.string.settings_quick_autoplay to R.string.settings_line_quick_autoplay),
     "quick_check_update" to (R.string.settings_quick_check_update to R.string.settings_line_when_app_opens),

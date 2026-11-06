@@ -3,23 +3,6 @@ import java.util.Properties
 import javax.inject.Inject
 import org.gradle.process.ExecOperations
 
-// Packaged locale qualifiers are read from tools/i18n/locales.json entries where packaged = true.
-// That catalogue is owned by the core repo (ahXN00/OwnTV_Core), which holds the strings; the copy
-// here exists only because Gradle needs the list before any dependency is resolved, so core's copy
-// never reaches this build. The pin-bump PR refreshes both files together — never edit one alone,
-// or a new language is silently stripped out of the APK while the build stays green.
-// The build consumes the ``resourceQualifier`` field specifically (NOT languageTag, NOT weblateCode):
-// a runtime BCP-47 tag fed straight into localeFilters is the bug this schema exists to prevent.
-val localesCatalogueFile = rootProject.file("tools/i18n/locales.json")
-@Suppress("UNCHECKED_CAST")
-val packagedLocaleQualifiers: Set<String> = run {
-    if (!localesCatalogueFile.isFile) return@run emptySet()
-    val raw = groovy.json.JsonSlurper().parseText(localesCatalogueFile.readText()) as List<Map<String, Any>>
-    raw.mapNotNull { entry ->
-        if ((entry["packaged"] as? Boolean) == true) entry["resourceQualifier"] as? String else null
-    }.toSet()
-}
-
 plugins {
     alias(libs.plugins.android.application)
     // Kotlin is provided by AGP 9's built-in Kotlin support; this plugin pins the Compose compiler
@@ -154,12 +137,13 @@ android {
     }
 
     androidResources {
-        // Packages only the catalogue entries marked packaged = true — the same 24 locales the TV
-        // app ships, because both read the same strings out of core. Without this, every library
-        // locale folder ships too (appcompat alone contributes ~85), and nothing can strip a locale
-        // afterwards: shrinkResources removes unreferenced resources, never locales. The debug-only
-        // pseudolocale qualifiers are added back per variant below; release ships neither.
-        localeFilters.addAll(packagedLocaleQualifiers)
+        // Three shipped languages: English, Simplified and Traditional Chinese. core still carries its
+        // 27 packaged locales in the dependency, but nothing outside this list enters the APK — and no
+        // later step can remove a locale either, because shrinkResources drops unreferenced resources,
+        // never locales. These are resource qualifiers, NOT runtime BCP-47 tags; the matching tags live
+        // in AppLocales, and the two lists must be edited together. Debug pseudolocales are added back
+        // per variant below; release ships neither.
+        localeFilters.addAll(listOf("en", "zh-rCN", "zh-rTW"))
     }
 
     packaging {

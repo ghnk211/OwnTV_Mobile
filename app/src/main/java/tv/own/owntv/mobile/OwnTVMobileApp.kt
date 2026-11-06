@@ -2,6 +2,7 @@ package tv.own.owntv.mobile
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -37,7 +38,7 @@ import tv.own.owntv.mobile.di.playerModule
 import tv.own.owntv.mobile.di.searchModule
 import tv.own.owntv.mobile.di.settingsModule
 import tv.own.owntv.mobile.di.shellModule
-import tv.own.owntv.mobile.di.sportsModule
+import tv.own.owntv.mobile.i18n.AppLocales
 import tv.own.owntv.mobile.ui.theme.subtitleFontResource
 
 /**
@@ -58,7 +59,7 @@ class OwnTVMobileApp : Application(), androidx.work.Configuration.Provider {
      * SharedPreferences-backed store, because DataStore cannot be read here.
      */
     override fun attachBaseContext(base: Context) {
-        val tag = LocaleStore.from(base).readBlocking()
+        val tag = AppLocales.normalize(LocaleStore.from(base).readBlocking())
         AppLocale.applyGlobally(tag)
         super.attachBaseContext(AppLocale.wrap(base, tag))
     }
@@ -66,7 +67,7 @@ class OwnTVMobileApp : Application(), androidx.work.Configuration.Provider {
     /** Re-apply the selection after the framework's process-level reset on a configuration change. */
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        AppLocale.applyGlobally(LocaleStore.from(this).readBlocking())
+        AppLocale.applyGlobally(AppLocales.normalize(LocaleStore.from(this).readBlocking()))
     }
 
     override fun onCreate() {
@@ -154,23 +155,37 @@ class OwnTVMobileApp : Application(), androidx.work.Configuration.Provider {
         tv.own.owntv.player.SubtitleFontAssets.resourceOf = { it.subtitleFontResource }
         // The eight icon colours are MainActivity + a suffix (see MainActivityColours.kt); core switches them.
         tv.own.owntv.core.brand.AppIconSwitcher.mainActivityClass = MainActivity::class.java.name
-        // Sports goal alerts and reminders may run with the app closed — a phone is in a pocket, not off
-        // like a television. The permission request is assigned by MainActivity, which alone can ask.
-        tv.own.owntv.core.sports.MatchAlertHost.backgroundAllowed = true
         startKoin {
             androidLogger(if (BuildConfig.DEBUG) Level.ERROR else Level.NONE)
             androidContext(this@OwnTVMobileApp)
             modules(
                 coreModule, databaseModule, dataModule, playerModule, shellModule,
                 liveModule, libraryModule, guideModule, homeModule, searchModule,
-                downloadsModule, settingsModule, sportsModule,
+                downloadsModule, settingsModule,
             )
         }
-        // Sports: core decides from Auto rebuild whether the stored board is due ("on every app start", or
-        // older than the chosen hours) — well after launch, so it never competes with the first screen.
+        // The language whitelist enforced on the stored value, not only on the read. An install upgraded
+        // from a build that offered 26 languages still carries a tag this APK has no strings for, and a
+        // restore or a companion write could put one back later; collapsing it here means no reader has
+        // to know the list. Idempotent — the write re-emits a tag that already normalises to itself.
         appScope.launch {
-            kotlinx.coroutines.delay(SPORTS_START_DELAY_MS)
-            runCatching { GlobalContext.get().get<tv.own.owntv.core.sports.SportsRepository>().appStarted() }
+            val localeStore = GlobalContext.get().get<LocaleStore>()
+            localeStore.currentTag.collect { raw ->
+                val tag = AppLocales.normalize(raw)
+                if (tag != raw) runCatching { localeStore.set(tag) }
+            }
+        }
+        // The Sports module is gone from this app, but a device upgraded from the build that had it may
+        // still carry its match alarms. `MatchAlertHost.backgroundAllowed` is now never set, so it stays
+        // at core's false default and rearmAll() takes the cancel-all branch — every stored alarm and
+        // reminder is withdrawn. The receivers and the score-card service are removed from the merged
+        // manifest anyway; stopService only clears a card still sitting in the shade. runCatching: on a
+        // fresh install there is nothing to cancel, and a failing cleanup must never take the app down.
+        appScope.launch {
+            runCatching {
+                GlobalContext.get().get<tv.own.owntv.core.sports.MatchAlertScheduler>().rearmAll()
+                stopService(Intent(this@OwnTVMobileApp, tv.own.owntv.core.sports.LiveMatchCardService::class.java))
+            }
         }
         // A chosen icon colour ("Later", the first-run pick, a restore) reaches the launcher when the app
         // is next in the background, never while it is on screen.
@@ -199,19 +214,17 @@ class OwnTVMobileApp : Application(), androidx.work.Configuration.Provider {
             customize = org.koin.core.context.GlobalContext.get().get(),
             channels = org.koin.core.context.GlobalContext.get().get(),
         )
-        // A new user starts on Stage with glass on; an existing install keeps its look.
+        // A new user starts on Stage with glass on; an existing install keeps its look. Then the slim
+        // settings of this release are applied: fixed playback caps, and the appearance items whose
+        // rows are gone from Settings reset to their factory values. Both are idempotent and only
+        // write what differs, so a failed read retries on the next cold start.
         appScope.launch {
-            runCatching {
-                org.koin.core.context.GlobalContext.get().get<tv.own.owntv.core.settings.SettingsRepository>().applyPhoneStageDefaults(
-                    tv.own.owntv.mobile.ui.screens.settings.PHONE_GLASS_DEFAULT_PCT,
-                )
-            }
+            val settings = org.koin.core.context.GlobalContext.get().get<tv.own.owntv.core.settings.SettingsRepository>()
+            runCatching { settings.applyPhoneStageDefaults(tv.own.owntv.mobile.ui.screens.settings.PHONE_GLASS_DEFAULT_PCT) }
+            tv.own.owntv.mobile.playback.applySlimPlaybackCaps(settings)
+            tv.own.owntv.mobile.playback.applySlimLiveDefaults(settings)
+            tv.own.owntv.mobile.playback.applySlimAppearanceDefaults(settings)
         }
-    }
-
-    private companion object {
-        /** Sports' Auto rebuild waits this long after launch (the television's own figure). */
-        const val SPORTS_START_DELAY_MS = 15_000L
     }
 
     /** Process-long scope for [tv.own.owntv.player.PlaybackStartup]; never cancelled. */

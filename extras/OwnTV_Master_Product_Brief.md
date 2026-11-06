@@ -23,8 +23,8 @@ in Kotlin with Jetpack Compose, sharing its **entire engine** with
 
 **Two interfaces, one database, one sync, one playback stack.** Everything below the screen — the
 Room schema and every migration, playlist parsing, EPG, backup, profiles, downloads, recording,
-settings storage, both playback engines and **every translated string** — is core's, shared byte for
-byte with the television.
+settings storage, both playback engines and **every translated string the two apps share** — is core's,
+shared byte for byte with the television.
 
 It is a **player only**: you supply an Xtream login, an M3U playlist (URL or a local file) or a
 Stalker/Ministra portal.
@@ -37,7 +37,8 @@ Stalker/Ministra portal.
 | **Touch-first** | Gestures, a document picker, the share sheet, rotation, a keyboard that covers half the screen |
 | **Not the TV app relaid out** | Touch-sized Stage parts, not a ten-foot focus ladder |
 | **One engine, two shells** | A behaviour fixed here is fixed on the television, and the reverse |
-| **Language-first** | 26 packaged interface languages, chosen before anything else |
+| **Language-first** | Three packaged interface languages — English, 简体中文 and 繁體中文 — chosen before anything else |
+| **Companion-sized** | One profile, three languages, no Sports: the engine is the television's whole engine, the scope is a phone's |
 | **Open source** | GPLv3, original code, built with the help of AI |
 
 ### 1.1 What is deliberately absent
@@ -50,10 +51,62 @@ Stalker/Ministra portal.
 | Watch Next / launcher channels | An Android TV surface; there is no leanback launcher entry here |
 | Panel width adjustment | A phone shows one column at a time; the tablet two-pane split is fixed |
 | Remote shortcuts | There is no remote. Every function they reached is reachable by tap or long-press |
+| Sports | Scores, leagues, team and match pages, goal alerts and their alarms — no entry, no background. The television keeps them |
+| Multi-profile management | One profile — the one this app opens with; older builds' rows lie dormant, not deleted. The television keeps them all |
 
 `REQUEST_INSTALL_PACKAGES` **is** declared, for the in-app updater and nothing else — distribution is
 sideloaded, so nothing else can tell a user a new version exists. If the app ever ships on Google
 Play, that permission and the two update rows in Settings come out together.
+
+**Status.** This describes a build, not a release. The single-profile, three-language, Sports-free shape
+is implemented on this branch and it now compiles: the suite (`:app:testStandardDebugUnitTest`, 28 JVM
+cases green), `:app:lintStandardDebug`, both debug assembles, the release assemble (unsigned, R8 plus
+resource shrinking) and the merged manifest all pass, on condition that the build reads core from a local
+checkout (`-Powntv.corePath=…`) — the two core APIs this shape leans on, `liveRestoreKey` and
+`guideFollowsLiveCategory`, are in that checkout but not yet in the published core 1.0.69 artifact. Nineteen
+of the 28 emulator scenarios are now watched end to end — the fresh-install wizard skips profile creation
+and lands in the app, the bottom bar is four slots with no Sports, an app lock survives a cold start and
+the right PIN opens it, a fifth wrong PIN brings the cooldown sentence, and Kids mode: turning it on works,
+turning it off while a lock is set demands the PIN, and neither Cancel nor a wrong PIN lets it through; and
+the backup half of the matrix — an exported file holds exactly one profile and its own sheet says so
+("This backup contains the current profile only."), a three-profile file is refused on screen ("This backup
+contains more than one profile. This app keeps a single profile, so it cannot be restored.") and the refused
+file comes out byte-for-byte unchanged, a same-named single-profile file restores straight through with no
+profile picker anywhere on it, a differently-named one asks first and Room really carries the new
+name afterwards — the screen says it exactly as
+("This backup’s profile is “Renamed Profile”. This device’s profile will be renamed to match before restoring.") —
+and a password-sealed file is not a readable container at all but an `OWNTVBK1` AES-GCM /
+PBKDF2(210,000) blob whose restore asks for the password before it will show what to restore; and the two stale-language-tag
+rows, where a saved en-GB is rewritten to en-US by the next cold start and a saved de is reset to follow the
+system; and the two upgrade-migration rows, where a database holding three profiles opens straight into the active one with no picker and leaves the other two rows untouched, and a stored active-profile id that points at a deleted profile still lands on Home without crashing; and the two rows closed on 2026-11-06 in round 7 — restoring a backup whose profile carries a PIN from the setup wizard locks the app on the spot (the restored PIN opens it, a wrong one is refused), and a Home config written by the old build that still lists LIVE_SPORTS draws no sports row anywhere, although the Layout page still counts that dormant row in its "8 rows" badge; and a background process killed with `am kill` comes back asking for the PIN rather than handing over an unlocked session, and writing Arabic into the device `system_locales` leaves the app English, left-to-right and crash-free both when the app pins English and when it follows the system, though the system side of that claim cannot be independently confirmed on this non-rootable image (adbd stays uid=2000, so `persist.sys.locale` and a framework restart are out of reach). Nine
+more are half-watched: rotating after unlocking does not ask again (the app's own font-size control was exercised in the wizard, 100% to 140% re-lays every row out live, but "no re-prompt after a font change" was never run with a lock set), the
+Downloads switch on the App page really flips (search reads `On` → `Off` → `On` again) but there is nothing
+to download yet — a fresh install has no playlist, Library says "· 0 titles", so "the Download buttons
+disappear" has still never been seen — and the lock holds against every entry the phone offers: a `VIEW`
+deep link resolves to nothing at all (the package registers only `MAIN`/`LAUNCHER`, no scheme), an explicit
+component intent with route extras is handed to the instance still sitting on the gate, and HOME then
+relaunch re-prompts. Changing and removing the lock both demand the current PIN first, and both refuse a
+wrong one: after the number is changed the old PIN gets "Wrong PIN — try again" at the gate while the new
+one walks straight in, and once the lock is removed there is no gate at all and a protected switch such as
+Kids mode stops asking. Two more halves come from the same restore walk: cancelling that rename prompt
+leaves the name untouched and a wrong sealed-backup password is refused in place without writing anything,
+but a restore that fails half-way has never actually been made to fail, and the anonymous / dormant-name
+refusals and the case where a sealed file really carries a PIN are still unit-test evidence only. The settings search finds the new App lock row, which flips from "No lock" to "PIN
+lock", and the language picker is three rows that re-localize the running app without a restart. The six
+instrumented text-entry tests pass on the same emulator (`:app:connectedStandardDebugAndroidTest`, 6/0) —
+after their selector was corrected, because the case as committed asked the wrapper `Column` for the
+editable node's semantics and so failed six of six on this branch and on `main` alike. Everything else on
+the list — every local-sync path, the upgrade migrations and the fresh-install restore of a PIN-carrying
+backup, the category lock, notification and
+picture-in-picture entry, the old-sports fallbacks, right-to-left layouts — is still
+unevidenced. What is left splits into two kinds: rows that need a source with titles or a live playback
+session — and titles here can only come from an IPTV provider, since core's `SourceType` offers
+M3U/XTREAM/Stalker and no local folder, so pushing media files at the device cannot produce them — and rows
+that need an older installation to upgrade from, which this phase deliberately did not build. One real defect
+surfaced on the way: after an export the app names the file it *suggested*, not the one the user actually
+saved, so renaming in the save dialog leaves the message saying "Saved to owntv-backup.own." while the file
+on disk is `sealed.own`. That is pre-existing and outside the slimming scope, so it is recorded rather than
+fixed here. Round eight closed the nameless-profile refusal for real: picking such a file is rejected on the spot with "This backup’s profile has no name, so it cannot be matched." It also settled the mid-restore rollback row — a backup whose inner `epgSources` payload is corrupt still reports "8 items restored." and keeps the announced rename, so that branch stays code-and-unit-test evidence only, and the sealed-export half of row 17 stays blocked because the `Backup password` field disappears at 140% font. Round nine took local sync off the paper: hosting shows a QR, a six-digit PIN and `http://10.0.2.15:8089/`, and every unauthenticated request to it is answered 401 with nothing but "Unauthorized. Check the PIN and try again."; pairing by typed address works end to end (`POST /sync/pair`, then `GET /sync/hello` reusing the returned secret as `X-Companion-Pin`); and a multi-profile backup fetched over the wire is refused with "Sync failed - The other device sent more than one profile. This app keeps a single profile, so it cannot be merged." leaving the profiles table untouched. Round eleven closed the last unrun scenario: after dismissing a stale sheet and reading the live PIN off the hosting page, a PC paired, downloaded this phone's sealed container (1348 B) and pushed a multi-profile backup in with POST /backup; the phone refused it with the single-profile sentence and left the profiles table untouched, while bogus credentials still drew only a 401.
 
 ---
 
@@ -159,11 +212,11 @@ Quality button, and experimental tunneled playback — all core's, all shared.
 
 ### 3.1 Shell & navigation
 
-The **Stage** design, shared with the television: a glass capsule bottom bar on a phone (Home · Live
-TV · Sports · TV Guide · Library — Movies | Series inside) and the TV's floating rail from **600 dp**, chosen by **window
-width** rather than device type — so a phone in landscape and a tablet in split screen are treated as
-what they are. Sideways, Live TV draws its list and preview side by side, and Movies and Series a
-glass card for the picked title beside the grid.
+The **Stage** design, shared with the television: a glass capsule bottom bar on a phone — four items
+now, Home · Live TV · TV Guide · Library, with Movies | Series inside — and the TV's floating rail from
+**600 dp**, chosen by **window width** rather than device type — so a phone in landscape and a tablet in
+split screen are treated as what they are. Sideways, Live TV draws its list and preview side by side, and
+Movies and Series a glass card for the picked title beside the grid.
 
 Each page has a large title and a crumb under it ("‹ Sky Cinema · 9 channels") that opens the
 categories. Top right: the playlist button (its mark), search, cast and the avatar, which opens
@@ -182,11 +235,11 @@ top. Predictive back is on.
   **muted preview** on top (beside the list when wide), not watched until a second tap opens it full
   screen — the television's preview. A channel on Home, in Favourites or History plays full screen;
   one from Search opens in Live TV's preview.
-- **Sports** — the television's Sports section as built: Scores · Calendar · Leagues tabs sharing one set
-  of sport and league buttons, team pages, ESPN scores for followed leagues, match
-  pages with Find channels (searched only on request), a filter sheet, Broadcasts, a Home row, the
-  score and Other channels in the player, and — phone only — goal alerts and a live score card that
-  work with the app closed (core's `MatchAlertHost.backgroundAllowed`).
+- **No Sports** — the television's Sports section does not exist here: none of the Scores · Calendar ·
+  Leagues tabs, no team or match pages, no score line or Other channels in the player, no goal alerts
+  and no live score tile. core's three sports components are struck from the merged manifest, and the
+  first launch after an upgrade cancels the match reminders an older build had scheduled, so nothing
+  can arrive for an entry that is gone. The section itself is untouched over there.
 - **Movies & Series** — two tabs with search, sort, Grid | List and **pinch to resize** the
   grid, progress bars on part-watched films and shows, and a detail page with backdrop, chips, resume,
   favourite, download, season chips and episode progress. The page's title drops a leading provider
@@ -201,18 +254,19 @@ top. Predictive back is on.
   Series, several at once) narrow the list. A **TV Shows** group lists stored-guide programmes whose
   title matches, on now or in the next 12 hours; a tap opens the channel. A channel result opens
   Live TV on that channel's own category, scrolled to it (not saved as the remembered category).
-- **Category memory** — the last Live TV / Movies / Series category is remembered per profile and
-  follows a profile switch at once; *TV Guide follows Live TV* (Browsing & lists) shares it with the Guide.
-- **More** (the avatar) — the profile and Switch, Settings, Downloads, Favourites, History, Backup,
-  Local sync, the error log and About.
+- **Category memory** — the last Live TV / Movies / Series category is remembered on the profile this
+  app opens with and applied without a restart; *TV Guide follows Live TV* (Browsing & lists) shares it
+  with the Guide.
+- **More** (the avatar) — the current profile card, shown rather than switched, then Settings,
+  Downloads, Favourites, History, Backup, Local sync, the error log and About.
 
 ### 3.3 Long-press, everywhere
 
-Seventy long-press handlers across twenty-one files — channels, films, shows, episodes, categories,
-downloads, recordings, guide rows, search results, playlists, EPG sources, profiles, quick toggles,
+Fifty-nine long-press handlers across twenty-three files — channels, films, shows, episodes,
+categories, downloads, recordings, guide rows, search results, playlists, EPG sources, quick toggles,
 the floating window and the navigation bar. The menus use core's own action keys and the user's saved
-order and hidden actions, so both apps offer the same actions in the same arrangement; a profile with
-downloads switched off has no Download anywhere, and a whole show or season asks first with the count.
+order and hidden actions, so both apps offer the same actions in the same arrangement; downloads
+switched off leaves no Download anywhere, and a whole show or season asks first with the count.
 
 ---
 
@@ -253,23 +307,48 @@ Mobile-specific shapes:
   pauses the download and asks whether to watch or keep downloading.
 - **Wi-Fi-only downloads** and a **data saver** that refuses to start a stream on mobile data.
 - **Backup & restore** — core's `.own` container, optionally encrypted, through the phone's own file
-  picker, with a PIN-gated profile checklist.
+  picker, choosing which parts travel. **The format and the protocol are core's, unchanged**, so a
+  television backup still restores here; what changed is what the phone accepts. An export is always
+  this profile and nothing else. A container holding one profile under another name is met by renaming
+  this device's profile to match — announced on the sheet before anything is applied, rolled back if the
+  restore fails — while a container holding several, or one whose profile has no name, is refused with
+  the reason why. Setup cannot show that prompt or undo a rename, so it refuses the differing name and
+  sends the user to Settings → Backup & Restore instead.
 - **Local sync** — the two devices pair over the LAN (QR code scanned with the camera, or picked from
   network discovery), preview exactly what a merge will change, and apply it deliberately. Hosting
-  runs only while the screen is open. Deletions propagate as deletions. It is also offered on the
-  **first setup screen**, where a phone with nothing on it only receives and never hosts, so a new
-  device is furnished from the television without going near the menus.
+  runs only while the screen is open. Deletions propagate as deletions. What is hosted, sent or handed
+  back is this profile alone, and an inbound container is held to the same test as a backup file. It is
+  also offered on the **first setup screen**, where a phone with nothing on it only receives and never
+  hosts, so a new device is furnished from the television without going near the menus.
 
 ---
 
-## 6. Profiles & settings
+## 6. Profile & settings
 
-Profiles with PINs, kids mode, and **a photo of the user's own** as an avatar — something the
-television has no way to offer. A profile gate that survives rotation but not process death.
+**One profile** — the one this app opens with. It carries the favourites, history, resume points, row
+order, category locks and restrictions exactly as core scopes them, and the avatar in the header still
+opens **More**, whose card now only says who this is. This phone is one person's device: there is no
+"who's watching" gate, no profile list, nothing to add, edit, delete or switch, and no face asked for —
+the tile a synced profile carries still renders, and so does a photo an older build took, but the
+picker went with the editor. The television keeps full multi-profile management. Profiles left behind by
+the builds that had it stay in the database, dormant and unreachable: no row is migrated, none is
+deleted, and a build that shows them reads them back.
 
-**Settings is three levels**: root → group → leaf, with a registry that drives the routes, the
-breadcrumbs, the back titles and the search index together, so a page can never be reachable by one
-and invisible to another. A search field over every setting; **quick toggles the user builds by
+What survives of profiles is protection, not identity — and it is one secret, not several. An **app
+lock**: a 4–6 digit PIN asked for when the app opens, five wrong answers bringing a 30-second cooldown,
+on a full screen that *replaces* the app rather than standing over it, so no back gesture, deep link or
+notification tap can show a library behind a dialog. The unlock is a session rather than a flag — it
+survives a rotation or a font-scale change and does not survive a killed process. Set, change or remove
+it in **Settings → App → App lock**; the same PIN answers the locked categories and the Settings PIN
+gate, so taking it off loosens all three and the page says so. **Kids Mode** is one switch for the
+whole app, in Settings → Content, and it wants that PIN to come off. **Allow downloads** moved to
+Settings → App, under the Downloads heading, when the profile editor went; the value still belongs to the
+profile.
+
+**Settings is three levels**, across **eleven groups** now that the Profile group has gone: root →
+group → leaf, with a registry that drives the routes, the breadcrumbs, the back titles and the search
+index together, so a page can never be reachable by one and invisible to another. A search field over
+every setting; **quick toggles the user builds by
 long-pressing any switch to pin it**; sub-pickers as bottom sheets, because a sheet is the one form
 that frosts the app's own wallpaper.
 
@@ -296,14 +375,25 @@ image for the whole app rather than one per panel.
 
 ## 8. Language & accessibility
 
-26 packaged interface languages, chosen on the first screen, with RTL-aware layouts. **This
-repository contains no `strings.xml` of its own and must not grow one** — a string added here would
-never reach Weblate and would be English-only for ever, so even a mobile-only string is added in
-core.
+Three packaged interface languages — English, 简体中文 (`zh-CN`) and 繁體中文 (`zh-TW`) — chosen on the
+first screen, or follow the phone. core still knows 45 locales and still ships their strings for the
+television; the phone's whitelist is `i18n/AppLocales.kt`, mirrored by `localeFilters` in the build so a
+picker can never offer a language whose resources were not packaged, and the two lists are edited
+together. A persisted tag outside it is collapsed rather than trusted: every `en-*` becomes `en-US`,
+anything else falls back to following the phone, which lands on the APK's English when the phone's own
+language was never packaged. Debug builds keep the pseudolocales, so a stretched or mirrored layout is
+still testable without either one shipping in release. The layouts stay direction-aware, though no
+language here reads right-to-left.
+
+**Wording the television shares is still added in core, never here** — a string added here would never
+reach Weblate and would be English-only for ever. The one exception is wording only this app can have:
+the app lock, the single-profile notices and the refusal texts live in `strings_mobile.xml` and its
+`zh-rCN` and `zh-rTW` siblings — three files whose key sets a unit test holds identical, because a
+phone-only string in one language is a phone-only string in none.
 
 A consumer-side gate enforces it: a hardcoded literal fails the compile rather than the push, and its
-baseline is **empty**, so there is no recorded debt for a new literal to hide behind. The only two
-exits are core's `strings_*.xml` or a declared technical literal.
+baseline is **empty**, so there is no recorded debt for a new literal to hide behind. The exits are a
+core `strings_*.xml` key, a key in the three `strings_mobile.xml` files, or a declared technical literal.
 
 Accessibility work covers state as well as labels — a tick and an accent colour say "selected" to an
 eye and to nothing else, so selection is announced.
@@ -337,13 +427,17 @@ and each keeps its own data. Both apps sign with the **same keystore** — a cer
 
 | Repo | Holds |
 |---|---|
-| **[OwnTV_Core](https://github.com/ahXN00/OwnTV_Core)** | Database, sync, EPG, backup, profiles, downloads, recording, settings storage, both engines, all strings |
+| **[OwnTV_Core](https://github.com/ahXN00/OwnTV_Core)** | Database, sync, EPG, backup, profiles, downloads, recording, settings storage, both engines, the shared strings |
 | **[OwnTV](https://github.com/ahXN00/OwnTV)** | The Android TV interface |
 | **[OwnTV_Mobile](https://github.com/ahXN00/OwnTV_Mobile)** | This app — the phone and tablet interface |
 
 A core change is made in core, verified against the television before it is released, and taken here
 by an automatic pin-bump pull request. Nothing is worked around locally: a workaround here is a bug
-the television will hit again.
+the television will hit again. What the phone leaves out is therefore filtered at its own edges rather
+than taken out of core — a three-qualifier `localeFilters` list answering `AppLocales`, three
+`tools:node="remove"` entries against core's sports receivers and service, a Home row skipped on read —
+and core's sports classes, 45-locale table and profile API stay in the dependency untouched, exactly as
+the television uses them.
 
 ### 10.2 This repository's shape
 
@@ -355,10 +449,13 @@ app/src/main/java/tv/own/owntv/mobile/
 ├── ui/stage/        the Stage parts every screen is built from — buttons, rows, fields, glass
 ├── ui/components/   the sheet host, icons, logos and the shared menus and pickers
 ├── ui/shell/        the bar/rail shell, the page header, the sync pill
+├── i18n/            the three-language whitelist behind the build filter, the pickers and the stored tag
+├── backup/          whose profile a backup or sync container carries, and what may be done about it
 ├── playback/        the foreground service, PiP, the data-saver gate (the sleep timer is core's)
 ├── cast/            the Google Cast sender
 └── di/              Koin modules
-tools/i18n/          the locale catalogue and the consumer-side string checks
+tools/i18n/          core's locale catalogue, kept in step with it but no longer read by the build, and
+                     the consumer-side string checks
 extras/              the guide, this brief, the parity checklist, logos and screenshots
 ```
 
@@ -372,10 +469,11 @@ starts.
 
 ### 10.4 Build & release
 
-ABI flavours (`standard` for real devices, `x86_64` for emulators), R8 with keep rules on release,
-locale filtering driven by a catalogue file that is deliberately duplicated from core because Gradle
-reads it at configure time, a baseline-profile module, and CI that builds, lints, runs the string
-gates and publishes a signed release from a tag.
+ABI flavours (`standard` for real devices, `x86_64` for emulators), R8 with keep rules on release, locale
+filtering pinned to the three shipped qualifiers as a literal in the build script beside `AppLocales`
+rather than read from core's catalogue file, with the debug pseudolocales re-added per variant, a
+baseline-profile module, and CI that builds, lints, runs the string gates and publishes a signed release
+from a tag.
 
 ---
 

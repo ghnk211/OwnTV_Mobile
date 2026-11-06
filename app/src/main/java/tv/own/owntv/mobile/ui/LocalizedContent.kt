@@ -29,8 +29,12 @@ import tv.own.owntv.core.i18n.SupportedLocales
 @Composable
 fun LocalizedContent(localeStore: LocaleStore, content: @Composable () -> Unit) {
     val hostContext = LocalContext.current
-    val tag by localeStore.currentTag.collectAsStateWithLifecycle()
-    val startTag = remember { localeStore.readBlocking() }
+    // Both tags are collapsed onto the app's whitelist before they are compared or wrapped: a stored
+    // tag the APK has no strings for would otherwise reach `scriptOf` and the recreate check as itself,
+    // and a wrapper built from it answers with the default resources while the picker still names it.
+    val rawTag by localeStore.currentTag.collectAsStateWithLifecycle()
+    val tag = tv.own.owntv.mobile.i18n.AppLocales.normalize(rawTag)
+    val startTag = remember { tv.own.owntv.mobile.i18n.AppLocales.normalize(localeStore.readBlocking()) }
     LaunchedEffect(tag) {
         if (tag != startTag && scriptOf(tag) != scriptOf(startTag)) findActivity(hostContext)?.recreate()
     }

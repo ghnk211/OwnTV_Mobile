@@ -337,9 +337,6 @@ class QuickPins(val keys: List<String>, private val save: (List<String>) -> Unit
  * so a fresh install — and every TV backup — lists them here too.
  */
 val QUICK_ALIASES: Map<String, String> = mapOf(
-    "quick_live_preview" to "vp_live_preview",
-    "quick_preview_sound" to "vp_preview_audio",
-    "quick_channel_numbers" to "vp_channel_numbers",
     "quick_hdr" to "vp_hdr",
     "quick_autoplay" to "vp_autoplay",
     "quick_check_update" to "update_startup",

@@ -39,9 +39,9 @@ import tv.own.owntv.core.metadata.MetadataProvider
 import tv.own.owntv.core.metadata.profileAllowsAdultMetadata
 import tv.own.owntv.core.model.MediaType
 import tv.own.owntv.core.model.SourceType
+import tv.own.owntv.core.profile.ProfileManager
 import tv.own.owntv.core.parser.XtreamClient
 import tv.own.owntv.core.player.PlaybackPrefsStore
-import tv.own.owntv.core.player.VodEngineStore
 import tv.own.owntv.core.repository.SourceEditor
 import tv.own.owntv.core.repository.SourceRepository
 import tv.own.owntv.core.repository.SourceTestResult
@@ -82,8 +82,6 @@ class SettingsViewModel(
     private val channelDao: ChannelDao,
     private val customize: CustomizationStore,
     private val okHttpClient: OkHttpClient,
-    private val vodEngineStore: VodEngineStore,
-    private val forceMpvStore: tv.own.owntv.core.player.ForceMpvStore,
     private val playbackPrefs: PlaybackPrefsStore,
     private val metadataProvider: MetadataProvider,
     private val metadataBudget: MetadataBudget,
@@ -101,6 +99,7 @@ class SettingsViewModel(
     private val livePreview: tv.own.owntv.player.LivePreviewEngine,
     private val enginePool: tv.own.owntv.player.LiveEnginePool,
     private val sourceEditor: SourceEditor,
+    private val profileManager: ProfileManager,
 ) : ViewModel() {
 
     /** Run a setter on a scope that survives the row being scrolled off the screen. */
@@ -117,6 +116,47 @@ class SettingsViewModel(
 
     val profiles: StateFlow<List<ProfileEntity>> = profileDao.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /**
+     * The one profile this app keeps, which is the profile the App lock, Kids mode and Allow downloads
+     * rows edit. Null only while Room is still answering.
+     */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val activeProfile: StateFlow<ProfileEntity?> = settings.activeProfileId
+        .flatMapLatest { id -> if (id < 0) flowOf(null) else profileDao.observeById(id) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Ask the profile's own PIN — what the App lock and Kids-off rows do before they change anything. */
+    fun verifyPin(profile: ProfileEntity, pin: String): Boolean = profileManager.verifyPin(profile, pin)
+
+    /** App lock PIN: null keeps the existing one, "" removes the lock, anything else sets it. */
+    fun setAppLockPin(pin: String?) {
+        viewModelScope.launch {
+            val profile = activeProfileNow() ?: return@launch
+            profileManager.edit(profile, profile.name, profile.avatarId, profile.isKids, pin)
+        }
+    }
+
+    /** Kids mode is a flag on the profile row, so the rest of it is handed back unchanged. */
+    fun setKidsMode(enabled: Boolean) {
+        viewModelScope.launch {
+            val profile = activeProfileNow() ?: return@launch
+            profileManager.edit(profile, profile.name, profile.avatarId, enabled, pin = null)
+        }
+    }
+
+    /** Download permission, stored per profile but now with only one profile to store it for. */
+    fun setDownloadsAllowed(allowed: Boolean) {
+        viewModelScope.launch {
+            val id = settings.activeProfileId.first()
+            if (id >= 0) settings.setDownloadsAllowed(id, allowed)
+        }
+    }
+
+    // Read fresh by id rather than from [activeProfile]: a row edited while a sheet was open is newer
+    // than anything the sheet captured, and `edit` writes the whole row.
+    private suspend fun activeProfileNow(): ProfileEntity? =
+        profileDao.getById(settings.activeProfileId.first())
 
     fun syncState(sourceId: Long): Flow<CatalogSyncState> = catalogSync.observeSync(sourceId)
 
@@ -433,16 +473,11 @@ class SettingsViewModel(
     // --- Per-item playback choices the player remembered, and the rows that forget them ---
 
     /**
-     * How many movies and episodes are pinned to a specific engine, and how many individual items
-     * have a remembered zoom, volume or A/V-sync offset.
+     * How many individual items have a remembered zoom, volume or A/V-sync offset.
      *
      * Counted separately because they are forgotten separately: wanting every film back at the
      * default aspect is not a request to lose the levels set on the quiet ones.
      */
-    val vodEnginePinCount: StateFlow<Int> =
-        combine(vodEngineStore.mpvUrls, vodEngineStore.exoUrls) { mpv, exo -> mpv.size + exo.size }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
-
     val savedZoomCount: StateFlow<Int> = playbackPrefs.observeZoomCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
@@ -452,48 +487,13 @@ class SettingsViewModel(
     val savedAudioDelayCount: StateFlow<Int> = playbackPrefs.observeAudioDelayCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
-    fun clearVodEnginePins() { viewModelScope.launch { vodEngineStore.clearAll() } }
-
-    /** How many channels are pinned to one engine (either direction), for the live reset row. */
-    val livePinCount: StateFlow<Int> =
-        combine(forceMpvStore.urls, forceMpvStore.exoUrls) { mpv, exo -> mpv.size + exo.size }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
-
-    /** Every channel follows the Live TV player setting again; films' pins are kept. */
-    fun clearLivePins() { viewModelScope.launch { forceMpvStore.clearAll() } }
-
     fun clearSavedZoom() { viewModelScope.launch { playbackPrefs.clearZoom() } }
 
     fun clearSavedVolume() { viewModelScope.launch { playbackPrefs.clearVolume() } }
 
     fun clearSavedAudioDelay() { viewModelScope.launch { playbackPrefs.clearAudioDelay() } }
 
-    // --- Per-playlist overrides of the global Live TV settings ---
-
-    /** `null` follows the global "Live TV player". */
-    fun setSourceLiveEngine(sourceId: Long, preference: String?) {
-        viewModelScope.launch { sourceDao.updateLiveEnginePreference(sourceId, preference) }
-    }
-
-    /** `null` mode follows the global "Live latency"; [customSecs] only matters for Custom. */
-    fun setSourceLiveLatency(sourceId: Long, mode: String?, customSecs: Int) {
-        viewModelScope.launch { sourceDao.updateLiveLatency(sourceId, mode, customSecs) }
-    }
-
-    /** `-1` follows the global "Pre-buffer". */
-    fun setSourcePreroll(sourceId: Long, secs: Int) {
-        viewModelScope.launch { sourceDao.updateLivePreroll(sourceId, secs) }
-    }
-
-    /** `null` follows the global "Movies & Series player". */
-    fun setSourceVodEngine(sourceId: Long, preference: String?) {
-        viewModelScope.launch { sourceDao.updateVodEnginePreference(sourceId, preference) }
-    }
-
-    /** `null` follows the global "Give up after"; 0 is never. */
-    fun setSourceTuneTimeout(sourceId: Long, secs: Int?) {
-        viewModelScope.launch { sourceDao.updateLiveTuneTimeout(sourceId, secs) }
-    }
+    // --- Per-playlist override of the global Catch-up time zone ---
 
     /** `null` mode follows the global catch-up time zone; [offsetMin] only matters for MANUAL. */
     fun setSourceCatchupTimezone(sourceId: Long, mode: String?, offsetMin: Int?) {

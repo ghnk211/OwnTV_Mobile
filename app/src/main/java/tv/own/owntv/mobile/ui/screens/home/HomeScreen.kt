@@ -104,10 +104,8 @@ fun HomeScreen(
     onOpenSeries: (Long) -> Unit,
     onPlayerOpened: () -> Unit,
     onOpenSearch: (String) -> Unit,
-    onOpenMatch: (tv.own.owntv.core.sports.model.Match) -> Unit,
     modifier: Modifier = Modifier,
     vm: HomeViewModel = koinViewModel(),
-    sportsVm: tv.own.owntv.mobile.ui.screens.sports.SportsViewModel = koinViewModel(),
 ) {
     val feed by vm.feed.collectAsStateWithLifecycle()
     val favoriteChannels by vm.favoriteChannels.collectAsStateWithLifecycle()
@@ -183,12 +181,11 @@ fun HomeScreen(
         HomeSkeleton(modifier)
         return
     }
-    // Computed once per feed: hasContent walks each row's loaded items.
-    // The Sports row's matches, asked for only while the row is switched on (no request otherwise).
-    val sportsCards = if (HomeRow.LIVE_SPORTS in state.config.visibleOrder) sportsVm.homeRow.collectAsStateWithLifecycle().value else emptyList()
-    val sportsConfig by sportsVm.sportsConfig.collectAsStateWithLifecycle()
-    val rows = remember(state, sportsCards.isEmpty()) {
-        state.config.visibleOrder.filter { if (it == HomeRow.LIVE_SPORTS) sportsCards.isNotEmpty() else state.hasContent(it) }
+    // Computed once per feed: hasContent walks each row's loaded items. The sports row was removed from
+    // this app, but core still ships it and an older config still lists it; it is dropped here, before
+    // hasContent or the draw below can see it — which is what their catch-all branches are for.
+    val rows = remember(state) {
+        state.config.visibleOrder.filter { it != HomeRow.LIVE_SPORTS && state.hasContent(it) }
     }
 
     // The television's three states, in its order. None offers "add a playlist": a user with none is in
@@ -374,22 +371,7 @@ fun HomeScreen(
                         onPlay = { item -> resumeGate(item.positionMs) { vm.playEpisode(item.targetItemId, it, onPlayerOpened) } },
                         onMenu = { menuFor = it },
                     )
-                    // Sports: followed matches live or within the hour, in the user's
-                    // order; a tap opens the match, where its channels are found.
-                    HomeRow.LIVE_SPORTS -> Column {
-                        Text(
-                            stringResource(R.string.sports_title), style = stageText(17f, 800), color = LocalStagePalette.current.text,
-                            modifier = Modifier.padding(start = 14.dp, bottom = 8.dp),
-                        )
-                        LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            items(sportsCards, key = { it.key }) { m ->
-                                tv.own.owntv.mobile.ui.screens.sports.MatchCard(
-                                    m, featured = false, config = sportsConfig, reminded = false,
-                                    onClick = { onOpenMatch(m) }, onLongClick = { onOpenMatch(m) },
-                                )
-                            }
-                        }
-                    }
+                    else -> Unit
                 }
             }
         }
@@ -455,8 +437,8 @@ private fun HomeFeed.hasContent(row: HomeRow): Boolean = when (row) {
     HomeRow.FAVORITE_SERIES -> favoriteSeries.isNotEmpty()
     HomeRow.CONTINUE_MOVIES -> continueMovies.isNotEmpty()
     HomeRow.CONTINUE_SERIES -> continueSeries.isNotEmpty()
-    // Decided by the Sports row's own matches, in HomeScreen.
-    HomeRow.LIVE_SPORTS -> false
+    // Only the sports row, already filtered out above, falls through here.
+    else -> false
 }
 
 /** A half-watched episode's menu is its show's: the show is what can be favourited or hidden. */

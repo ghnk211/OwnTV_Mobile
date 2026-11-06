@@ -1,7 +1,6 @@
 package tv.own.owntv.mobile.ui.screens
 
 import android.text.format.DateUtils
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -50,32 +49,28 @@ import tv.own.owntv.mobile.ui.shell.ShellAvatar
 import tv.own.owntv.mobile.ui.shell.ShellViewModel
 import tv.own.owntv.mobile.ui.shell.displayName
 import tv.own.owntv.mobile.ui.stage.LocalStagePalette
-import tv.own.owntv.mobile.ui.stage.StageButton
 import tv.own.owntv.mobile.ui.stage.StageGroupLabel
 import tv.own.owntv.mobile.ui.stage.StageMenuItem
 import tv.own.owntv.mobile.ui.stage.StageTag
 import tv.own.owntv.mobile.ui.stage.StageTagTone
-import tv.own.owntv.mobile.ui.stage.stageClickable
 import tv.own.owntv.mobile.ui.stage.stageGlass
 import tv.own.owntv.mobile.ui.stage.stageText
 import tv.own.owntv.player.PlaybackErrorLog
 
 /**
- * More, opened from the avatar: the profile card with **Switch**, then Settings and Downloads, YOUR
- * THINGS (Favourites, History), KEEP IT SAFE (Backup & Restore, Local sync) and APP (Error log, About) — each
+ * More, opened from the avatar: the current profile card, then Settings and Downloads, YOUR THINGS
+ * (Favourites, History), KEEP IT SAFE (Backup & Restore, Local sync) and APP (Error log, About) — each
  * row with what it holds before you go and look. Two layers: More, then a page.
  *
  * Backup, Local sync, the error log and About are here rather than in Settings because none of them is a
- * setting. The profile manager (edit, PIN, delete) opens from the profile card itself; Switch is the chooser.
+ * setting. The card only says who is watching and which playlist is open; with one profile there is
+ * nothing to switch to, and the lock and kids settings live in Settings › App.
  */
 @Composable
 fun MoreScreen(
     scrollToTop: SharedFlow<String>,
     onNavigate: (MobileDestination) -> Unit,
     onOpenLeaf: (MoreLeaf) -> Unit,
-    /** The profile card opens Settings › Profile. */
-    onOpenProfiles: () -> Unit,
-    onSwitchProfile: () -> Unit,
     modifier: Modifier = Modifier,
     counts: MoreCountsViewModel = koinViewModel(),
     profilesVm: ProfilesViewModel = koinViewModel(),
@@ -115,8 +110,6 @@ fun MoreScreen(
                 line = playlistLabel + stringResource(R.string.content_epg_bits_separator) +
                     pluralStringResource(R.plurals.more_playlist_count, playlists.size, playlists.size),
                 avatar = { ShellAvatar(profile, onClick = null, diameter = 44.dp) },
-                onOpen = onOpenProfiles,
-                onSwitch = onSwitchProfile,
             )
         }
         item {
@@ -168,19 +161,18 @@ private fun MoreItem(labelRes: Int, icon: androidx.compose.ui.graphics.vector.Im
 
 /**
  * The glass profile card (radius 20, padding 12): the 44 dp avatar, the name (16 / 800), "All playlists ·
- * 3 playlists" (11.5 muted) and **Switch**. A tap on the card opens the profile manager.
+ * 3 playlists" (11.5 muted). It shows — there is one profile, so there is nothing to switch to and
+ * nothing to open.
  */
 @Composable
-private fun ProfileCard(name: String, line: String, avatar: @Composable () -> Unit, onOpen: () -> Unit, onSwitch: () -> Unit) {
+private fun ProfileCard(name: String, line: String, avatar: @Composable () -> Unit) {
     val palette = LocalStagePalette.current
     val shape = RoundedCornerShape(20.dp)
-    val interaction = remember { MutableInteractionSource() }
     Row(
         Modifier
             .fillMaxWidth()
             .stageGlass(shape)
             .clip(shape)
-            .stageClickable(interaction, onOpen, null)
             .padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -190,7 +182,6 @@ private fun ProfileCard(name: String, line: String, avatar: @Composable () -> Un
             Text(name, style = stageText(16f, 800), color = palette.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(line, style = stageText(11.5f, 500), color = palette.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        StageButton(onClick = onSwitch, text = stringResource(R.string.more_profile_switch), icon = MobileIcons.Person, small = true)
     }
 }
 

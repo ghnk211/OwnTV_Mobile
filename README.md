@@ -51,10 +51,10 @@ This is an **open-source** project — the code is original (not derived from an
 > Every feature, where to find it, and the gestures — on one page.
 
 > ### 📱 Already using OwnTV on your television?
-> **Local sync** carries your playlists, profiles, favourites and watch history across your own
+> **Local sync** carries your playlists, favourites and watch history across your own
 > Wi-Fi, with no account and no cloud — offered on the very first setup screen, so a new phone is
 > furnished from the television without going near the menus. A **backup** made on the television
-> restores here too, encrypted ones included.
+> restores here too, encrypted ones included, as long as it carries one profile.
 
 ---
 
@@ -122,17 +122,19 @@ Scan to join from your phone:
 - Save downloads and recordings to **a folder you pick**, SD card included, and **export** a copy
   anywhere.
 
-### 👥 Profiles, sync & settings
+### 👤 One profile, sync & settings
 
-- **Profiles** with a picture of your own, locking, and kids profiles; lock single categories behind a PIN, and optionally Settings too.
-- **Backup & restore** with a password and your own file picker, choosing which profiles and which
-  parts of your data travel.
+- **One profile per phone** — the app opens on it, and it carries your favourites, history, resume
+  points, layout and restrictions. An **app lock** (a 4–6 digit PIN asked for when the app opens),
+  **Kids Mode** for the whole app, locking single categories behind a PIN, and optionally Settings too.
+- **Backup & restore** with a password and your own file picker, choosing which parts of your data
+  travel. A backup is always the current profile; a file holding several is refused with a reason.
 - **Local sync** over your own Wi-Fi — pair by QR or on the network, see exactly what will change
-  before it changes, and send, receive or merge.
-- **Settings in twelve groups** with a search box that finds any setting by name, **Quick** for the
+  before it changes, and send, receive or merge. The current profile only.
+- **Settings in eleven groups** with a search box that finds any setting by name, **Quick** for the
   rows you pin, and **Customize** for renaming, hiding, reordering and regrouping everything in your
   library.
-- **26 languages**, right-to-left layouts included.
+- **Three languages** — English, 简体中文 and 繁體中文 — or follow the phone's own language.
 
 ---
 
@@ -169,6 +171,10 @@ migration, parser, sync, EPG, backup and playback decision lives in the core lib
 byte for byte, with the television app. If you are looking for how a playlist is parsed or how the
 database is versioned, it is [over there](https://github.com/ahXN00/OwnTV_Core).
 
+The one exception is wording only this app can have — the app lock, the single-profile backup
+notices: `app/src/main/res/values/strings_mobile.xml` and its `zh-rCN` / `zh-rTW` siblings, three
+files with the same keys, checked by a unit test. Anything the television shows too stays in core.
+
 ### Project layout
 
 ```
@@ -178,14 +184,16 @@ app/                     the phone & tablet UI: navigation, screens, player chro
                          recordings · multiview · settings
     ui/stage/            the Stage parts every screen is built from (buttons, rows, fields, glass)
     ui/components/       the sheet host, icons, logos and the shared menus and pickers
+    i18n/                the three-language whitelist the build, the pickers and the stored tag read
     di/                  Koin modules
-tools/i18n/              the locale catalogue and the consumer-side string checks
+tools/i18n/              core's locale catalogue (kept in step with it) and the consumer-side string checks
 extras/                  logos, credits artwork, and the TV parity checklist
 ```
 
 ## 📚 Docs (`extras/`)
 
 - 📖 **[User Guide](extras/USER_GUIDE.md)** — every feature and where to find it.
+- 🗺️ **[Feature map (中文)](extras/FEATURE_MAP.md)** — 逐屏功能梳理、core 边界、权限门禁与已知取舍，按当前代码核对。
 - 📄 **[Master Product Brief](extras/OwnTV_Master_Product_Brief.md)** — the full as-built feature and
   architecture reference.
 - ✅ **[Parity checklist](extras/PARITY_CHECKLIST.md)** — every television feature, where it landed
@@ -230,6 +238,10 @@ same file, **never to a file in this repository**:
 owntv.corePath=/path/to/OwnTV_Core
 ```
 
+On `mobile-mini` that local checkout is not optional yet: this HEAD calls `liveRestoreKey` and
+`guideFollowsLiveCategory`, which exist in core's development branch but not in the published `1.0.69`
+artifact, so a build with the default pin stops at those two names until core publishes them.
+
 Signing and keystore values belong in `~/.gradle/gradle.properties` or CI secrets, never in a
 repository file. With nothing configured the APK simply builds unsigned.
 
@@ -250,9 +262,10 @@ Contributions, bug reports and ideas are welcome — open an issue or a pull req
 project's player-only, bring-your-own-source positioning, and match the existing code style.
 
 **Where does a change go?** If it is about the database, playlist sync, EPG, backup, profiles,
-downloads, settings storage, the playback engine **or any user-visible text**, it belongs in
-[OwnTV_Core](https://github.com/ahXN00/OwnTV_Core), not here. This repository holds the phone and
-tablet interface only.
+downloads, settings storage, the playback engine **or any user-visible text the television shares**,
+it belongs in [OwnTV_Core](https://github.com/ahXN00/OwnTV_Core), not here. This repository holds the
+phone and tablet interface only. Phone-only wording is the single exception, and it has to be added in
+all three shipped languages at once.
 
 <!-- i18n-contribution:start -->
 ## Help translate OwnTV
@@ -266,7 +279,9 @@ If your language is already available, contribute interface translations across 
 
 OwnTV speaks 26 languages because people translate it on
 [**Weblate**](https://weblate.org/), which hosts the project free of charge for libre software.
-Thank you to Weblate and to every translator who has given the app their language.
+Thank you to Weblate and to every translator who has given the app their language. This phone build
+ships three of them — English, 简体中文 and 繁體中文 — so the translations it carries are those three;
+the rest stay in core for the television.
 
 <img src="extras/partner-logos/tmdb_logo.svg" alt="TMDB" width="200">
 

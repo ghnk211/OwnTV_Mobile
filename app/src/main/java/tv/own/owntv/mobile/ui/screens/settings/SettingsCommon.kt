@@ -37,7 +37,6 @@ enum class SettingsGroup(
     val icon: ImageVector,
 ) {
     QUICK("quick", R.string.settings_group_quick, R.string.settings_group_summary_quick, MobileIcons.AutoAwesome),
-    PROFILE("profile", R.string.settings_profile_group, R.string.settings_card_profile, MobileIcons.Person),
     SOURCES("sources", R.string.settings_group_sources, R.string.settings_card_sources, MobileIcons.FormatListBulleted),
     APPEARANCE("appearance", R.string.settings_appearance_group, R.string.settings_card_appearance, MobileIcons.Palette),
     LAYOUT("layout", R.string.settings_group_layout, R.string.settings_card_layout_mobile, MobileIcons.GridView),

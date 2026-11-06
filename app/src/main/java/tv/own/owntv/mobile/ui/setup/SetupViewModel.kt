@@ -5,16 +5,19 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import tv.own.owntv.core.backup.BackupManager
 import tv.own.owntv.core.database.dao.ProfileDao
 import tv.own.owntv.core.settings.PlaylistRefresh
 import tv.own.owntv.core.settings.SettingsRepository
-import tv.own.owntv.core.database.entity.SourceEntity
 import tv.own.owntv.core.setup.SourceImporter
 import tv.own.owntv.core.sync.SyncScopeChoice
 import tv.own.owntv.mobile.R
+import tv.own.owntv.mobile.backup.BackupProfiles
 import java.io.File
 
 /**
@@ -108,6 +111,10 @@ class SetupViewModel(
      *
      * [sections] defaults to all of it, which is what this did unconditionally before the wizard
      * gained a tick-list of its own.
+     *
+     * A file this app cannot restore safely never reaches core: the wizard has no section-by-section
+     * preview to explain a rename with, and no way to undo one part-way through, so it refuses and
+     * says why in [blocked] instead.
      */
     fun importBackup(
         file: File,
@@ -116,7 +123,9 @@ class SetupViewModel(
         deviceSettings: Boolean = false,
     ) {
         importJob?.cancel()
-        importJob = appScope.launch { importer.importBackup(file, sections, deviceSettings) }
+        importJob = appScope.launch {
+            if (!refuseInSetup(file, null, sections)) importer.importBackup(file, sections, deviceSettings)
+        }
     }
 
     fun restoreWithPassword(
@@ -126,7 +135,43 @@ class SetupViewModel(
         deviceSettings: Boolean = false,
     ) {
         importJob?.cancel()
-        importJob = appScope.launch { importer.restoreWithPassword(file, password, sections, deviceSettings) }
+        importJob = appScope.launch {
+            // The sealed file could not be read before the password arrived, so this is the first
+            // real look at what is inside it.
+            if (!refuseInSetup(file, password, sections)) importer.restoreWithPassword(file, password, sections, deviceSettings)
+        }
+    }
+
+    private val _blocked = MutableStateFlow<Int?>(null)
+
+    /** Why the last backup was refused, as a message; null when nothing is being refused. */
+    val blocked: StateFlow<Int?> = _blocked.asStateFlow()
+
+    fun dismissBlocked() { _blocked.value = null }
+
+    /**
+     * @return true when the backup was refused — core is then not called, and the picked file stays
+     * where it is so the same one can be restored from Settings, where the rename can be confirmed.
+     */
+    private suspend fun refuseInSetup(file: File, password: String?, sections: Set<BackupManager.Section>): Boolean {
+        val onDevice = profileDao.getAllOnce()
+        val active = settings.activeProfileIdNow()
+        val decision = BackupProfiles.decide(
+            summary = BackupProfiles.read(file, password),
+            deviceProfile = onDevice.firstOrNull { it.id == active },
+            otherNames = onDevice.filterNot { it.id == active }.map { it.name },
+            sections = sections,
+        )
+        val reason = when (decision.block) {
+            BackupProfiles.Block.MULTIPLE -> R.string.mobile_multi_profile_import
+            BackupProfiles.Block.UNNAMED -> R.string.mobile_nameless_profile_import
+            BackupProfiles.Block.HIDDEN -> R.string.mobile_hidden_profile_import
+            // A different name means the restore would rename this device's profile. Settings can ask
+            // first; the wizard cannot, so it sends the user there.
+            null -> if (decision.renameTo != null) R.string.mobile_restore_from_settings else null
+        } ?: return false
+        _blocked.value = reason
+        return true
     }
 
     /**
@@ -141,13 +186,36 @@ class SetupViewModel(
 
     /**
      * Ends the flow: the profile the content landed on becomes the active one, and its id is handed
-     * back so the shell can admit it without asking who is watching — the television's `onDone`
-     * carries the same id for the same reason.
+     * back so the shell knows who to show.
+     *
+     * It no longer creates a profile of its own on top of that. [attachToProfile] already made one for
+     * a genuinely empty install before any import ran, so by the time the wizard finishes there is
+     * either that profile or the one a restore brought in — and the wizard's own "who is watching"
+     * step, which used to be where a name and a PIN were chosen, went with multi-profile support.
+     *
+     * The id is not an unlock. If the profile that landed carries a PIN, the shell's app lock asks for
+     * it; passing a session token from here would be the wizard letting itself in.
      */
     fun finish(onDone: (Long?) -> Unit) {
         appScope.launch {
-            val profileId = importer.finish()
-            onMain { onDone(profileId) }
+            val active = settings.activeProfileIdNow()
+            val existing = if (active >= 0) active else profileDao.getAllOnce().firstOrNull()?.id
+            if (existing != null) {
+                if (existing != active) profiles.switchTo(existing)
+                onMain { onDone(existing) }
+                return@launch
+            }
+            // Skipped everything, so nothing ran and no profile was made: the app still needs one to
+            // scope favorites and history against.
+            val id = profiles.create(
+                name = context.getString(R.string.setup_default_profile),
+                avatarId = 0,
+                isKids = false,
+                pin = null,
+                fallbackName = context.getString(R.string.setup_default_profile),
+            )
+            profiles.switchTo(id)
+            onMain { onDone(id) }
         }
     }
 
@@ -160,32 +228,6 @@ class SetupViewModel(
      * process with it. That is what closed the app on "OK" after an import.
      */
     private suspend fun onMain(block: () -> Unit) = withContext(Dispatchers.Main) { block() }
-
-    /**
-     * The profile the wizard's own step creates, before any content exists to hang on it.
-     *
-     * [attachToProfile] makes one silently for anyone who reached the form without a profile; this is
-     * the deliberate one, with the name and avatar the user chose. Both go through core's importer, so
-     * whichever ran first is the profile the content lands on.
-     */
-    fun createProfile(name: String, avatarId: Int, isKids: Boolean, pin: String?, picture: android.net.Uri?, onCreated: () -> Unit) {
-        appScope.launch {
-            val id = importer.createProfile(name, avatarId, isKids, pin)
-            // The picture waits for the profile: before it exists there is no id to store one under.
-            if (picture != null) runCatching {
-                profileDao.getById(id)?.let { p ->
-                    context.contentResolver.openInputStream(picture)?.use { profiles.setCustomAvatar(p, it) }
-                }
-            }
-            onMain(onCreated)
-        }
-    }
-
-    /** Playlists another profile already has, which this one can share rather than re-import. */
-    suspend fun availableExistingSources(): List<SourceEntity> = importer.availableExistingSources()
-
-    /** Link the chosen existing playlists to this profile, then re-sync each one. */
-    fun linkExisting(sourceIds: Set<Long>) = runImport { importer.linkExisting(sourceIds) }
 
     fun reset() = importer.reset()
 
@@ -206,7 +248,7 @@ class SetupViewModel(
     }
 
     /**
-     * Which profile the new playlist belongs to. An app that has been used before already has one,
+     * The profile the new playlist belongs to. An app that has been used before already has one,
      * and adding a second playlist must not quietly create a second profile to hang it on; only a
      * genuinely empty install makes one, named the way the wizard would name it.
      */

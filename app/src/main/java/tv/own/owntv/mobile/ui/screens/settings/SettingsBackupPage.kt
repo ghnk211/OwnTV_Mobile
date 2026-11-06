@@ -50,12 +50,11 @@ import org.koin.androidx.compose.koinViewModel
 import tv.own.owntv.core.backup.BackupManager
 import tv.own.owntv.core.companion.CompanionFailure
 import tv.own.owntv.core.companion.CompanionServerState
-import tv.own.owntv.core.database.entity.ProfileEntity
 import tv.own.owntv.mobile.R
+import tv.own.owntv.mobile.backup.BackupProfiles
 import tv.own.owntv.mobile.ui.components.MobileBottomSheet
 import tv.own.owntv.mobile.ui.components.MobileIcons
 import tv.own.owntv.mobile.ui.components.StageConfirmItems
-import tv.own.owntv.mobile.ui.profiles.ProfilePinSheet
 import tv.own.owntv.mobile.ui.screens.MoreCountsViewModel
 import tv.own.owntv.mobile.ui.setup.copyPickedFile
 import tv.own.owntv.mobile.ui.setup.rememberBackupFilePicker
@@ -104,8 +103,6 @@ fun SettingsBackupPage(
     counts: MoreCountsViewModel = koinViewModel(),
     shell: ShellViewModel = koinViewModel(),
 ) {
-    val profiles by vm.profiles.collectAsStateWithLifecycle()
-    val activeId by vm.activeProfileId.collectAsStateWithLifecycle()
     val lastBackup by counts.lastBackup.collectAsStateWithLifecycle()
     val favorites by counts.favorites.collectAsStateWithLifecycle()
     val history by counts.history.collectAsStateWithLifecycle()
@@ -113,6 +110,8 @@ fun SettingsBackupPage(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val palette = LocalStagePalette.current
+    // A method reference held so a recomposition does not hand the sheets a new one every frame.
+    val decisionFor = remember(vm) { vm::decisionFor }
 
     var exportTarget by remember { mutableStateOf<BackupTarget?>(null) }
     var restoreChooser by remember { mutableStateOf(false) }
@@ -122,7 +121,7 @@ fun SettingsBackupPage(
         val request = vm.pendingFileExport
         vm.pendingFileExport = null
         if (uri != null && request != null) {
-            vm.export(uri, BACKUP_FILE_NAME, request.sections, request.profileIds, request.password)
+            vm.export(uri, BACKUP_FILE_NAME, request.sections, request.password)
         }
     }
     val pickBackup = rememberBackupFilePicker { uri ->
@@ -189,9 +188,6 @@ fun SettingsBackupPage(
 
     exportTarget?.let { target ->
         ExportSheet(
-            profiles = profiles,
-            activeProfileId = activeId,
-            verifyPin = vm::verifyPin,
             onExport = { request ->
                 exportTarget = null
                 when (target) {
@@ -207,9 +203,9 @@ fun SettingsBackupPage(
                     }
                     BackupTarget.REMOTE -> {
                         remoteExport = true
-                        vm.exportRemote(request.sections, request.profileIds, request.password)
+                        vm.exportRemote(request.sections, request.password)
                     }
-                    BackupTarget.SHARE -> vm.exportForShare(request.sections, request.profileIds, request.password) { file ->
+                    BackupTarget.SHARE -> vm.exportForShare(request.sections, request.password) { file ->
                         val uri = FileProvider.getUriForFile(context, context.packageName + ".share", file)
                         val send = Intent(Intent.ACTION_SEND)
                             .setType(BACKUP_MIME)
@@ -276,6 +272,9 @@ fun SettingsBackupPage(
                 // A sealed file was already opened with its password; asking for it twice would be
                 // asking the same question again.
                 askPassword = pending.inspection.encrypted && pending.password == null,
+                // A sealed file can carry a profile PIN, which a restore then writes over this app's.
+                sealed = pending.sealed,
+                decisionFor = decisionFor,
                 onRestore = vm::restore,
                 onDismiss = vm::cancelRestore,
             )
@@ -425,10 +424,9 @@ private fun CompanionFailure.text(): String = when (this) {
     CompanionFailure.Unavailable -> stringResource(R.string.setup_companion_unavailable)
 }
 
-/** Everything the export needs, decided before the picker opens. */
+/** Everything the export needs, decided before the picker opens. It always carries this profile. */
 internal data class ExportRequest(
     val sections: Set<BackupManager.Section>,
-    val profileIds: Set<Long>,
     val password: String?,
 )
 
@@ -441,45 +439,28 @@ private fun SwitchRow(label: String, description: String?, checked: Boolean, onT
 }
 
 /**
- * Whose data, which parts of it, and whether the file is encrypted — all three in one sheet, because they
+ * Which parts of this profile's data, and whether the file is encrypted — in one sheet, because they
  * are one decision and a phone should not walk anybody through three screens for it.
  *
- * A locked profile that is not the one in use has to be unlocked before it can be ticked: its PIN is
- * what stops the person holding the phone from carrying its history off to another device.
+ * There is no "whose data" question any more: this app keeps one profile, and that is the one the
+ * backup carries. The locked-profile PIN the old sheet asked before ticking somebody else's name went
+ * with the names it ticked.
  */
 @Composable
 private fun ExportSheet(
-    profiles: List<ProfileEntity>,
-    activeProfileId: Long,
-    verifyPin: (ProfileEntity, String) -> Boolean,
     onExport: (ExportRequest) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var profileIds by remember(profiles) { mutableStateOf(setOf(activeProfileId)) }
     var sections by remember { mutableStateOf(BackupManager.Section.entries.toSet()) }
     var password by remember { mutableStateOf("") }
-    var pinFor by remember { mutableStateOf<ProfileEntity?>(null) }
     val palette = LocalStagePalette.current
 
     MobileBottomSheet(onDismissRequest = onDismiss, title = stringResource(R.string.settings_backup_export_title)) {
-        StageSheetHeader(title = stringResource(R.string.settings_backup_export_title), subtitle = stringResource(R.string.settings_backup_selected_profiles))
+        StageSheetHeader(
+            title = stringResource(R.string.settings_backup_export_title),
+            subtitle = stringResource(R.string.mobile_backup_single_profile_note),
+        )
         Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-            StageGroupLabel(stringResource(R.string.settings_backup_which_profiles))
-            profiles.forEach { profile ->
-                val locked = profile.pinHash != null && profile.id != activeProfileId
-                SwitchRow(
-                    label = if (profile.id == activeProfileId) stringResource(R.string.settings_backup_profile_current, profile.name) else profile.name,
-                    description = if (locked) stringResource(R.string.settings_backup_pin_locked) else null,
-                    checked = profile.id in profileIds,
-                    onToggle = { on ->
-                        when {
-                            !on -> profileIds = profileIds - profile.id
-                            locked -> pinFor = profile
-                            else -> profileIds = profileIds + profile.id
-                        }
-                    },
-                )
-            }
             StageGroupLabel(stringResource(R.string.settings_backup_what_backup))
             BackupManager.Section.entries.forEach { section ->
                 SwitchRow(
@@ -503,24 +484,9 @@ private fun ExportSheet(
         }
         StageConfirmItems(
             confirm = stringResource(if (password.isBlank()) R.string.settings_backup_export_unencrypted else R.string.settings_backup_encrypt_export),
-            confirmEnabled = profileIds.isNotEmpty() && sections.isNotEmpty(),
-            onConfirm = { onExport(ExportRequest(sections, profileIds, password.takeIf { it.isNotBlank() })) },
+            confirmEnabled = sections.isNotEmpty(),
+            onConfirm = { onExport(ExportRequest(sections, password.takeIf { it.isNotBlank() })) },
             onDismiss = onDismiss,
-        )
-    }
-
-    pinFor?.let { locked ->
-        ProfilePinSheet(
-            profileName = locked.name,
-            onSubmit = { pin ->
-                verifyPin(locked, pin).also {
-                    if (it) {
-                        profileIds = profileIds + locked.id
-                        pinFor = null
-                    }
-                }
-            },
-            onDismiss = { pinFor = null },
         )
     }
 }
@@ -559,12 +525,18 @@ private fun SealedPasswordSheet(
  *
  * [askPassword] is an unsealed but encrypted file: the passwords inside it are locked, everything
  * else is not, so restoring without the password is offered rather than demanded.
+ *
+ * [decisionFor] is asked again on every tick, because this app keeps one profile and the file keeps a
+ * name: what that means — a rename of this device's profile, or a file that cannot be restored at all
+ * — is part of what the user is confirming, not something to find out afterwards.
  */
 @Composable
 private fun RestoreSheet(
     inspection: BackupManager.Inspection,
     wrongPassword: Boolean,
     askPassword: Boolean,
+    sealed: Boolean,
+    decisionFor: (Set<BackupManager.Section>) -> BackupProfiles.Decision,
     onRestore: (Set<BackupManager.Section>, String?, Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -574,6 +546,8 @@ private fun RestoreSheet(
     var deviceSettings by remember(inspection) { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
     val palette = LocalStagePalette.current
+    val decision = decisionFor(sections)
+    val refusal = backupRefusalRes(decision.block)
     MobileBottomSheet(onDismissRequest = onDismiss, title = stringResource(R.string.settings_backup_restore_title)) {
         StageSheetHeader(title = stringResource(R.string.settings_backup_restore_title))
         Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
@@ -594,8 +568,36 @@ private fun RestoreSheet(
                     onToggle = { deviceSettings = it },
                 )
             }
+            val note = stageText(11.5f, 500, lineHeight = 1.4f)
+            if (refusal != null) {
+                // No restore at all: the reason is the whole point of the sheet now, so the confirm is
+                // left disabled rather than hidden — the user has to be able to read it.
+                Text(
+                    stringResource(refusal),
+                    style = note,
+                    color = palette.danger,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            } else {
+                decision.renameTo?.let { name ->
+                    Text(
+                        stringResource(R.string.mobile_profile_rename_notice, name),
+                        style = note,
+                        color = palette.warn,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
+            }
+            if (sealed) {
+                Text(
+                    stringResource(R.string.mobile_restore_pin_notice),
+                    style = note,
+                    color = palette.muted,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
             if (askPassword) {
-                Text(stringResource(R.string.settings_backup_saved_passwords_description), style = stageText(11.5f, 500, lineHeight = 1.4f), color = palette.muted, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+                Text(stringResource(R.string.settings_backup_saved_passwords_description), style = note, color = palette.muted, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
                 StageSearchField(
                     value = password,
                     onValueChange = { password = it },
@@ -613,7 +615,7 @@ private fun RestoreSheet(
         // The view model closes the sheet when the restore is done, or keeps it for a wrong password.
         ConfirmThenCancel(
             stringResource(if (askPassword && password.isBlank()) R.string.settings_backup_skip_passwords else R.string.settings_backup_restore_action),
-            sections.isNotEmpty(),
+            sections.isNotEmpty() && refusal == null,
             { onRestore(sections, password.takeIf { it.isNotBlank() }, deviceSettings) },
             onDismiss,
         )
@@ -653,6 +655,8 @@ private fun OutcomeSheet(outcome: BackupViewModel.Outcome, onDismiss: () -> Unit
                     Text(stringResource(R.string.settings_backup_restore_password_note), style = body, color = palette.muted)
                 }
                 is BackupViewModel.Outcome.Failed -> Text(stringResource(outcome.messageRes), style = body, color = palette.danger)
+                // Nothing was written and the file is where it was — this is an instruction, not a fault.
+                is BackupViewModel.Outcome.Refused -> Text(stringResource(outcome.messageRes), style = body, color = palette.warn)
             }
         }
         StageMenuItem(stringResource(R.string.common_ok), onClick = onDismiss, icon = MobileIcons.Check, filled = true)

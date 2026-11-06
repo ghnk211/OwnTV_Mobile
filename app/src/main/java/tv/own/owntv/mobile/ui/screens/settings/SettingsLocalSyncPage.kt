@@ -2,6 +2,7 @@ package tv.own.owntv.mobile.ui.screens.settings
 
 import android.text.format.DateUtils
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
@@ -163,6 +164,10 @@ fun SettingsLocalSyncPage(
         is LocalSyncViewModel.Step.Confirm -> ConfirmSheet(
             preview = step.preview,
             direction = step.direction,
+            // A sync container is sealed with the key the two devices agreed, and a profile can carry a
+            // PIN — which is then what opens this app afterwards.
+            sealed = step.password != null,
+            renameTo = step.renameTo,
             onConfirm = vm::confirm,
             onDismiss = vm::cancel,
         )
@@ -170,6 +175,7 @@ fun SettingsLocalSyncPage(
     }
 
     vm.error?.let { ErrorSheet(it, vm::dismissError) }
+    vm.blocked?.let { BlockedSheet(it, vm::dismissBlocked) }
 }
 
 /**
@@ -223,7 +229,7 @@ fun SetupLocalSyncStep(
         // Title only. Every sheet below already says what to do, and the find sheet in particular
         // carries this step's instruction verbatim — printing it here too showed it twice at once.
         WizardFrame(
-            step = WizardStep.PROFILE,
+            step = WizardStep.CONTENT,
             title = stringResource(R.string.setup_sync_device),
             sub = null,
             next = null,
@@ -245,6 +251,8 @@ fun SetupLocalSyncStep(
             is LocalSyncViewModel.Step.Confirm -> ConfirmSheet(
                 preview = step.preview,
                 direction = step.direction,
+                sealed = step.password != null,
+                renameTo = step.renameTo,
                 onConfirm = vm::confirm,
                 onDismiss = vm::cancel,
             )
@@ -254,6 +262,9 @@ fun SetupLocalSyncStep(
         }
 
         vm.error?.let { ErrorSheet(it, vm::dismissError) }
+        // The same refusal as on the settings page: the profile that arrived is the other device's
+        // problem to fix, and nothing of it was applied here.
+        vm.blocked?.let { BlockedSheet(it, vm::dismissBlocked) }
     }
 }
 
@@ -535,11 +546,19 @@ private fun SectionsSheet(
     }
 }
 
-/** The dry run. Nothing has been written when this is on screen. */
+/**
+ * The dry run. Nothing has been written when this is on screen.
+ *
+ * [renameTo] is the one thing the merge does to this device rather than to its data: this app keeps one
+ * profile, so the incoming one only lands on it by taking its name — which the user is told about here,
+ * before anything happens, and which is undone if the merge then fails.
+ */
 @Composable
 private fun ConfirmSheet(
     preview: BackupManager.Preview,
     direction: SyncDirection,
+    sealed: Boolean,
+    renameTo: String?,
     onConfirm: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -576,12 +595,41 @@ private fun ConfirmSheet(
                     onToggle = { deviceSettings = it },
                 )
             }
+            renameTo?.let { name ->
+                Text(
+                    stringResource(R.string.mobile_profile_rename_notice_sync, name),
+                    style = stageText(11.5f, 500, lineHeight = 1.4f),
+                    color = LocalStagePalette.current.warn,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                )
+            }
+            if (sealed) SyncNote(stringResource(R.string.mobile_sync_pin_notice))
             if (direction == SyncDirection.MERGE) SyncNote(stringResource(R.string.local_sync_merge_note))
         }
         SyncButtons(
             confirm = stringResource(R.string.local_sync_apply),
             confirmEnabled = !preview.isEmpty,
             onConfirm = { onConfirm(deviceSettings) },
+            onDismiss = onDismiss,
+        )
+    }
+}
+
+/**
+ * A transfer this device cannot take, and what to change on the device that sent it. Nothing arrived
+ * anywhere: the container was thrown out of the cache the moment it was recognised.
+ */
+@Composable
+private fun BlockedSheet(@StringRes messageRes: Int, onDismiss: () -> Unit) {
+    MobileBottomSheet(onDismissRequest = onDismiss, title = stringResource(R.string.local_sync_failed)) {
+        StageSheetHeader(title = stringResource(R.string.local_sync_failed))
+        Column(Modifier) {
+            SyncNote(stringResource(messageRes))
+        }
+        SyncButtons(
+            confirm = stringResource(R.string.common_ok),
+            confirmEnabled = true,
+            onConfirm = onDismiss,
             onDismiss = onDismiss,
         )
     }

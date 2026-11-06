@@ -103,11 +103,11 @@ fun SettingsGlassPage(
         }
     }
 
-    SettingsCrumb(pluralStringResource(R.plurals.settings_setting_count, 9, 9), SettingsGroup.APPEARANCE)
+    SettingsCrumb(pluralStringResource(R.plurals.settings_setting_count, 8, 8), SettingsGroup.APPEARANCE)
     SettingsStagePage(modifier) {
         item(key = "preview") { GlassPreview(Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp)) }
 
-        val bgRows = if (pic) 6 else 4
+        val bgRows = if (pic) 5 else 3
         item(key = "shd-bg") { StageSectionHead(stringResource(R.string.settings_bg_background), count = bgRows) }
         item(key = "bg") {
             val styles = listOf(BackgroundStyle.STAGE, BackgroundStyle.PICTURE, BackgroundStyle.PLAIN)
@@ -165,16 +165,6 @@ fun SettingsGlassPage(
                 PercentRow(MobileIcons.AutoAwesome, R.string.settings_bg_blur, R.string.settings_line_bg_blur, background.blurPct, BackgroundConfig.BLUR_MAX, 10) { vm.edit { setBackgroundBlur(it) } }
             }
         }
-        item(key = "accent") {
-            StageSettingRow(
-                title = stringResource(R.string.settings_bg_accent_light),
-                icon = MobileIcons.WbSunny,
-                subtitle = stringResource(R.string.settings_line_bg_accent_light),
-                onClick = { vm.edit { setBackgroundAccentLight(!background.accentLight) } },
-                role = Role.Switch,
-            ) { StageSwitch(background.accentLight) }
-        }
-
         item(key = "shd-glass") { StageSectionHead(stringResource(R.string.settings_glass_section), count = 2) }
         item(key = "glass") {
             StageSettingRow(

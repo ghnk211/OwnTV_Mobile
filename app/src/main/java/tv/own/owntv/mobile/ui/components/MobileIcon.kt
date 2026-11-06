@@ -86,8 +86,6 @@ object MobileIcons {
     val Trend: ImageVector by lazy { stage(StageGlyph.TREND) }
     /** The Series place (`series`). */
     val Series: ImageVector by lazy { stage(StageGlyph.SERIES) }
-    /** The Sports place: the television's trophy. */
-    val Sports: ImageVector by lazy { stage(StageGlyph.SPORTS) }
     /** Four tiles (`more`): Show counts. */
     val Tiles: ImageVector by lazy { stage(StageGlyph.TILES) }
 

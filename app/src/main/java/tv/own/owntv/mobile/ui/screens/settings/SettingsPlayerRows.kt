@@ -10,17 +10,13 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
 import tv.own.owntv.core.brand.AppIconSwitcher
-import tv.own.owntv.core.database.entity.FOLLOW_GLOBAL_LATENCY_SECS
-import tv.own.owntv.core.database.entity.FOLLOW_GLOBAL_PREROLL
 import tv.own.owntv.core.database.entity.SourceEntity
 import tv.own.owntv.core.live.DEFAULT_MULTIVIEW_TILES
 import tv.own.owntv.core.live.MAX_MULTIVIEW_TILES
 import tv.own.owntv.core.live.MIN_MULTIVIEW_TILES
-import tv.own.owntv.core.player.EnginePreference
 import tv.own.owntv.core.player.FfmpegAudioSetting
 import tv.own.owntv.core.player.SurroundMode
 import tv.own.owntv.core.player.TrackLanguages
@@ -50,49 +46,13 @@ import tv.own.owntv.player.ZoomMode
 internal fun playerSections(vm: SettingsViewModel): List<SettingSection> {
     val g = SettingsGroup.PLAYER
     val s = vm.settings
-    val sources by vm.sources.collectAsStateWithLifecycle()
-    val livePins by vm.livePinCount.collectAsStateWithLifecycle()
-    val vodPins by vm.vodEnginePinCount.collectAsStateWithLifecycle()
-    val liveEngine = s.liveEnginePreference.pref(EnginePreference.EXO_FIRST)
-    val vodEngine = s.vodEnginePreference.pref(EnginePreference.MPV_FIRST)
-    val buffer = s.vodBufferSecs.pref(0)
     val timeout = s.vodNetworkTimeoutSecs.pref(0)
     val reconnects = s.vodReconnects.pref(1)
-    val mobileQuality = s.mobileDataMaxVideoHeight.pref(0)
-    val externalOn = s.externalPlayerLive.pref(false) || s.externalPlayerMovies.pref(false) || s.externalPlayerSeries.pref(false)
-    val engines = EnginePreference.entries.map { SettingsChoice(it, engineLabel(it)) }
+    val externalOn = s.externalPlayerMovies.pref(false) || s.externalPlayerSeries.pref(false)
     return listOf(
         SettingSection(
             stringResource(R.string.settings_vp_cat_player),
-            listOfNotNull(
-                choiceItem(
-                    "vp_live_engine", MobileIcons.LiveTv, g, stringResource(R.string.settings_live_tv_player),
-                    stringResource(R.string.settings_line_live_engine), stringResource(R.string.settings_help_live_engine),
-                    engines, liveEngine, EnginePreference.EXO_FIRST, { p -> vm.edit { setLiveEnginePreference(p) } },
-                ),
-                if (sources.isNotEmpty()) pageItem(
-                    "vp_live_engine_sources", MobileIcons.Layers, stringResource(R.string.settings_live_engine_per_playlist),
-                    stringResource(R.string.settings_line_override_playlist),
-                    overrideCountLabel(sources.count { it.liveEnginePreference != null }), SettingsLeaf.LIVE_ENGINE_SOURCES.route,
-                ) else null,
-                savedItem(
-                    "vp_reset_live_pins", R.string.settings_title_saved_live_choices, R.string.settings_line_saved_live_choices, livePins,
-                    R.string.settings_reset_live_player_choices_confirm, R.string.settings_reset_live_player_choices_confirm_description,
-                ) { vm.clearLivePins() },
-                choiceItem(
-                    "vp_vod_engine", MobileIcons.Movie, g, stringResource(R.string.settings_movies_series_player),
-                    stringResource(R.string.settings_line_vod_engine), stringResource(R.string.settings_movies_player_description_mobile),
-                    engines, vodEngine, EnginePreference.MPV_FIRST, { p -> vm.edit { setVodEnginePreference(p) } },
-                ),
-                if (sources.isNotEmpty()) pageItem(
-                    "vp_vod_engine_sources", MobileIcons.Layers, stringResource(R.string.settings_vod_engine_per_playlist),
-                    stringResource(R.string.settings_line_override_playlist),
-                    overrideCountLabel(sources.count { it.vodEnginePreference != null }), SettingsLeaf.VOD_ENGINE_SOURCES.route,
-                ) else null,
-                savedItem(
-                    "vp_reset_pins", R.string.settings_title_saved_choices, R.string.settings_line_saved_choices, vodPins,
-                    R.string.settings_reset_player_choices_confirm, R.string.settings_reset_player_choices_confirm_description,
-                ) { vm.clearVodEnginePins() },
+            listOf(
                 pageItem(
                     "vp_external", MobileIcons.OpenInNew, stringResource(R.string.settings_external_player), stringResource(R.string.settings_line_external),
                     stringResource(if (externalOn) R.string.common_on else R.string.common_off), SettingsLeaf.EXTERNAL_PLAYER.route,
@@ -103,28 +63,23 @@ internal fun playerSections(vm: SettingsViewModel): List<SettingSection> {
             stringResource(R.string.settings_vp_cat_streaming),
             listOf(
                 choiceItem(
-                    "vp_vod_buffer", MobileIcons.Download, g, stringResource(R.string.settings_vod_buffer),
-                    stringResource(R.string.settings_line_vod_buffer_mobile), stringResource(R.string.settings_vod_buffer_description),
-                    s.vodBufferChoicesSecs.map { SettingsChoice(it, autoOrSeconds(it)) }, buffer, 0, { v -> vm.edit { setVodBufferSecs(v) } },
-                ),
-                choiceItem(
-                    "vp_vod_timeout", MobileIcons.Schedule, g, stringResource(R.string.settings_vod_network_timeout),
-                    stringResource(R.string.settings_line_vod_timeout_mobile), stringResource(R.string.settings_vod_network_timeout_description),
-                    s.vodNetworkTimeoutChoicesSecs.map { SettingsChoice(it, autoOrSeconds(it)) }, timeout, 0, { v -> vm.edit { setVodNetworkTimeoutSecs(v) } },
-                ),
-                choiceItem(
                     "vp_vod_reconnects", MobileIcons.Refresh, g, stringResource(R.string.settings_vod_reconnects),
                     stringResource(R.string.settings_line_vod_reconnects_mobile), stringResource(R.string.settings_vod_reconnects_description),
                     s.vodReconnectChoices.map { SettingsChoice(it, stringResource(R.string.settings_vod_reconnects_value, it)) },
                     reconnects, 1, { v -> vm.edit { setVodReconnects(v) } },
                 ),
+            ),
+        ),
+        // Troubleshooting-only: Auto (0) is what the engines already do, so the row lives under
+        // Diagnostics instead of the streaming list; its stored key and Auto default are unchanged.
+        SettingSection(
+            stringResource(R.string.settings_diagnostics),
+            listOf(
                 choiceItem(
-                    "mobile_quality", MobileIcons.Translate, g, stringResource(R.string.settings_mobile_data_quality),
-                    stringResource(R.string.settings_mobile_data_quality_description), null,
-                    s.mobileDataMaxVideoHeightChoices.map { SettingsChoice(it, qualityLabel(it, R.string.common_off)) },
-                    mobileQuality, 0, { h -> vm.edit { setMobileDataMaxVideoHeight(h) } },
+                    "vp_vod_timeout", MobileIcons.Schedule, g, stringResource(R.string.settings_vod_network_timeout),
+                    stringResource(R.string.settings_line_vod_timeout_mobile), stringResource(R.string.settings_vod_network_timeout_description),
+                    s.vodNetworkTimeoutChoicesSecs.map { SettingsChoice(it, autoOrSeconds(it)) }, timeout, 0, { v -> vm.edit { setVodNetworkTimeoutSecs(v) } },
                 ),
-                quickSwitch(vm, "data_saver", MobileIcons.Translate, R.string.settings_data_saver, R.string.settings_data_saver_description),
             ),
         ),
     )
@@ -172,7 +127,6 @@ internal fun pictureSections(vm: SettingsViewModel): List<SettingSection> {
     val g = SettingsGroup.PICTURE
     val s = vm.settings
     val savedZoom by vm.savedZoomCount.collectAsStateWithLifecycle()
-    val maxHeight = s.maxVideoHeight.pref(0)
     val zoomName = s.defaultZoom.pref(ZoomMode.FIT.name)
     val zoom = runCatching { ZoomMode.valueOf(zoomName) }.getOrDefault(ZoomMode.FIT)
     val tunneled = s.tunneledPlayback.pref(false)
@@ -200,12 +154,6 @@ internal fun pictureSections(vm: SettingsViewModel): List<SettingSection> {
                 quickSwitch(vm, "vp_hw", MobileIcons.AutoAwesome, R.string.settings_hardware_decoding, R.string.settings_line_hw_mobile),
                 quickSwitch(vm, "vp_sw_above_1080p", MobileIcons.AutoAwesome, R.string.settings_software_decode_above_1080p, R.string.settings_line_sw_decode_mobile),
                 quickSwitch(vm, "vp_hdr", MobileIcons.WbSunny, R.string.settings_quick_prefer_sdr, R.string.settings_line_prefer_sdr),
-                choiceItem(
-                    "vp_max_quality", MobileIcons.OpenInFull, g, stringResource(R.string.settings_max_video_quality),
-                    stringResource(R.string.settings_line_max_quality), stringResource(R.string.settings_max_video_quality_description),
-                    s.maxVideoHeightChoices.map { SettingsChoice(it, qualityLabel(it, R.string.settings_auto)) }, maxHeight, 0,
-                    { h -> vm.edit { setMaxVideoHeight(h) } },
-                ),
                 // Only where a decoder can tunnel; after a failure the line says why it is off.
                 if (tv.own.owntv.player.Tunneling.supported) switchItem(
                     "vp_tunneled", MobileIcons.PlayArrow, stringResource(R.string.settings_title_tunneled),
@@ -367,13 +315,11 @@ internal fun soundSections(vm: SettingsViewModel): List<SettingSection> {
 internal fun liveSections(vm: SettingsViewModel): List<SettingSection> {
     val g = SettingsGroup.LIVE
     val s = vm.settings
-    val sources by vm.sources.collectAsStateWithLifecycle()
     val timeshift = s.timeshiftEnabled.pref(false)
     val window = s.timeshiftWindowMinutes.pref(TimeshiftRules.DEFAULT_WINDOW_MINUTES)
     val resume = s.timeshiftResumeMode.pref(SettingsRepository.ResumeMode.ASK)
     val latency = LiveLatency.fromName(s.liveLatencyMode.pref(LiveLatency.BALANCED.name))
     val custom = s.liveLatencyCustomSecs.pref(LiveBuffer.CUSTOM_DEFAULT)
-    val preroll = s.livePrerollSecs.pref(0)
     val giveUp = s.liveTuneTimeoutSecs.pref(LiveLadder.DEFAULT_BUDGET_SECS)
 
     // Low latency can make a working stream stutter, so it is acknowledged before it applies. [onCancel] runs when
@@ -395,21 +341,11 @@ internal fun liveSections(vm: SettingsViewModel): List<SettingSection> {
             lowWarning = Pair({}, { vm.edit { setLiveLatencyMode(LiveLatency.BALANCED.name) } })
         }
     }
-    val prerollList = LiveBuffer.PREROLL_CHOICES
     val giveUpList = LiveLadder.BUDGET_CHOICES_SECS.sortedBy { if (it == 0) Int.MAX_VALUE else it }
     return listOf(
         SettingSection(
             stringResource(R.string.settings_live_tv),
             listOfNotNull(
-                quickSwitch(vm, "vp_channel_numbers", MobileIcons.FormatListBulleted, R.string.settings_channel_numbers, R.string.settings_line_channel_numbers),
-                switchItem(
-                    "vp_live_preview", MobileIcons.LiveTv, stringResource(R.string.settings_quick_live_preview),
-                    stringResource(R.string.settings_line_live_preview_mobile), s.livePreviewEnabled.pref(true),
-                ) { vm.edit { setLivePreviewEnabled(it) } },
-                switchItem(
-                    "vp_preview_audio", MobileIcons.VolumeUp, stringResource(R.string.settings_quick_preview_sound),
-                    stringResource(R.string.settings_line_preview_sound), s.livePreviewAudio.pref(false),
-                ) { vm.edit { setLivePreviewAudio(it) } },
                 switchItem(
                     "vp_timeshift", MobileIcons.Pause, stringResource(R.string.settings_timeshift),
                     stringResource(R.string.settings_line_timeshift), timeshift,
@@ -452,25 +388,6 @@ internal fun liveSections(vm: SettingsViewModel): List<SettingSection> {
                     ),
                     pinnable = false,
                 ) else null,
-                if (sources.isNotEmpty()) pageItem(
-                    "vp_latency_sources", MobileIcons.Layers, stringResource(R.string.settings_live_latency_per_playlist),
-                    stringResource(R.string.settings_line_override_playlist),
-                    overrideCountLabel(sources.count { it.liveLatencyMode != null }), SettingsLeaf.LATENCY_SOURCES.route,
-                ) else null,
-                SettingItem(
-                    "vp_preroll", MobileIcons.Download, stringResource(R.string.settings_live_preroll), stringResource(R.string.settings_line_preroll),
-                    SettingValue.Stepper(
-                        prerollLabel(preroll),
-                        { vm.edit { setLivePrerollSecs(prerollList.stepFrom(preroll, -1)) } },
-                        { vm.edit { setLivePrerollSecs(prerollList.stepFrom(preroll, 1)) } },
-                        preroll > prerollList.first(), preroll < prerollList.last(),
-                    ),
-                ),
-                if (sources.isNotEmpty()) pageItem(
-                    "vp_preroll_sources", MobileIcons.Layers, stringResource(R.string.settings_live_preroll_per_playlist),
-                    stringResource(R.string.settings_line_override_playlist),
-                    overrideCountLabel(sources.count { it.livePrerollSecs != FOLLOW_GLOBAL_PREROLL }), SettingsLeaf.PREROLL_SOURCES.route,
-                ) else null,
                 // Never (0) is the far end of the list: past 60 s comes "never give up".
                 SettingItem(
                     "vp_tune_timeout", MobileIcons.Schedule, stringResource(R.string.settings_live_tune_timeout), stringResource(R.string.settings_line_tune_timeout),
@@ -481,11 +398,6 @@ internal fun liveSections(vm: SettingsViewModel): List<SettingSection> {
                         giveUpList.indexOf(giveUp) != 0, giveUp != 0,
                     ),
                 ),
-                if (sources.isNotEmpty()) pageItem(
-                    "vp_tune_timeout_sources", MobileIcons.Layers, stringResource(R.string.settings_live_tune_timeout_per_playlist),
-                    stringResource(R.string.settings_line_override_playlist),
-                    overrideCountLabel(sources.count { it.liveTuneTimeoutSecs != null }), SettingsLeaf.TUNE_TIMEOUT_SOURCES.route,
-                ) else null,
             ),
         ),
     )
@@ -496,10 +408,6 @@ private fun List<Int>.stepIndex(current: Int, delta: Int): Int {
     val at = indexOf(current).takeIf { it >= 0 } ?: indexOfFirst { it != 0 && it >= current }.takeIf { it >= 0 } ?: lastIndex
     return this[(at + delta).coerceIn(0, lastIndex)]
 }
-
-@Composable
-private fun prerollLabel(secs: Int): String =
-    if (secs <= 0) stringResource(R.string.common_off) else stringResource(R.string.settings_video_seconds, secs)
 
 // ----------------------------------------------------------------------------------- Watching & recording
 
@@ -653,7 +561,7 @@ private val ROLL_CHOICES = listOf(0, 1, 2, 3, 5, 10, 15, 30)
 
 /**
  * One per-playlist override: each playlist with what it is set to; a tap opens the choices for that
- * playlist — Follow the global setting first. Replaces the two stacked sheets of the old page.
+ * playlist — Follow the global setting first. Only Catch-up's time zone is still per playlist here.
  */
 @Composable
 fun PerPlaylistPage(leaf: SettingsLeaf, modifier: Modifier = Modifier, vm: SettingsViewModel = koinViewModel()) {
@@ -661,8 +569,6 @@ fun PerPlaylistPage(leaf: SettingsLeaf, modifier: Modifier = Modifier, vm: Setti
     val follow = stringResource(R.string.settings_live_preroll_follow)
     val eyebrow = stringResource(leaf.titleRes)
     var editing by remember { mutableStateOf<Long?>(null) }
-    var customFor by remember { mutableStateOf<Long?>(null) }
-    var lowWarning by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     SettingsStagePage(modifier) {
         sources.forEachIndexed { index, src ->
@@ -674,43 +580,8 @@ fun PerPlaylistPage(leaf: SettingsLeaf, modifier: Modifier = Modifier, vm: Setti
 
     val src = sources.firstOrNull { it.id == editing }
     if (src != null) {
-        val engines = EnginePreference.entries.map { SettingsChoice<String?>(it.name, engineLabel(it)) }
         val close = { editing = null }
         when (leaf) {
-            SettingsLeaf.LIVE_ENGINE_SOURCES -> StageChoiceSheet(
-                eyebrow, src.name, stringResource(R.string.settings_help_live_engine),
-                listOf(SettingsChoice<String?>(null, follow)) + engines, src.liveEnginePreference,
-                { vm.setSourceLiveEngine(src.id, it) }, close, recommended = null,
-            )
-            SettingsLeaf.VOD_ENGINE_SOURCES -> StageChoiceSheet(
-                eyebrow, src.name, stringResource(R.string.settings_movies_player_description_mobile),
-                listOf(SettingsChoice<String?>(null, follow)) + engines, src.vodEnginePreference,
-                { vm.setSourceVodEngine(src.id, it) }, close,
-            )
-            SettingsLeaf.LATENCY_SOURCES -> StageChoiceSheet(
-                eyebrow, src.name, stringResource(R.string.settings_live_latency_description),
-                listOf(SettingsChoice<String?>(null, follow)) + LiveLatency.entries.map { SettingsChoice<String?>(it.name, stringResource(it.latencyLabel())) },
-                src.liveLatencyMode,
-                { name ->
-                    when (LiveLatency.fromName(name ?: "")) {
-                        LiveLatency.LOW -> lowWarning = { vm.setSourceLiveLatency(src.id, name, sourceCustomSecs(src)) }
-                        // The seconds come next; Custom is committed with them, never with a value nobody picked.
-                        LiveLatency.CUSTOM -> customFor = src.id
-                        else -> vm.setSourceLiveLatency(src.id, name, FOLLOW_GLOBAL_LATENCY_SECS)
-                    }
-                },
-                close,
-            )
-            SettingsLeaf.PREROLL_SOURCES -> StageChoiceSheet(
-                eyebrow, src.name, stringResource(R.string.settings_live_preroll_description),
-                listOf(SettingsChoice(FOLLOW_GLOBAL_PREROLL, follow)) + LiveBuffer.PREROLL_CHOICES.map { SettingsChoice(it, prerollLabel(it)) },
-                src.livePrerollSecs, { vm.setSourcePreroll(src.id, it) }, close,
-            )
-            SettingsLeaf.TUNE_TIMEOUT_SOURCES -> StageChoiceSheet(
-                eyebrow, src.name, stringResource(R.string.settings_live_tune_timeout_description),
-                listOf(SettingsChoice<Int?>(null, follow)) + LiveLadder.BUDGET_CHOICES_SECS.map { SettingsChoice<Int?>(it, tuneTimeoutLabel(it)) },
-                src.liveTuneTimeoutSecs, { vm.setSourceTuneTimeout(src.id, it) }, close,
-            )
             SettingsLeaf.CATCHUP_SOURCES -> {
                 val manual = SettingsRepository.CatchupTimezone.MANUAL.name
                 StageChoiceSheet(
@@ -726,34 +597,6 @@ fun PerPlaylistPage(leaf: SettingsLeaf, modifier: Modifier = Modifier, vm: Setti
             else -> Unit
         }
     }
-    sources.firstOrNull { it.id == customFor }?.let { s ->
-        val secs = sourceCustomSecs(s)
-        androidx.compose.runtime.key(s.id) {
-            tv.own.owntv.mobile.ui.components.MobileBottomSheet(onDismissRequest = { customFor = null }) {
-                tv.own.owntv.mobile.ui.stage.StageSheetHeader(s.name, eyebrow = eyebrow)
-                StageSettingRowValue(stringResource(R.string.settings_live_latency_custom)) {
-                    tv.own.owntv.mobile.ui.stage.StageStepper(
-                        stringResource(R.string.settings_live_buffer_seconds, secs),
-                        { vm.setSourceLiveLatency(s.id, LiveLatency.CUSTOM.name, (secs - 1).coerceAtLeast(LiveBuffer.CUSTOM_MIN)) },
-                        {
-                            val next = (secs + 1).coerceAtMost(LiveBuffer.CUSTOM_MAX)
-                            vm.setSourceLiveLatency(s.id, LiveLatency.CUSTOM.name, next)
-                        },
-                        minusEnabled = secs > LiveBuffer.CUSTOM_MIN, plusEnabled = secs < LiveBuffer.CUSTOM_MAX,
-                    )
-                }
-            }
-        }
-    }
-    lowWarning?.let { apply ->
-        StageConfirmSheet(
-            title = stringResource(R.string.settings_low_latency_warning),
-            text = stringResource(R.string.settings_low_latency_warning_description),
-            confirm = stringResource(R.string.settings_low_latency_understand),
-            onConfirm = apply,
-            onDismiss = { lowWarning = null },
-        )
-    }
 }
 
 /** A playlist row of a per-playlist page: its mark, its name, its value with ▾. */
@@ -766,26 +609,8 @@ private fun StageSettingRowFor(src: SourceEntity, index: Int, value: String, onC
     ) { tv.own.owntv.mobile.ui.stage.StageRowValue(value, tv.own.owntv.mobile.ui.stage.StageChevron.DOWN) }
 }
 
-/** A single row inside a sheet: its name, then [trailing]. */
-@Composable
-private fun StageSettingRowValue(title: String, trailing: @Composable () -> Unit) {
-    tv.own.owntv.mobile.ui.stage.StageSettingRow(title = title, minHeight = 48.dp) { trailing() }
-}
-
 @Composable
 private fun sourceValue(leaf: SettingsLeaf, src: SourceEntity, follow: String): String = when (leaf) {
-    SettingsLeaf.LIVE_ENGINE_SOURCES -> src.liveEnginePreference?.let { n -> EnginePreference.entries.firstOrNull { it.name == n } }?.let { engineLabel(it) } ?: follow
-    SettingsLeaf.VOD_ENGINE_SOURCES -> src.vodEnginePreference?.let { n -> EnginePreference.entries.firstOrNull { it.name == n } }?.let { engineLabel(it) } ?: follow
-    SettingsLeaf.LATENCY_SOURCES -> {
-        val mode = src.liveLatencyMode?.let { LiveLatency.fromName(it) }
-        when {
-            mode == null -> follow
-            mode == LiveLatency.CUSTOM -> stringResource(R.string.settings_live_buffer_seconds, sourceCustomSecs(src))
-            else -> stringResource(mode.latencyLabel())
-        }
-    }
-    SettingsLeaf.PREROLL_SOURCES -> if (src.livePrerollSecs == FOLLOW_GLOBAL_PREROLL) follow else prerollLabel(src.livePrerollSecs)
-    SettingsLeaf.TUNE_TIMEOUT_SOURCES -> src.liveTuneTimeoutSecs?.let { tuneTimeoutLabel(it) } ?: follow
     SettingsLeaf.CATCHUP_SOURCES -> when (src.catchupTimezone) {
         null -> follow
         SettingsRepository.CatchupTimezone.MANUAL.name -> utcOffsetLabel(src.catchupOffsetMin ?: 0)
@@ -799,7 +624,6 @@ private fun sourceValue(leaf: SettingsLeaf, src: SourceEntity, follow: String): 
 fun ExternalPlayerPage(modifier: Modifier = Modifier, vm: SettingsViewModel = koinViewModel()) {
     val s = vm.settings
     val rows = listOf(
-        Triple(SettingsRepository.ExternalPlayerSection.LIVE_TV, R.string.common_nav_live_tv, s.externalPlayerLive.pref(false)),
         Triple(SettingsRepository.ExternalPlayerSection.MOVIES, R.string.common_nav_movies, s.externalPlayerMovies.pref(false)),
         Triple(SettingsRepository.ExternalPlayerSection.SERIES, R.string.common_nav_series, s.externalPlayerSeries.pref(false)),
     )
@@ -819,19 +643,6 @@ fun ExternalPlayerPage(modifier: Modifier = Modifier, vm: SettingsViewModel = ko
 
 // ---------------------------------------------------------------------------------------------- labels
 
-/** "ExoPlayer, then mpv" — the brand names are never translated, the joining phrase is. */
-@Composable
-internal fun engineLabel(preference: EnginePreference): String {
-    val exo = stringResource(R.string.settings_player_exoplayer)
-    val mpv = stringResource(R.string.settings_player_mpv)
-    return when (preference) {
-        EnginePreference.EXO_FIRST -> stringResource(R.string.settings_engine_order, exo, mpv)
-        EnginePreference.MPV_FIRST -> stringResource(R.string.settings_engine_order, mpv, exo)
-        EnginePreference.EXO_ONLY -> stringResource(R.string.settings_engine_only, exo)
-        EnginePreference.MPV_ONLY -> stringResource(R.string.settings_engine_only, mpv)
-    }
-}
-
 @Composable
 private fun trackLanguageName(code: String): String = when (code) {
     "" -> stringResource(R.string.settings_none_auto)
@@ -847,11 +658,6 @@ private fun trackLanguageChoices(withOriginal: Boolean): List<SettingsChoice<Str
     return codes.map { SettingsChoice(it, trackLanguageName(it)) }
 }
 
-/** [noneRes] ("Auto" / "Off") for 0, else the picture height ("1080p"). */
-@Composable
-private fun qualityLabel(height: Int, noneRes: Int): String =
-    if (height <= 0) stringResource(noneRes) else stringResource(R.string.settings_video_quality_lines, height)
-
 /** "Auto" for 0, else seconds ("60s") — the film buffer and network timeout choices. */
 @Composable
 private fun autoOrSeconds(secs: Int): String =
@@ -861,10 +667,6 @@ private fun autoOrSeconds(secs: Int): String =
 @Composable
 private fun tuneTimeoutLabel(secs: Int): String =
     if (secs <= 0) stringResource(R.string.common_never) else stringResource(R.string.settings_live_buffer_seconds, secs)
-
-/** A playlist's own custom latency, or the global default when it has never been given one. */
-private fun sourceCustomSecs(source: SourceEntity): Int =
-    source.liveLatencyCustomSecs.takeIf { it >= LiveBuffer.CUSTOM_MIN } ?: LiveBuffer.CUSTOM_DEFAULT
 
 private fun SurroundMode.labelRes() = when (this) {
     SurroundMode.AUTO -> R.string.settings_auto

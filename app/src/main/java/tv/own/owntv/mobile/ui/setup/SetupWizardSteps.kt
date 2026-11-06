@@ -2,22 +2,16 @@ package tv.own.owntv.mobile.ui.setup
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -25,43 +19,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalAutofillManager
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import tv.own.owntv.core.brand.AppIcon
-import tv.own.owntv.core.database.entity.SourceEntity
 import tv.own.owntv.core.i18n.LocaleStore
-import tv.own.owntv.core.i18n.SupportedLocales
-import tv.own.owntv.core.profile.PROFILE_AVATAR_COUNT
+import tv.own.owntv.mobile.i18n.AppLocales
 import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.core.theme.FontCustomization
 import tv.own.owntv.core.theme.UiFontScale
-import tv.own.owntv.core.theme.UiZoom
 import tv.own.owntv.mobile.R
 import tv.own.owntv.mobile.ui.components.BrandMark
-import tv.own.owntv.mobile.ui.components.MobileBottomSheet
 import tv.own.owntv.mobile.ui.components.MobileIcons
-import tv.own.owntv.mobile.ui.components.sheetListHeight
-import tv.own.owntv.mobile.ui.profiles.ProfileAvatar
 import tv.own.owntv.mobile.ui.screens.settings.AppIconSheet
 import tv.own.owntv.mobile.ui.screens.settings.RemoteSourceSheet
 import tv.own.owntv.mobile.ui.screens.settings.SettingsChoice
 import tv.own.owntv.mobile.ui.screens.settings.StageChoiceSheet
-import tv.own.owntv.mobile.ui.screens.settings.StageConfirmSheet
-import tv.own.owntv.mobile.ui.stage.StageTextRow
 import tv.own.owntv.mobile.ui.stage.LocalStagePalette
 import tv.own.owntv.mobile.ui.stage.StageChevron
 import tv.own.owntv.mobile.ui.stage.StageRowValue
 import tv.own.owntv.mobile.ui.stage.StageSettingRow
-import tv.own.owntv.mobile.ui.stage.StageSheetHeader
 import tv.own.owntv.mobile.ui.stage.StageStepper
-import tv.own.owntv.mobile.ui.stage.StageSwitch
 import tv.own.owntv.mobile.ui.stage.stageAccent
 import tv.own.owntv.mobile.ui.stage.stageText
 
@@ -89,28 +70,20 @@ fun WelcomeStep(onNext: () -> Unit) {
 }
 
 /**
- * How big everything is, before the first screen that is mostly words: UI zoom and Font size as
- * steppers, written straight through — `MobileTheme` scales the whole step under the finger — the app icon, and
- * the sample row to judge them by. Below [UiZoom.LOW_RAM_WARN] the same accept-the-risk question Settings asks
- * comes first, once per visit.
+ * How big the text is, before the first screen that is mostly words: Font size as a stepper, written
+ * straight through — `MobileTheme` scales the whole step under the finger — the app icon, and the
+ * sample row to judge them by. The interface zoom is no longer a user setting on this app, so the
+ * wizard does not offer it either.
  */
 @Composable
 fun DisplaySizeStep(onNext: () -> Unit, onBack: () -> Unit) {
     val settings: SettingsRepository = koinInject()
     val scope = rememberCoroutineScope()
-    val zoom by settings.uiZoomPercent.collectAsStateWithLifecycle(UiZoom.DEFAULT)
     val fonts by settings.fontCustomization.collectAsStateWithLifecycle(FontCustomization())
     val appIcon by settings.appIcon.collectAsStateWithLifecycle(AppIcon.DEFAULT)
-    var pendingLowZoom by remember { mutableStateOf<Int?>(null) }
-    var lowZoomAccepted by remember { mutableStateOf(zoom < UiZoom.LOW_RAM_WARN) }
     var pickIcon by remember { mutableStateOf(false) }
-    val setZoom: (Int) -> Unit = { raw ->
-        val pct = UiZoom.clamp(raw)
-        if (pct < UiZoom.LOW_RAM_WARN && !lowZoomAccepted) pendingLowZoom = pct else scope.launch { settings.setUiZoomPercent(pct) }
-    }
     val resetSize: () -> Unit = {
         scope.launch {
-            settings.setUiZoomPercent(UiZoom.DEFAULT)
             settings.setFontCustomization(fonts.copy(sizePercent = UiFontScale.DEFAULT))
         }
     }
@@ -124,15 +97,6 @@ fun DisplaySizeStep(onNext: () -> Unit, onBack: () -> Unit) {
         onBack = onBack,
         extraLeft = listOf(stringResource(R.string.settings_reset) to resetSize),
     ) {
-        StageSettingRow(title = stringResource(R.string.settings_ui_zoom), icon = MobileIcons.OpenInFull, subtitle = stringResource(R.string.setup_line_zoom), role = null) {
-            StageStepper(
-                stringResource(R.string.settings_surface_transparency, zoom),
-                onMinus = { setZoom(zoom - UiZoom.STEP) },
-                onPlus = { setZoom(zoom + UiZoom.STEP) },
-                minusEnabled = zoom > UiZoom.MIN,
-                plusEnabled = zoom < UiZoom.MAX,
-            )
-        }
         StageSettingRow(title = stringResource(R.string.settings_font_size), icon = MobileIcons.Edit, subtitle = stringResource(R.string.setup_line_font), role = null) {
             StageStepper(
                 stringResource(R.string.settings_surface_transparency, fonts.sizePercent),
@@ -169,18 +133,6 @@ fun DisplaySizeStep(onNext: () -> Unit, onBack: () -> Unit) {
     if (pickIcon) {
         AppIconSheet(chosen = appIcon, onPick = { scope.launch { settings.setAppIcon(it) } }, onDismiss = { pickIcon = false }, askRestart = false)
     }
-    pendingLowZoom?.let { target ->
-        StageConfirmSheet(
-            title = stringResource(R.string.settings_low_zoom_warning_title),
-            text = stringResource(R.string.settings_low_zoom_warning_mobile, UiZoom.LOW_RAM_WARN, UiZoom.LOW_RAM_WARN),
-            confirm = stringResource(R.string.settings_low_zoom_accept),
-            onConfirm = {
-                lowZoomAccepted = true
-                scope.launch { settings.setUiZoomPercent(target) }
-            },
-            onDismiss = { pendingLowZoom = null },
-        )
-    }
 }
 
 /** The App icon row's value: five icons from the chosen one's set, the chosen one ringed. */
@@ -214,148 +166,36 @@ fun DisclaimerStep(onAgree: () -> Unit, onBack: () -> Unit) {
 }
 
 /**
- * Start fresh, or bring everything back. Restoring first is why the profile step comes after this one — a
- * restore brings its own profiles.
+ * Start fresh, or bring everything back. The three ways content arrives on an app that keeps one
+ * profile: a playlist typed or sent in, a backup file, another phone. The profile is not asked for —
+ * whichever of these lands first is the one it is made for.
  */
 @Composable
-fun SetupChoiceStep(onCreateProfile: () -> Unit, onRestore: () -> Unit, onSyncDevice: () -> Unit, onBack: () -> Unit) {
+fun SetupChoiceStep(onStartFresh: () -> Unit, onRestore: () -> Unit, onSyncDevice: () -> Unit, onBack: () -> Unit) {
     WizardFrame(
-        step = WizardStep.PROFILE,
+        step = WizardStep.CONTENT,
         title = stringResource(R.string.setup_set_up_owntv),
         sub = stringResource(R.string.setup_setup_choice_description),
         next = null,
         onNext = {},
         onBack = onBack,
     ) {
-        WizardCard(MobileIcons.Person, stringResource(R.string.setup_new_profile), stringResource(R.string.setup_create_profile_add_sources), onCreateProfile)
+        WizardCard(MobileIcons.Person, stringResource(R.string.mobile_start_fresh), stringResource(R.string.mobile_start_fresh_description), onStartFresh)
         // The phone restores from a file it picks itself; Remote restore lives on the Backup page.
-        WizardCard(MobileIcons.Download, stringResource(R.string.setup_restore_a_backup), stringResource(R.string.setup_import_profiles_playlists), onRestore)
+        WizardCard(MobileIcons.Download, stringResource(R.string.setup_restore_a_backup), stringResource(R.string.mobile_restore_backup_description), onRestore)
         WizardCard(MobileIcons.Phone, stringResource(R.string.setup_sync_device), stringResource(R.string.setup_sync_device_description), onSyncDevice)
     }
 }
 
 /**
- * Who's watching?: Name, Avatar (the letter first, a tap opens the pictures), Kids profile and an optional
- * PIN, then Create profile. A blank name becomes the default one, as it always has on the phone. A
- * picture of the user's own is held until Create: before then there is no profile to store it under.
- */
-@Composable
-fun ProfileStep(onCreate: (name: String, avatarId: Int, isKids: Boolean, pin: String?, picture: android.net.Uri?) -> Unit, onBack: () -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var avatarId by remember { mutableIntStateOf(-1) }
-    var isKids by remember { mutableStateOf(false) }
-    var pin by remember { mutableStateOf("") }
-    var pickAvatar by remember { mutableStateOf(false) }
-    var picture by remember { mutableStateOf<android.net.Uri?>(null) }
-    val picker = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia(),
-    ) { uri -> if (uri != null) picture = uri }
-    // A password manager must not offer to save a profile PIN.
-    val autofill = LocalAutofillManager.current
-    WizardFrame(
-        step = WizardStep.PROFILE,
-        title = stringResource(R.string.profiles_gate_title),
-        sub = stringResource(R.string.setup_profile_sub),
-        next = stringResource(R.string.setup_create_profile),
-        onNext = { autofill?.cancel(); onCreate(name, avatarId, isKids, pin.takeIf { it.isNotBlank() }, picture) },
-        nextEnabled = pin.isEmpty() || pin.length >= PIN_MIN,
-        onBack = onBack,
-    ) {
-        StageTextRow(MobileIcons.Edit, stringResource(R.string.profiles_name), name, { name = it }, placeholder = stringResource(R.string.profiles_name_hint))
-        StageSettingRow(
-            title = stringResource(R.string.setup_avatar),
-            icon = MobileIcons.Person,
-            subtitle = stringResource(R.string.setup_avatar_line),
-            onClick = { pickAvatar = true },
-        ) { AvatarStrip(avatarId) }
-        StageSettingRow(
-            title = stringResource(R.string.profiles_avatar_own_picture),
-            icon = MobileIcons.Person,
-            onClick = {
-                picker.launch(
-                    androidx.activity.result.PickVisualMediaRequest(
-                        androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly,
-                    ),
-                )
-            },
-        ) {
-            picture?.let { ProfileAvatar(avatarId = avatarId, imagePath = it.toString(), modifier = Modifier.size(28.dp).clip(CircleShape)) }
-        }
-        StageSettingRow(
-            title = stringResource(R.string.profiles_kids),
-            icon = MobileIcons.FavoriteBorder,
-            subtitle = stringResource(R.string.profiles_kids_description),
-            onClick = { isKids = !isKids },
-            role = Role.Switch,
-        ) { StageSwitch(isKids) }
-        StageTextRow(
-            MobileIcons.Edit,
-            stringResource(R.string.profiles_optional_pin),
-            pin,
-            { typed -> pin = typed.filter(Char::isDigit).take(PIN_MAX) },
-            placeholder = stringResource(R.string.profiles_pin_digits),
-            password = true,
-            keyboardType = KeyboardType.NumberPassword,
-        )
-    }
-    if (pickAvatar) AvatarSheet(avatarId, onPick = { avatarId = it; pickAvatar = false }, onDismiss = { pickAvatar = false })
-}
-
-/** The Avatar row's value: five pictures from the chosen one on, the chosen one ringed. */
-@Composable
-private fun AvatarStrip(chosen: Int) {
-    val accent = stageAccent.accent
-    val ids = (-1 until PROFILE_AVATAR_COUNT).toList()
-    val start = ids.indexOf(chosen).coerceAtLeast(0)
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        repeat(5) { k ->
-            val id = ids[(start + k) % ids.size]
-            Box(
-                Modifier.size(18.dp).then(if (id == chosen) Modifier.border(1.5.dp, accent, CircleShape) else Modifier),
-                contentAlignment = Alignment.Center,
-            ) { ProfileAvatar(avatarId = id, modifier = Modifier.size(16.dp).clip(CircleShape)) }
-        }
-    }
-}
-
-/** Every picture, the letter first; a tap picks and closes. */
-@Composable
-private fun AvatarSheet(chosen: Int, onPick: (Int) -> Unit, onDismiss: () -> Unit) {
-    val accent = stageAccent.accent
-    MobileBottomSheet(onDismissRequest = onDismiss) {
-        StageSheetHeader(stringResource(R.string.setup_avatar))
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(64.dp),
-            modifier = Modifier.heightIn(max = sheetListHeight()).padding(horizontal = 10.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            items(PROFILE_AVATAR_COUNT + 1) { index ->
-                val id = index - 1
-                Box(
-                    Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .then(if (id == chosen) Modifier.border(2.dp, accent, CircleShape) else Modifier)
-                        .clickable(role = Role.RadioButton) { onPick(id) }
-                        .padding(4.dp),
-                ) { ProfileAvatar(avatarId = id, modifier = Modifier.size(56.dp).clip(CircleShape)) }
-            }
-        }
-    }
-}
-
-/**
- * Add a playlist: Remote first (a phone keyboard is slow for addresses too), Type it here, Existing when
- * another profile has playlists, Import, then Skip for now.
+ * Add a playlist: Remote first (a phone keyboard is slow for addresses too), Type it here, Import,
+ * then Skip for now.
  */
 @Composable
 fun AddContentStep(
     vm: SetupViewModel,
-    hasExisting: Boolean,
     onRemoteReceived: () -> Unit,
     onNew: () -> Unit,
-    onExisting: () -> Unit,
     onImport: () -> Unit,
     onSkip: () -> Unit,
     onBack: (() -> Unit)?,
@@ -378,49 +218,22 @@ fun AddContentStep(
             vm.consumeRemotePayload()
             onNew()
         }
-        if (hasExisting) {
-            WizardCard(MobileIcons.Layers, stringResource(R.string.setup_existing), stringResource(R.string.setup_use_other_profile_playlists), onExisting)
-        }
         WizardCard(MobileIcons.Folder, stringResource(R.string.setup_import), stringResource(R.string.setup_restore_backup_file), onImport)
         WizardLink(stringResource(R.string.setup_skip_for_now), onSkip)
     }
     if (remote) RemoteSourceSheet(vm, onReceived = { remote = false; onRemoteReceived() }, onDismiss = { remote = false })
 }
 
-/** Playlists another profile already has, shared rather than downloaded a second time: a switch each. */
-@Composable
-fun ExistingSourcesStep(sources: List<SourceEntity>, onAdd: (Set<Long>) -> Unit, onBack: () -> Unit) {
-    var selected by remember { mutableStateOf(setOf<Long>()) }
-    WizardFrame(
-        step = WizardStep.PLAYLIST,
-        title = stringResource(R.string.setup_use_existing_playlists),
-        sub = stringResource(R.string.setup_pick_playlists),
-        next = pluralStringResource(R.plurals.setup_add_selected_playlists, selected.size, selected.size),
-        onNext = { onAdd(selected) },
-        nextEnabled = selected.isNotEmpty(),
-        onBack = onBack,
-    ) {
-        sources.forEach { source ->
-            val checked = source.id in selected
-            // The name only: an address can carry a user name and password.
-            StageSettingRow(
-                title = source.name,
-                icon = MobileIcons.PlaylistPlay,
-                onClick = { selected = if (checked) selected - source.id else selected + source.id },
-                role = Role.Switch,
-            ) { StageSwitch(checked) }
-        }
-    }
-}
-
-/** The language row: "All 26 languages" under it, the chosen one on the right; a tap opens the list. */
+/** The language row: how many languages ship, under it; the chosen one on the right; a tap opens the list. */
 @Composable
 private fun FirstRunLanguageRow(localeStore: LocaleStore = koinInject()) {
     val scope = rememberCoroutineScope()
     var open by remember { mutableStateOf(false) }
-    val current by localeStore.currentTag.collectAsStateWithLifecycle()
+    val stored by localeStore.currentTag.collectAsStateWithLifecycle()
+    // Normalised, so the row names the language the wizard is actually drawn in.
+    val current = AppLocales.normalize(stored)
     val systemLabel = stringResource(R.string.settings_language_system_default)
-    val rows = remember { SupportedLocales.pickerRows.sortedBy { it.englishName } }
+    val rows = remember { AppLocales.rows.sortedBy { it.englishName } }
     val label = rows.firstOrNull { it.languageTag == current }?.endonym ?: systemLabel
     StageSettingRow(
         title = stringResource(R.string.settings_language),
@@ -442,5 +255,3 @@ private fun FirstRunLanguageRow(localeStore: LocaleStore = koinInject()) {
     }
 }
 
-private const val PIN_MIN = 4
-private const val PIN_MAX = 6

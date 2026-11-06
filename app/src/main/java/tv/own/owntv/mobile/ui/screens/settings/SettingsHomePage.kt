@@ -86,8 +86,11 @@ fun SettingsHomePage(
         settingsSection(R.string.settings_sections)
         settingsNote(R.string.settings_hidden_sections)
         settingsGroup(key = "rows") {
-            home.settingsRows.forEachIndexed { index, row ->
-                val order = home.settingsRows
+            // The sports row was removed from this app but survives in core's enum and in configs
+            // written before the removal, so it is dropped from the list — and with it from the order
+            // written back, which core's mergeOrder harmlessly re-adds on the next read.
+            val order = home.settingsRows.filter { it != HomeRow.LIVE_SPORTS }
+            order.forEachIndexed { index, row ->
                 ReorderableSwitchRow(
                     title = stringResource(row.titleRes()),
                     subtitle = if (row in home.hidden) stringResource(R.string.settings_hidden)
@@ -174,28 +177,29 @@ private fun ReorderableSwitchRow(
     }
 }
 
-private fun HomeRow.titleRes() = when (this) {
+private fun HomeRow.titleRes(): Int = when (this) {
     HomeRow.TRENDING -> R.string.home_row_now_trending
     HomeRow.HERO -> R.string.settings_keep_watching
-    HomeRow.LIVE_SPORTS -> R.string.sports_home_row
     HomeRow.RECENT_CHANNELS -> R.string.home_row_recent_channels
     HomeRow.FAVORITE_CHANNELS -> R.string.home_row_favorite_channels
     HomeRow.FAVORITE_MOVIES -> R.string.home_row_favorite_movies
     HomeRow.FAVORITE_SERIES -> R.string.home_row_favorite_series
     HomeRow.CONTINUE_MOVIES -> R.string.home_row_continue_movies
     HomeRow.CONTINUE_SERIES -> R.string.home_row_continue_series
+    // Only the sports row falls through here, and the filter above keeps it from ever reaching this.
+    else -> throw IllegalStateException()
 }
 
-private fun HomeRow.descriptionRes() = when (this) {
+private fun HomeRow.descriptionRes(): Int = when (this) {
     HomeRow.TRENDING -> R.string.home_row_trending_description
     HomeRow.HERO -> R.string.home_row_hero_description
-    HomeRow.LIVE_SPORTS -> R.string.sports_home_row_description
     HomeRow.RECENT_CHANNELS -> R.string.home_row_recent_description
     HomeRow.FAVORITE_CHANNELS -> R.string.home_row_favorite_description
     HomeRow.FAVORITE_MOVIES -> R.string.home_row_favorite_movies_description
     HomeRow.FAVORITE_SERIES -> R.string.home_row_favorite_series_description
     HomeRow.CONTINUE_MOVIES -> R.string.home_row_continue_movies_description
     HomeRow.CONTINUE_SERIES -> R.string.home_row_continue_series_description
+    else -> throw IllegalStateException()
 }
 
 /** Which of the two channel rows this is, and the shape it is currently drawn in. */

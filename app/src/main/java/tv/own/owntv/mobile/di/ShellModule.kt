@@ -34,14 +34,14 @@ val shellModule = module {
     single { tv.own.owntv.mobile.ui.categorylock.SettingsPinSession() }
     single { CategoryRelock(CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate), get(), get(), get()) }
     single { tv.own.owntv.mobile.ui.categorylock.SealedPlaybackHost() }
-    viewModel { ProfilesViewModel(get(), get(), get(), androidContext()) }
+    viewModel { ProfilesViewModel(get(), get(), get()) }
     viewModelOf(::ProfileGateSession)
     // The counts the More rows and the Favourites / History chips carry.
     viewModel {
         tv.own.owntv.mobile.ui.screens.MoreCountsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
-    viewModel { BackupViewModel(get(), get(), androidContext(), get(), get(), get()) }
-    viewModel { tv.own.owntv.mobile.ui.screens.settings.LocalSyncViewModel(get()) }
+    viewModel { BackupViewModel(get(), androidContext(), get(), get(), get()) }
+    viewModel { tv.own.owntv.mobile.ui.screens.settings.LocalSyncViewModel(get(), get(), get()) }
     // An import has to outlive the wizard screen that started it — "Run in background" is exactly
     // that promise — so it runs here rather than in a ViewModel that dies with its navigation entry.
     single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.Default) }

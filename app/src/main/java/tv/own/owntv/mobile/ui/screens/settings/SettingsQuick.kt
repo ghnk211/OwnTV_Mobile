@@ -60,13 +60,6 @@ val QUICK_TOGGLES: List<QuickToggle> = listOf(
         default = true,
     ),
     QuickToggle(
-        "vp_channel_numbers",
-        R.string.settings_channel_numbers,
-        { it.directTune },
-        { setDirectTune(it) },
-        default = true,
-    ),
-    QuickToggle(
         "vp_autoplay",
         R.string.settings_autoplay_next,
         { it.autoPlayNext },
@@ -93,7 +86,6 @@ val QUICK_TOGGLES: List<QuickToggle> = listOf(
         { setBackgroundPlayback(it) },
     ),
     QuickToggle("pip_enabled", R.string.settings_pip, { it.pipEnabled }, { setPipEnabled(it) }),
-    QuickToggle("data_saver", R.string.settings_data_saver, { it.dataSaver }, { setDataSaver(it) }),
     QuickToggle(
         "downloads_wifi_only",
         R.string.settings_downloads_wifi_only,

@@ -60,7 +60,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import tv.own.owntv.core.companion.CompanionLink
-import tv.own.owntv.core.i18n.SupportedLocales
+import tv.own.owntv.mobile.i18n.AppLocales
 import tv.own.owntv.mobile.BuildConfig
 import tv.own.owntv.mobile.R
 import tv.own.owntv.player.PlaybackErrorLog
@@ -156,7 +156,7 @@ fun AboutPage(onOpenLanguage: () -> Unit, modifier: Modifier = Modifier) {
         @OptIn(ExperimentalLayoutApi::class)
         FlowRow(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             StageTool(onClick = { openLink(context, "https://$GITHUB_REPO") }, label = GITHUB_NAME, icon = MobileIcons.Translate)
-            val languages = tv.own.owntv.core.i18n.SupportedLocales.all.count { it.packaged }
+            val languages = AppLocales.rows.size
             StageTool(onClick = onOpenLanguage, label = pluralStringResource(R.plurals.more_about_languages, languages, languages), icon = MobileIcons.Translate)
             StageTool(onClick = { updateSheet = true }, label = stringResource(R.string.settings_check_updates), icon = MobileIcons.Refresh)
         }

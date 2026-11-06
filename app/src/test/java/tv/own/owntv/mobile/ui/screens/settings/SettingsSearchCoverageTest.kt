@@ -65,7 +65,7 @@ class SettingsSearchCoverageTest {
             "settings_metadata_clear_advanced_title", "player_subtitles_connected_as", "player_subtitles_delete_action",
             "player_subtitles_downloads", "player_subtitles_resets", "player_subtitles_sign_in", "player_subtitles_sign_out",
             "player_subtitles_stay_signed_in", "settings_sources_delete_title", "settings_sources_probe_title",
-            "setup_auto_refresh_title", "setup_default_playlist", "profiles_delete_title", "settings_subtitle_color",
+            "setup_auto_refresh_title", "setup_default_playlist", "settings_subtitle_color",
             "settings_subtitle_reset_all", "settings_sources_clean_names_title",
         )
         val skipped = setOf("SettingsBackupPage.kt", "SettingsLocalSyncPage.kt")

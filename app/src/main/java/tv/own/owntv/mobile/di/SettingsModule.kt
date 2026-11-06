@@ -32,8 +32,6 @@ val settingsModule = module {
             channelDao = get(),
             customize = get(),
             okHttpClient = get(),
-            vodEngineStore = get(),
-            forceMpvStore = get(),
             playbackPrefs = get(),
             metadataProvider = get(),
             metadataBudget = get(),
@@ -49,6 +47,7 @@ val settingsModule = module {
             livePreview = get(),
             enginePool = get(),
             sourceEditor = get(),
+            profileManager = get(),
         )
     }
     viewModel {

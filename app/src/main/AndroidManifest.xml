@@ -260,6 +260,18 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <!-- 手机端移除体育后台：core 的 Manifest 会合并进来，这里显式去掉。
+             旧闹钟由启动时的 rearmAll 清理；移除组件后旧 AlarmManager 项即使触发也不会送达。 -->
+        <receiver
+            android:name="tv.own.owntv.core.sports.MatchAlertReceiver"
+            tools:node="remove" />
+        <receiver
+            android:name="tv.own.owntv.core.sports.MatchAlertBootReceiver"
+            tools:node="remove" />
+        <service
+            android:name="tv.own.owntv.core.sports.LiveMatchCardService"
+            tools:node="remove" />
+
     </application>
 
 </manifest>
