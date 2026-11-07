@@ -47,12 +47,6 @@ val QUICK_TOGGLES: List<QuickToggle> = listOf(
         default = true,
     ),
     QuickToggle(
-        "vp_sw_above_1080p",
-        R.string.settings_software_decode_above_1080p,
-        { it.softwareDecodeAbove1080p },
-        { setSoftwareDecodeAbove1080p(it) },
-    ),
-    QuickToggle(
         "vp_hdr",
         R.string.settings_quick_prefer_sdr,
         { it.preferSdr },
@@ -65,19 +59,6 @@ val QUICK_TOGGLES: List<QuickToggle> = listOf(
         { it.autoPlayNext },
         { setAutoPlayNext(it) },
         default = true,
-    ),
-    QuickToggle(
-        "vp_measured_stats",
-        R.string.settings_measured_stats,
-        { it.measuredStreamStats },
-        { setMeasuredStreamStats(it) },
-        default = true,
-    ),
-    QuickToggle(
-        "vp_logging",
-        R.string.settings_detailed_playback_logging,
-        { it.detailedDiagnostics },
-        { setDetailedDiagnostics(it) },
     ),
     QuickToggle(
         "background_playback",
@@ -114,12 +95,6 @@ val QUICK_TOGGLES: List<QuickToggle> = listOf(
         { it.audioPerChannel },
         { setAudioPerChannel(it) },
         default = true,
-    ),
-    QuickToggle(
-        "detailed_diagnostics",
-        R.string.settings_diagnostics,
-        { it.detailedDiagnostics },
-        { setDetailedDiagnostics(it) },
     ),
 )
 

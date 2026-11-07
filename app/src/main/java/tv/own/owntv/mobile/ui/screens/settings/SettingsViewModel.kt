@@ -480,25 +480,15 @@ class SettingsViewModel(
     // --- Per-item playback choices the player remembered, and the rows that forget them ---
 
     /**
-     * How many individual items have a remembered zoom, volume or A/V-sync offset.
+     * How many individual items have a remembered zoom.
      *
-     * Counted separately because they are forgotten separately: wanting every film back at the
+     * Counted because it is forgotten on its own row: wanting every film back at the
      * default aspect is not a request to lose the levels set on the quiet ones.
      */
     val savedZoomCount: StateFlow<Int> = playbackPrefs.observeZoomCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
-    val savedVolumeCount: StateFlow<Int> = playbackPrefs.observeVolumeCount()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
-
-    val savedAudioDelayCount: StateFlow<Int> = playbackPrefs.observeAudioDelayCount()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
-
     fun clearSavedZoom() { viewModelScope.launch { playbackPrefs.clearZoom() } }
-
-    fun clearSavedVolume() { viewModelScope.launch { playbackPrefs.clearVolume() } }
-
-    fun clearSavedAudioDelay() { viewModelScope.launch { playbackPrefs.clearAudioDelay() } }
 
     // --- Per-playlist override of the global Catch-up time zone ---
 

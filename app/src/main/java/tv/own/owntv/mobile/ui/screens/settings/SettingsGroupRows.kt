@@ -563,13 +563,6 @@ private fun appSections(vm: SettingsViewModel): List<SettingSection> {
                 ) { vm.edit { setDownloadsWifiOnly(it) } },
             ),
         ),
-        SettingSection(
-            stringResource(R.string.settings_diagnostics),
-            listOf(
-                quickSwitch(vm, "vp_measured_stats", MobileIcons.Tune, R.string.settings_measured_stats, R.string.settings_line_measured_stats),
-                quickSwitch(vm, "vp_logging", MobileIcons.FormatListBulleted, R.string.settings_detailed_playback_logging, R.string.settings_line_logging),
-            ),
-        ),
     )
 }
 

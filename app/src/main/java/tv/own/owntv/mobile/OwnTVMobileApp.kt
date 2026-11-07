@@ -215,8 +215,8 @@ class OwnTVMobileApp : Application(), androidx.work.Configuration.Provider {
             channels = org.koin.core.context.GlobalContext.get().get(),
         )
         // A new user starts on Stage with glass on; an existing install keeps its look. Then the slim
-        // settings of this release are applied: fixed playback caps, and the appearance items whose
-        // rows are gone from Settings reset to their factory values. Both are idempotent and only
+        // settings of this release are applied: fixed playback caps, and the appearance and sound items
+        // whose rows are gone from Settings reset to their factory values. All are idempotent and only
         // write what differs, so a failed read retries on the next cold start.
         appScope.launch {
             val settings = org.koin.core.context.GlobalContext.get().get<tv.own.owntv.core.settings.SettingsRepository>()
@@ -224,6 +224,12 @@ class OwnTVMobileApp : Application(), androidx.work.Configuration.Provider {
             tv.own.owntv.mobile.playback.applySlimPlaybackCaps(settings)
             tv.own.owntv.mobile.playback.applySlimLiveDefaults(settings)
             tv.own.owntv.mobile.playback.applySlimAppearanceDefaults(settings)
+            tv.own.owntv.mobile.playback.applySlimSoundDefaults(
+                settings = settings,
+                playbackPrefs = org.koin.core.context.GlobalContext.get().get(),
+                context = this@OwnTVMobileApp,
+            )
+            tv.own.owntv.mobile.playback.applySlimPlaybackBehaviorDefaults(settings)
         }
     }
 

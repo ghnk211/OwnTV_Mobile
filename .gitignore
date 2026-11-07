@@ -65,3 +65,4 @@ replay_pid*.log
 
 # WorkBuddy local project data, never committed
 .workbuddy/
+.codeartsdoer/
