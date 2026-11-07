@@ -30,13 +30,6 @@ val QUICK_TOGGLES: List<QuickToggle> = listOf(
         { setPreferSdr(it) },
         default = true,
     ),
-    QuickToggle(
-        "quick_autoplay",
-        R.string.settings_quick_autoplay,
-        { it.autoPlayNext },
-        { setAutoPlayNext(it) },
-        default = true,
-    ),
     // The video player's own switches, under the keys the television pins them by, so a pinned list
     // restored from a television lands on the same rows here.
     QuickToggle(
@@ -54,47 +47,10 @@ val QUICK_TOGGLES: List<QuickToggle> = listOf(
         default = true,
     ),
     QuickToggle(
-        "vp_autoplay",
-        R.string.settings_autoplay_next,
-        { it.autoPlayNext },
-        { setAutoPlayNext(it) },
-        default = true,
-    ),
-    QuickToggle(
-        "background_playback",
-        R.string.settings_background_playback,
-        { it.backgroundPlayback },
-        { setBackgroundPlayback(it) },
-    ),
-    QuickToggle("pip_enabled", R.string.settings_pip, { it.pipEnabled }, { setPipEnabled(it) }),
-    QuickToggle(
         "downloads_wifi_only",
         R.string.settings_downloads_wifi_only,
         { it.downloadsWifiOnly },
         { setDownloadsWifiOnly(it) },
-    ),
-    // The mobility layer. Same shape as the three above: touch-host only, and a television that
-    // restores a pinned list containing them simply has no row to draw.
-    QuickToggle("pip_snap", R.string.settings_pip_snap, { it.pipSnap }, { setPipSnap(it) }, default = true),
-    QuickToggle(
-        "audio_on_screen_off",
-        R.string.settings_audio_on_screen_off,
-        { it.audioOnScreenOff },
-        { setAudioOnScreenOff(it) },
-        default = true,
-    ),
-    QuickToggle(
-        "audio_on_mobile_data",
-        R.string.settings_audio_on_mobile_data,
-        { it.audioOnMobileData },
-        { setAudioOnMobileData(it) },
-    ),
-    QuickToggle(
-        "audio_per_channel",
-        R.string.settings_audio_per_channel,
-        { it.audioPerChannel },
-        { setAudioPerChannel(it) },
-        default = true,
     ),
 )
 

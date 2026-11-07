@@ -248,7 +248,6 @@ private fun quickRows(all: Map<SettingsGroup, List<SettingSection>>, pins: Quick
 /** Quick's own title and line for the pins it starts with, by their stored (TV) key. */
 private val QUICK_WORDS: Map<String, Pair<Int, Int>> = mapOf(
     "quick_hdr" to (R.string.settings_quick_prefer_sdr to R.string.settings_line_prefer_sdr),
-    "quick_autoplay" to (R.string.settings_quick_autoplay to R.string.settings_line_quick_autoplay),
     "quick_check_update" to (R.string.settings_quick_check_update to R.string.settings_line_when_app_opens),
 )
 

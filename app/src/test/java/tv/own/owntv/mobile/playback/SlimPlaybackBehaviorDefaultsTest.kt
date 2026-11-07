@@ -70,13 +70,13 @@ class SlimPlaybackBehaviorDefaultsTest {
     }
 
     @Test
-    fun `watching page drops the step lengths and gesture sensitivity`() {
+    fun `watching page drops the step lengths, gesture sensitivity and autoplay`() {
         val keys = keys(watchingRows)
         assertTrue("vp_seek_step still on the page: $keys", "vp_seek_step" !in keys)
         assertTrue("vp_rewind_step still on the page: $keys", "vp_rewind_step" !in keys)
         assertTrue("gesture_sensitivity still on the page: $keys", "gesture_sensitivity" !in keys)
         assertTrue("vp_resume missing from the page: $keys", "vp_resume" in keys)
-        assertTrue("vp_autoplay missing from the page: $keys", "vp_autoplay" in keys)
+        assertTrue("vp_autoplay still on the page: $keys", "vp_autoplay" !in keys)
     }
 
     @Test
@@ -89,7 +89,13 @@ class SlimPlaybackBehaviorDefaultsTest {
     @Test
     fun `quick list no longer offers the removed switches`() {
         val text = read("src/main/java/tv/own/owntv/mobile/ui/screens/settings/SettingsQuick.kt")
-        listOf("vp_sw_above_1080p", "vp_measured_stats", "vp_logging", "detailed_diagnostics").forEach {
+        listOf(
+            "vp_sw_above_1080p", "vp_measured_stats", "vp_logging", "detailed_diagnostics",
+            // The watching & recording switches removed in this round: a quickSwitch row left behind
+            // while its QuickToggle is gone would throw NoSuchElementException at composition time.
+            "quick_autoplay", "vp_autoplay", "background_playback", "pip_enabled", "pip_snap",
+            "audio_on_screen_off", "audio_on_mobile_data", "audio_per_channel",
+        ).forEach {
             assertTrue("\"$it\" still pinnable", "\"$it\"" !in text)
         }
     }

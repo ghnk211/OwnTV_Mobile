@@ -11,9 +11,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
 import tv.own.owntv.core.database.entity.SourceEntity
-import tv.own.owntv.core.live.DEFAULT_MULTIVIEW_TILES
-import tv.own.owntv.core.live.MAX_MULTIVIEW_TILES
-import tv.own.owntv.core.live.MIN_MULTIVIEW_TILES
 import tv.own.owntv.core.player.SurroundMode
 import tv.own.owntv.core.recording.RecordingSchedule
 import tv.own.owntv.core.settings.SettingsRepository
@@ -176,12 +173,6 @@ internal fun watchingSections(vm: SettingsViewModel): List<SettingSection> {
     val s = vm.settings
     // ASK: what core stores when nothing has been chosen.
     val resume = s.resumeMode.pref(SettingsRepository.ResumeMode.ASK)
-    val multiview = s.multiviewEnabled.pref(false)
-    val tiles = s.multiviewTiles.pref(DEFAULT_MULTIVIEW_TILES)
-    // A value stored before "off" was withdrawn reads as docked, so the row never names a choice the sheet lacks.
-    val mini = s.miniPlayerStyle.pref(SettingsRepository.MiniPlayerStyle.FLOATING)
-        .takeIf { it != SettingsRepository.MiniPlayerStyle.OFF } ?: SettingsRepository.MiniPlayerStyle.DOCKED
-    val pipSize = s.pipSize.pref(SettingsRepository.PipSize.MEDIUM)
     val preRoll = s.recordingPreRollMinutes.pref(RecordingSchedule.DEFAULT_PRE_ROLL_MINUTES)
     val postRoll = s.recordingPostRollMinutes.pref(RecordingSchedule.DEFAULT_POST_ROLL_MINUTES)
     val recordWatching = s.recordWhatImWatching.pref(false)
@@ -210,48 +201,6 @@ internal fun watchingSections(vm: SettingsViewModel): List<SettingSection> {
                     SettingsRepository.ResumeMode.entries.map { SettingsChoice(it, stringResource(it.resumeLabel())) },
                     resume, SettingsRepository.ResumeMode.ASK, { m -> vm.edit { setResumeMode(m) } },
                 ),
-                quickSwitch(vm, "vp_autoplay", MobileIcons.SkipNext, R.string.settings_autoplay_next, R.string.settings_line_autoplay),
-            ),
-        ),
-        SettingSection(
-            stringResource(R.string.settings_vp_cat_multiview),
-            listOfNotNull(
-                switchItem(
-                    "vp_multiview", MobileIcons.Multiview, stringResource(R.string.settings_multiview),
-                    stringResource(R.string.settings_vp_cat_multiview_summary_mobile), multiview,
-                ) { vm.edit { setMultiviewEnabled(it) } },
-                // "Max 4", not "4": the number is a ceiling — the grid opens with two and grows when asked.
-                if (multiview) choiceItem(
-                    "vp_multiview_tiles", MobileIcons.GridView, g, stringResource(R.string.settings_multiview_tiles_max),
-                    stringResource(R.string.settings_line_tiles), stringResource(R.string.settings_multiview_description),
-                    (MIN_MULTIVIEW_TILES..MAX_MULTIVIEW_TILES).map { SettingsChoice(it, stringResource(R.string.settings_multiview_tiles_max_value, it)) },
-                    tiles, DEFAULT_MULTIVIEW_TILES, { n -> vm.edit { setMultiviewTiles(n) } },
-                ) else null,
-                // Docked or floating, and no third answer: "off" would leave a stream nowhere to go.
-                choiceItem(
-                    "vp_mini", MobileIcons.Phone, g, stringResource(R.string.settings_mini_player),
-                    stringResource(R.string.settings_mini_player_style_description), null,
-                    SettingsRepository.MiniPlayerStyle.entries.filter { it != SettingsRepository.MiniPlayerStyle.OFF }
-                        .map { SettingsChoice(it, stringResource(it.miniLabel())) },
-                    mini, SettingsRepository.MiniPlayerStyle.FLOATING, { m -> vm.edit { setMiniPlayerStyle(m) } },
-                ),
-                quickSwitch(vm, "pip_enabled", MobileIcons.Phone, R.string.settings_pip, R.string.settings_line_pip_mobile),
-                choiceItem(
-                    "pip_size", MobileIcons.OpenInFull, g, stringResource(R.string.settings_pip_size),
-                    stringResource(R.string.settings_line_pip_size_mobile), null,
-                    SettingsRepository.PipSize.entries.map { SettingsChoice(it, stringResource(it.pipLabel())) },
-                    pipSize, SettingsRepository.PipSize.MEDIUM, { v -> vm.edit { setPipSize(v) } },
-                ),
-                quickSwitch(vm, "pip_snap", MobileIcons.Move, R.string.settings_pip_snap, R.string.settings_line_pip_snap_mobile),
-            ),
-        ),
-        SettingSection(
-            stringResource(R.string.content_downloads_group_on_phone),
-            listOf(
-                quickSwitch(vm, "background_playback", MobileIcons.Headphones, R.string.settings_background_playback, R.string.settings_background_playback_description),
-                quickSwitch(vm, "audio_on_screen_off", MobileIcons.Bedtime, R.string.settings_audio_on_screen_off, R.string.settings_line_audio_screen_off_mobile),
-                quickSwitch(vm, "audio_on_mobile_data", MobileIcons.Translate, R.string.settings_audio_on_mobile_data, R.string.settings_audio_on_mobile_data_description),
-                quickSwitch(vm, "audio_per_channel", MobileIcons.VolumeUp, R.string.settings_audio_per_channel, R.string.settings_line_audio_per_channel_mobile),
             ),
         ),
         SettingSection(
@@ -395,14 +344,3 @@ private fun SettingsRepository.ResumeMode.resumeLabel() = when (this) {
     SettingsRepository.ResumeMode.NEVER -> R.string.settings_resume_never
 }
 
-private fun SettingsRepository.MiniPlayerStyle.miniLabel(): Int = when (this) {
-    SettingsRepository.MiniPlayerStyle.FLOATING -> R.string.settings_mini_player_style_floating
-    SettingsRepository.MiniPlayerStyle.DOCKED -> R.string.settings_mini_player_style_docked
-    SettingsRepository.MiniPlayerStyle.OFF -> R.string.common_off
-}
-
-private fun SettingsRepository.PipSize.pipLabel(): Int = when (this) {
-    SettingsRepository.PipSize.SMALL -> R.string.settings_pip_size_small
-    SettingsRepository.PipSize.MEDIUM -> R.string.settings_pip_size_medium
-    SettingsRepository.PipSize.LARGE -> R.string.settings_pip_size_large
-}

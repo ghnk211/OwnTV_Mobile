@@ -338,7 +338,6 @@ class QuickPins(val keys: List<String>, private val save: (List<String>) -> Unit
  */
 val QUICK_ALIASES: Map<String, String> = mapOf(
     "quick_hdr" to "vp_hdr",
-    "quick_autoplay" to "vp_autoplay",
     "quick_check_update" to "update_startup",
     "detailed_diagnostics" to "vp_logging",
 )

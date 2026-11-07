@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.first
 import tv.own.owntv.core.database.entity.FOLLOW_GLOBAL_LATENCY_SECS
 import tv.own.owntv.core.database.entity.FOLLOW_GLOBAL_PREROLL
 import tv.own.owntv.core.database.entity.SourceEntity
+import tv.own.owntv.core.live.DEFAULT_MULTIVIEW_TILES
 import tv.own.owntv.core.player.AudioOutputKind
 import tv.own.owntv.core.player.EnginePreference
 import tv.own.owntv.core.player.FfmpegAudioSetting
@@ -188,3 +189,32 @@ internal suspend fun applySlimPlaybackBehaviorDefaults(settings: SettingsReposit
     if (settings.liveRewindStepSec.first() != SeekSteps.DEFAULT_LIVE_REWIND_STEP_SEC) settings.setLiveRewindStepSec(SeekSteps.DEFAULT_LIVE_REWIND_STEP_SEC)
     if (settings.gestureSensitivityPct.first() != 100) settings.setGestureSensitivityPct(100)
 }.onFailure { Log.w(TAG, "applySlimPlaybackBehaviorDefaults failed", it) }
+
+/**
+ * 冷启动把「观看与录制」组中已从设置页移除的项统一回出厂默认，不保留老用户值。
+ *
+ * 只重置被移除的项；继续播放与录制相关设置仍由用户选择，不在收敛范围内。
+ * 自动播放下一集的出厂默认即开启（core "On by default"）。
+ * 幂等：只在与目标值不一致时写入；失败只记日志，下一次冷启动会重试。
+ *
+ * @param settings core 设置仓库。
+ */
+internal suspend fun applySlimWatchingDefaults(settings: SettingsRepository) = runCatching {
+    if (!settings.autoPlayNext.first()) settings.setAutoPlayNext(true)
+    if (settings.multiviewEnabled.first()) settings.setMultiviewEnabled(false)
+    if (settings.multiviewTiles.first() != DEFAULT_MULTIVIEW_TILES) {
+        settings.setMultiviewTiles(DEFAULT_MULTIVIEW_TILES)
+    }
+    if (settings.miniPlayerStyle.first() != SettingsRepository.MiniPlayerStyle.FLOATING) {
+        settings.setMiniPlayerStyle(SettingsRepository.MiniPlayerStyle.FLOATING)
+    }
+    if (!settings.pipEnabled.first()) settings.setPipEnabled(true)
+    if (settings.pipSize.first() != SettingsRepository.PipSize.MEDIUM) {
+        settings.setPipSize(SettingsRepository.PipSize.MEDIUM)
+    }
+    if (!settings.pipSnap.first()) settings.setPipSnap(true)
+    if (!settings.backgroundPlayback.first()) settings.setBackgroundPlayback(true)
+    if (!settings.audioOnScreenOff.first()) settings.setAudioOnScreenOff(true)
+    if (settings.audioOnMobileData.first()) settings.setAudioOnMobileData(false)
+    if (!settings.audioPerChannel.first()) settings.setAudioPerChannel(true)
+}.onFailure { Log.w(TAG, "applySlimWatchingDefaults failed", it) }
