@@ -383,7 +383,7 @@ extras/         品牌资源、字体许可、五份文档（含本梳理与精�
 - `./gradlew :app:assembleStandardDebug`；checks：`testStandardDebugUnitTest`、`lintStandardDebug`、两条 Python i18n 校验。
 - **flavor 只按 ABI 分**：`standard`（arm64-v8a + armeabi-v7a）与 `x86_64`（模拟器）——播放器 .so 太大，通用 APK 不值得。
 - release 开 minify + shrinkResources；debug 开伪语言；签名顺序：环境变量（CI）→ 用户级 Gradle 属性 → 仓外 `owntv-signing.properties`；未配置则产出未签名 APK。与电视端**共用同一 keystore 与属性名**。
-- core 解析：默认取 Maven 上的 `owntvCore=1.0.69`；`owntv.corePath` 走 composite build（改 core 无需发布）；`owntv.libmpvLocalRepo` 指向本地构建的 libmpv。这两个属性**只能写在 `~/.gradle/gradle.properties`，绝不写进仓库**。
+- core 解析：源码在 `vendor/OwnTV_Core`（git subtree，来自 `ghnk211/OwnTV_Core` 的 `mobile` 分支），`includeBuild` 直接替换 `tv.own.owntv:core` / `:player-core`；不再有 pin 与 `owntv.corePath`。只有 `libmpv` 仍从 OwnTV Maven 解析；`owntv.libmpvLocalRepo` 用于本地构建的 libmpv，**只能写在 `~/.gradle/gradle.properties`，绝不写进仓库**。更新流程见 `docs/Core源码集成方案.md`。
 - ProGuard 保点：libmpv JNI、WorkManager、`Room_Impl`、枚举名、`CastOptionsProvider`。
 - `baselineprofile`：Macrobenchmark 在真机录制基线画像并 `mergeIntoMain`，CI 不跑。
 

@@ -29,24 +29,24 @@ dependencyResolutionManagement {
         }
         google()
         mavenCentral()
-        // OwnTV's own Maven repository — public, no login: tv.own.owntv:core and :player-core
-        // (built from https://github.com/ahXN00/OwnTV_Core) and tv.own.owntv:libmpv, the mpv engine
-        // (https://github.com/ahXN00/OwnTV_libmpv). Served from OwnTV_Core's gh-pages branch.
+        // OwnTV's public Maven repository. Only the mpv engine still comes from here:
+        // tv.own.owntv:libmpv (https://github.com/ahXN00/OwnTV_libmpv). core and player-core are
+        // built from vendor/OwnTV_Core below, and this filter makes a broken substitution fail
+        // loudly instead of silently falling back to a published core.
         maven {
             name = "OwnTV"
             url = uri("https://ahxn00.github.io/OwnTV_Core/maven")
-            content { includeGroup("tv.own.owntv") }
+            content { includeModule("tv.own.owntv", "libmpv") }
         }
     }
 }
 
-// Local development: build against core's own source instead of the published artifact, so a core
-// edit reaches this app with no publish step. Gradle substitutes the dependency automatically
-// because OwnTV_Core publishes under the same group and artifact ids this app asks for. CI leaves
-// owntv.corePath unset and resolves the pinned version instead. The SAME property serves the TV app
-// and this one — set it once in ~/.gradle/gradle.properties, never here:
-//   owntv.corePath=E:/MEGA/CODE/AI/OwnTV_Suite/OwnTV_Core
-providers.gradleProperty("owntv.corePath").orNull?.takeIf { it.isNotBlank() }?.let { includeBuild(it) }
+// Core's source lives in this repository at vendor/OwnTV_Core — a git subtree of
+// https://github.com/ghnk211/OwnTV_Core (branch `mobile`, forked from ahXN00/OwnTV_Core). Gradle
+// substitutes the tv.own.owntv:core and :player-core coordinates with this build's modules by
+// matching group:name, so a core edit reaches the app with no publish step and CI builds exactly
+// the code committed here.
+includeBuild("vendor/OwnTV_Core")
 
 rootProject.name = "OwnTVMobile"
 include(":app")

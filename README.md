@@ -228,19 +228,16 @@ cd OwnTV_Mobile
 sdk.dir=C:/Users/<you>/AppData/Local/Android/Sdk
 ```
 
-**Resolving the core library.** By default the build takes the pinned `owntvCore` version from
-OwnTV's public Maven repository (https://ahxn00.github.io/OwnTV_Core/maven) — no account or token
-needed. That is what CI does, fork pull requests included. To build against a local checkout of core
-instead — a composite build, so an edit there reaches the app with no publish step — add this to the
-same file, **never to a file in this repository**:
+**The core library is vendored.** `vendor/OwnTV_Core` is a git subtree of
+https://github.com/ghnk211/OwnTV_Core (branch `mobile`), itself forked from
+https://github.com/ahXN00/OwnTV_Core. `settings.gradle.kts` includes it as a composite build, so
+Gradle substitutes the `tv.own.owntv:core` and `:player-core` coordinates with the source committed
+here. There is no pin and no `owntv.corePath` step: a clean clone builds exactly the core source in
+this repository. Only the mpv engine, `tv.own.owntv:libmpv`, still resolves from OwnTV's public
+Maven repository.
 
-```properties
-owntv.corePath=/path/to/OwnTV_Core
-```
-
-On `mobile-mini` that local checkout is not optional yet: this HEAD calls `liveRestoreKey` and
-`guideFollowsLiveCategory`, which exist in core's development branch but not in the published `1.0.69`
-artifact, so a build with the default pin stops at those two names until core publishes them.
+To update the vendored core, see [docs/Core源码集成方案.md](docs/Core源码集成方案.md): edit the
+`mobile` branch of the fork, run core's tests, then `git subtree pull` into this repository.
 
 Signing and keystore values belong in `~/.gradle/gradle.properties` or CI secrets, never in a
 repository file. With nothing configured the APK simply builds unsigned.

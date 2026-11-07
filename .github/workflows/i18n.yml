@@ -1,15 +1,17 @@
 name: i18n
 
-# Lightweight, deliberately SEPARATE from android.yml. Three jobs, all gating:
-#   baseline  — the hardcoded-literal ratchet against the pull-request merge base (not HEAD^, which
-#               is bypassable in a multi-commit PR).
-#   validate  — the Kotlin-side checks: locale-stable number formatting and bounded text overflow.
-#   pseudo    — inspects the BUILT debug and release APKs and proves pseudolocales survived
-#               localeFilters in debug and are absent in release. The flag being set is not proof.
+# Lightweight, deliberately SEPARATE from android.yml. Four jobs, all gating:
+#   baseline      — the hardcoded-literal ratchet for app/ against the pull-request merge base (not
+#                   HEAD^, which is bypassable in a multi-commit PR).
+#   core-baseline — the same ratchet for the vendored core (vendor/OwnTV_Core/core and
+#                   vendor/OwnTV_Core/player-core), using core's own checker and baseline.
+#   validate      — the Kotlin-side checks: locale-stable number formatting and bounded text overflow.
+#   pseudo        — inspects the BUILT debug and release APKs and proves pseudolocales survived
+#                   localeFilters in debug and are absent in release. The flag being set is not proof.
 #
-# The strings themselves are NOT in this repository. Every strings*.xml lives in the core library
-# (ahXN00/OwnTV_Core), so locales.json schema checks, placeholder/plural parity, translation
-# coverage and the toolkit's own regression tests all run there. What runs here is only what this
+# The strings themselves live in the vendored core (vendor/OwnTV_Core). locales.json schema checks,
+# placeholder/plural parity, translation coverage and the toolkit's own regression tests still run
+# in the core repository; what runs here is the copy those tools need at build time, plus what this
 # repo's own Kotlin can get wrong.
 #
 # Why merge base and not HEAD^: a baseline can grow in commit 2 and stay untouched in the final
@@ -21,10 +23,6 @@ name: i18n
 # next PR fails for debt that is not its own. On push the ratchet has no merge base to compare
 # against, so it runs in bootstrap mode: main must be self-consistent (nothing unclassified, nothing
 # stale), which is the invariant a PR then inherits.
-#
-# All three step aside for a "Pin core x.y.z" branch: that pull request changes the pin and
-# locales.json and no Kotlin at all, so every check here would re-examine code identical to main.
-# android.yml's verify-pin job covers those pull requests instead.
 
 on:
   pull_request:
@@ -41,7 +39,6 @@ concurrency:
 
 jobs:
   baseline:
-    if: ${{ !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'bump/core-')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PR head
@@ -75,8 +72,20 @@ jobs:
             python3 tools/i18n/check_hardcoded_strings.py verify --bootstrap
           fi
 
+  core-baseline:
+    # Core's own checker, run against the vendored snapshot. `--bootstrap` is path-based and does
+    # not need git history; core's verify-ci is not used because its git-relative paths assume the
+    # core repository is the git root.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Vendored core hardcoded-literal check
+        run: python3 vendor/OwnTV_Core/tools/i18n/check_hardcoded_strings.py verify --bootstrap
+
   validate:
-    if: ${{ !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'bump/core-')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -90,9 +99,9 @@ jobs:
 
   pseudo:
     # Builds the debug + release standard APKs and inspects their resource tables. Heavier than the
-    # other two jobs, so it is its own job rather than piggy-backed on android.yml — and skipped on
+    # other jobs, so it is its own job rather than piggy-backed on android.yml — and skipped on
     # push, where android.yml already assembles main.
-    if: ${{ github.event_name != 'push' && !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'bump/core-')) }}
+    if: ${{ github.event_name != 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

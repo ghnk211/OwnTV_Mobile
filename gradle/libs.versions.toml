@@ -58,12 +58,11 @@ espressoCore = "3.7.0"
 benchmark = "1.5.0"
 uiautomator = "2.4.0"
 
-# --- OwnTV core library (https://github.com/ahXN00/OwnTV_Core) ---
-# Both artifacts always ship on the same version; never split them. Bumping this is how the mobile
-# app takes a core change, and core's release workflow opens that bump as a PR automatically. For
-# local work, owntv.corePath in ~/.gradle/gradle.properties substitutes core's source for these
-# artifacts and this number is then ignored.
-owntvCore = "1.0.69"
+# --- OwnTV core library (vendored at vendor/OwnTV_Core) ---
+# Coordinate placeholder only: Gradle substitutes the vendored core modules for these coordinates by
+# group:name, so the number below is ignored by the build. Keep it aligned with
+# vendor/OwnTV_Core/build.gradle.kts's coreVersion so the two do not look contradictory.
+owntvCore = "1.0.70"
 
 # libmpv is deliberately NOT declared here. `:player-core` exposes it as `api`, so it reaches this
 # app's compile classpath with core — which it must, because OwnTVPlayer implements
@@ -71,8 +70,8 @@ owntvCore = "1.0.69"
 # naming their own would be two copies of a native library and a packaging conflict.
 
 [libraries]
-# The shared engine, from its own repository. Everything below the UI — database, sync, EPG, backup,
-# settings, strings — comes from here; this repo adds the phone/tablet shell only.
+# The shared engine, vendored at vendor/OwnTV_Core. Everything below the UI — database, sync, EPG,
+# backup, settings, strings — comes from there; this repo adds the phone/tablet shell only.
 owntv-core = { group = "tv.own.owntv", name = "core", version.ref = "owntvCore" }
 owntv-player-core = { group = "tv.own.owntv", name = "player-core", version.ref = "owntvCore" }
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }

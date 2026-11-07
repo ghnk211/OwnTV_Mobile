@@ -288,17 +288,16 @@ val verifyI18nLiterals = tasks.register<VerifyI18nLiterals>("verifyI18nLiterals"
 tasks.named("preBuild") { dependsOn(verifyI18nLiterals) }
 
 dependencies {
-    // The shared engine, from its own repository — https://github.com/ahXN00/OwnTV_Core. Set
-    // owntv.corePath in ~/.gradle/gradle.properties to build against its source instead of the pin.
+    // The shared engine, built from vendor/OwnTV_Core (see settings.gradle.kts). Gradle substitutes
+    // these coordinates with that build's modules; the version in the catalog is only a placeholder.
     implementation(libs.owntv.core)
     // The shared playback engine. It renders nothing itself, which is exactly why the same engine
     // serves the TV HUD and this app's touch controls. Always on core's version.
     implementation(libs.owntv.player.core)
     // libmpv is NOT declared here. `:player-core` exposes it as `api`, so it arrives on this app's
     // compile classpath with core — which it must, because `OwnTVPlayer`'s supertype is
-    // `MPVLib.EventObserver`. It was declared explicitly while the pin was older than `1.0.6`, where
-    // core still hid it behind `implementation`; the pin is far past that, and two hosts each naming
-    // their own version is how a packaging conflict over a native library starts.
+    // `MPVLib.EventObserver`. Core's catalog owns the version, and two hosts each naming their own
+    // is how a packaging conflict over a native library starts.
 
     // Core
     implementation(libs.androidx.core.ktx)
