@@ -17,21 +17,19 @@ enum class SettingsLeaf(
     ADD_SOURCE(SettingsGroup.SOURCES, "add", R.string.content_add_source),
     EPG_SOURCES(SettingsGroup.SOURCES, "epg", R.string.settings_epg_sources),
     CATCHUP_SOURCES(SettingsGroup.SOURCES, "catchup-playlists", R.string.settings_catchup_timezone_per_playlist),
-
-    GLASS_EFFECT(SettingsGroup.APPEARANCE, "glass", R.string.settings_glass_bg_title),
-    FONTS(SettingsGroup.APPEARANCE, "fonts", R.string.settings_title_fonts),
-
-    HOME(SettingsGroup.LAYOUT, "home", R.string.settings_home_screen),
-    BROWSING(SettingsGroup.LAYOUT, "browsing", R.string.settings_browsing_lists),
-    CONTENT_MENUS(SettingsGroup.LAYOUT, "menus", R.string.settings_content_menus_title),
-
-    CUSTOMIZE(SettingsGroup.CONTENT, "customize", R.string.settings_customize_short_mobile),
-    METADATA(SettingsGroup.CONTENT, "metadata", R.string.settings_metadata),
-    OPEN_SUBTITLES(SettingsGroup.CONTENT, "opensubtitles", R.string.settings_open_subtitles),
+    CUSTOMIZE(SettingsGroup.SOURCES, "customize", R.string.settings_customize_short_mobile),
+    METADATA(SettingsGroup.SOURCES, "metadata", R.string.settings_metadata),
 
     EXTERNAL_PLAYER(SettingsGroup.PLAYER, "external", R.string.settings_external_player),
 
     SUBTITLE_APPEARANCE(SettingsGroup.SOUND, "subtitles", R.string.settings_subtitle_appearance),
+    OPEN_SUBTITLES(SettingsGroup.SOUND, "opensubtitles", R.string.settings_open_subtitles),
+
+    GLASS_EFFECT(SettingsGroup.APPEARANCE, "glass", R.string.settings_glass_bg_title),
+    FONTS(SettingsGroup.APPEARANCE, "fonts", R.string.settings_title_fonts),
+    HOME(SettingsGroup.APPEARANCE, "home", R.string.settings_home_screen),
+    BROWSING(SettingsGroup.APPEARANCE, "browsing", R.string.settings_browsing_lists),
+    CONTENT_MENUS(SettingsGroup.APPEARANCE, "menus", R.string.settings_content_menus_title),
 
     LANGUAGE(SettingsGroup.APP, "language", R.string.settings_language),
     APP_LOCK(SettingsGroup.APP, "app-lock", R.string.mobile_app_lock),
@@ -39,7 +37,7 @@ enum class SettingsLeaf(
     DNS(SettingsGroup.APP, "dns", R.string.settings_dns),
     ;
 
-    /** `settings/content/customize` — the group's own route with the page hung off it. */
+    /** `settings/sources/customize` — the group's own route with the page hung off it. */
     val route: String = "${group.route}/$slug"
 }
 

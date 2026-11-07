@@ -55,7 +55,6 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koin.androidx.compose.koinViewModel
-import tv.own.owntv.core.customize.CategoryRestorePlan
 import tv.own.owntv.core.live.LiveKey
 import tv.own.owntv.core.live.ProviderTags
 import tv.own.owntv.core.settings.SettingsRepository
@@ -72,8 +71,8 @@ import tv.own.owntv.mobile.ui.screens.ObeyScrollToTop
 import tv.own.owntv.mobile.ui.screens.home.durationText
 import tv.own.owntv.mobile.ui.screens.home.formatRating
 import tv.own.owntv.mobile.ui.screens.home.formatYear
-import tv.own.owntv.mobile.ui.screens.live.CategoryRestoreConfirm
 import tv.own.owntv.mobile.ui.screens.live.LiveCategoryMenu
+import tv.own.owntv.mobile.ui.screens.settings.customize.TextPromptDialog
 import tv.own.owntv.core.categorylock.SealedCategoryAction
 import tv.own.owntv.mobile.ui.shell.ProvidePageCrumb
 import tv.own.owntv.mobile.ui.shell.PageCrumb
@@ -162,7 +161,7 @@ fun LibraryScreen(
     var sortOpen by remember { mutableStateOf(false) }
     var categoriesOpen by remember { mutableStateOf(false) }
     var categoryMenuFor by remember { mutableStateOf<VodCategory?>(null) }
-    var restoreFor by remember { mutableStateOf<VodCategory?>(null) }
+    var renamingFor by remember { mutableStateOf<VodCategory?>(null) }
     val lock = tv.own.owntv.mobile.ui.categorylock.rememberCategoryLock(
         if (tab == LibraryTab.MOVIES) tv.own.owntv.core.model.MediaType.MOVIE else tv.own.owntv.core.model.MediaType.SERIES,
     )
@@ -386,26 +385,17 @@ fun LibraryScreen(
         val name = category.label(tab)
         LiveCategoryMenu(
             title = name,
-            custom = category.key is LiveKey.Custom,
-            onMove = { kind -> lock.guarded(category.key, category.sealed, SealedCategoryAction.MOVE) { vm.moveCategory(category.key, kind) } },
+            onRename = { renamingFor = category },
             onHide = { lock.guarded(category.key, category.sealed, SealedCategoryAction.HIDE) { vm.hideCategory(category.key) } },
-            onRestore = {
-                categoryMenuFor = null
-                lock.guarded(category.key, category.sealed, SealedCategoryAction.RESTORE) { restoreFor = category }
-            },
             onDismiss = { categoryMenuFor = null },
-            locked = tv.own.owntv.mobile.ui.categorylock.lockMenuState(category.key, category.locked),
-            onToggleLock = { lock.toggleLock(category.key) },
         )
     }
-    restoreFor?.let { category ->
-        val plan by produceState<CategoryRestorePlan?>(null, category.key) { value = vm.categoryRestorePlan(category.key) }
-        CategoryRestoreConfirm(
-            title = category.label(tab),
-            custom = category.key is LiveKey.Custom,
-            plan = plan,
-            onRestore = { vm.restoreCategory(category.key) },
-            onDismiss = { restoreFor = null },
+    renamingFor?.let { category ->
+        TextPromptDialog(
+            title = stringResource(R.string.settings_customize_rename),
+            initial = category.label(tab),
+            onConfirm = { vm.renameCategory(category.key, it.takeIf { t -> t.isNotBlank() }); renamingFor = null },
+            onDismiss = { renamingFor = null },
         )
     }
 }

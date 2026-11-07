@@ -7,7 +7,6 @@ import tv.own.owntv.mobile.ui.player.CatchupSheet as JumpBackSheet
 import androidx.activity.compose.BackHandler
 import tv.own.owntv.mobile.ui.shell.LocalMiniRequested
 import androidx.compose.runtime.produceState
-import tv.own.owntv.core.customize.CategoryRestorePlan
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +19,7 @@ import tv.own.owntv.core.ui.stage.PlaylistMark
 import tv.own.owntv.mobile.ui.components.peekOrNull
 import tv.own.owntv.mobile.ui.components.rememberClockTick
 import tv.own.owntv.mobile.ui.screens.home.timeLeftText
+import tv.own.owntv.mobile.ui.screens.settings.customize.TextPromptDialog
 import tv.own.owntv.mobile.ui.shell.ProvidePageCrumb
 import tv.own.owntv.mobile.ui.shell.PageCrumb
 import tv.own.owntv.mobile.ui.stage.LocalStagePalette
@@ -137,7 +137,7 @@ fun LiveScreen(
     val lock = tv.own.owntv.mobile.ui.categorylock.rememberCategoryLock(tv.own.owntv.core.model.MediaType.LIVE)
     var categoryPicker by remember { mutableStateOf(false) }
     var categoryMenuFor by remember { mutableStateOf<LiveCategory?>(null) }
-    var restoreFor by remember { mutableStateOf<LiveCategory?>(null) }
+    var renamingFor by remember { mutableStateOf<LiveCategory?>(null) }
     var catchupFor by remember { mutableStateOf<ChannelEntity?>(null) }
     var jumpBackOpen by remember { mutableStateOf(false) }
     // Wide: the list on the left, the preview and its programme on the right — the same preview
@@ -397,16 +397,17 @@ fun LiveScreen(
         val name = remember(category) { ProviderTags.parse(category.title.orEmpty()).name }
         LiveCategoryMenu(
             title = name,
-            custom = category.key is LiveKey.Custom,
-            onMove = { kind -> lock.guarded(category.key, category.sealed, SealedCategoryAction.MOVE) { vm.moveCategory(category.key, kind) } },
+            onRename = { renamingFor = category },
             onHide = { lock.guarded(category.key, category.sealed, SealedCategoryAction.HIDE) { vm.hideCategory(category.key) } },
-            onRestore = {
-                categoryMenuFor = null
-                lock.guarded(category.key, category.sealed, SealedCategoryAction.RESTORE) { restoreFor = category }
-            },
             onDismiss = { categoryMenuFor = null },
-            locked = tv.own.owntv.mobile.ui.categorylock.lockMenuState(category.key, category.locked),
-            onToggleLock = { lock.toggleLock(category.key) },
+        )
+    }
+    renamingFor?.let { category ->
+        TextPromptDialog(
+            title = stringResource(R.string.settings_customize_rename),
+            initial = remember(category) { ProviderTags.parse(category.title.orEmpty()).name },
+            onConfirm = { vm.renameCategory(category.key, it.takeIf { t -> t.isNotBlank() }); renamingFor = null },
+            onDismiss = { renamingFor = null },
         )
     }
     catchupFor?.let { channel ->
@@ -427,16 +428,6 @@ fun LiveScreen(
                 programmeStart = tuner::currentProgrammeStart,
             ),
             onDismiss = { jumpBackOpen = false },
-        )
-    }
-    restoreFor?.let { category ->
-        val plan by produceState<CategoryRestorePlan?>(null, category.key) { value = vm.categoryRestorePlan(category.key) }
-        CategoryRestoreConfirm(
-            title = remember(category) { ProviderTags.parse(category.title.orEmpty()).name },
-            custom = category.key is LiveKey.Custom,
-            plan = plan,
-            onRestore = { vm.restoreCategory(category.key) },
-            onDismiss = { restoreFor = null },
         )
     }
 }

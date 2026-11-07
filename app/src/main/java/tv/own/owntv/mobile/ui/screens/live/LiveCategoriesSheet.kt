@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import tv.own.owntv.core.customize.CategoryRestorePlan
-import tv.own.owntv.core.customize.MoveKind
 import tv.own.owntv.core.customize.categoryRestoreSummary
 import tv.own.owntv.core.live.LiveKey
 import tv.own.owntv.core.live.ProviderTags
@@ -125,44 +124,20 @@ private fun LiveCategory.icon() = when (builtIn) {
 }
 
 /**
- * Hold a category: move it through the list, hide it, lock it with the PIN, or restore it to the
- * playlist's default ("Restore to default" for a combined category) — the TV's menu. Restore asks first
- * ([CategoryRestoreConfirm]). [locked] offers Lock with PIN (false) or Remove lock (true); null neither.
+ * Hold a category: rename it, or hide it. Both go through the same store as Settings → Customize,
+ * so either can be undone there.
  */
 @Composable
 internal fun LiveCategoryMenu(
     title: String,
-    custom: Boolean,
-    onMove: (MoveKind) -> Unit,
+    onRename: () -> Unit,
     onHide: () -> Unit,
-    onRestore: () -> Unit,
     onDismiss: () -> Unit,
-    locked: Boolean? = null,
-    onToggleLock: () -> Unit = {},
 ) {
     MobileBottomSheet(onDismissRequest = onDismiss, title = title) {
         StageSheetHeader(title = title)
-        listOf(
-            Triple(R.string.settings_customize_move_top, MobileIcons.KeyboardDoubleArrowUp, MoveKind.TOP),
-            Triple(R.string.settings_row_menu_move_up, MobileIcons.KeyboardArrowUp, MoveKind.UP),
-            Triple(R.string.settings_row_menu_move_down, MobileIcons.KeyboardArrowDown, MoveKind.DOWN),
-            Triple(R.string.settings_customize_move_bottom, MobileIcons.KeyboardDoubleArrowDown, MoveKind.BOTTOM),
-        ).forEach { (label, icon, kind) ->
-            StageMenuItem(stringResource(label), onClick = { onDismiss(); onMove(kind) }, icon = icon)
-        }
+        StageMenuItem(stringResource(R.string.settings_customize_rename), onClick = { onDismiss(); onRename() }, icon = MobileIcons.Edit)
         StageMenuItem(stringResource(R.string.settings_customize_hide), onClick = { onDismiss(); onHide() }, icon = MobileIcons.VisibilityOff)
-        if (locked != null) {
-            StageMenuItem(
-                stringResource(if (locked) R.string.settings_customize_remove_lock else R.string.content_category_lock),
-                onClick = { onDismiss(); onToggleLock() },
-                icon = MobileIcons.Lock,
-            )
-        }
-        StageMenuItem(
-            stringResource(if (custom) R.string.content_category_restore_custom else R.string.content_category_restore_playlist),
-            onClick = onRestore,
-            icon = MobileIcons.Refresh,
-        )
     }
 }
 

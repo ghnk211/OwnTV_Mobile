@@ -54,12 +54,11 @@ import tv.own.owntv.mobile.ui.components.ContentMenuSheet
 import tv.own.owntv.mobile.ui.components.MobileBottomSheet
 import tv.own.owntv.mobile.ui.components.MoveToCategorySheet
 import tv.own.owntv.mobile.ui.components.NewCategoryDialog
-import tv.own.owntv.mobile.ui.components.ReorderSheet
 import tv.own.owntv.mobile.ui.components.SheetAction
 import tv.own.owntv.mobile.ui.components.sheetListHeight
 
 /** Which follow-up the sheet handed off to. Only ever one at a time. */
-private enum class ChannelDialog { RENAME, MATCH_EPG, EPG_OFFSET, MOVE, MOVE_TO_CATEGORY, NEW_CATEGORY, SCHEDULE_RECORDING }
+private enum class ChannelDialog { RENAME, MOVE_TO_CATEGORY, NEW_CATEGORY, SCHEDULE_RECORDING }
 
 /**
  * The long-press menu for a channel, and everything it opens.
@@ -112,11 +111,9 @@ fun ChannelMenu(
     if (sheetOpen && multiviewSetting != null) {
         val canMove = vm.contextKeyOf(selected) != null
         // Group ids = the TV's four groups, in its order.
-        val watch = 0; val chan = 1; val guide = 2; val organise = 3
+        val watch = 0; val chan = 1; val organise = 3
         val catchupValue = channel.catchupDays.takeIf { it > 0 }
             ?.let { pluralStringResource(R.plurals.settings_epg_guide_days_value, it, it) }
-        val matchValue = stringResource(if (vm.currentEpgMatch(channel) != null) R.string.settings_manual else R.string.settings_auto)
-        val offsetValue = vm.currentEpgShift(channel)?.let { epgShiftLabel(it) } ?: stringResource(R.string.content_epg_offset_global_short)
         val actions = buildList {
             if (channel.catchup) {
                 add(SheetAction("catchup", stringResource(R.string.content_catchup), MobileIcons.Catchup, group = watch, value = catchupValue, onClick = onOpenCatchup))
@@ -146,7 +143,6 @@ fun ChannelMenu(
                     },
                 )
             }
-            add(SheetAction("play_external", stringResource(R.string.content_play_external_short), MobileIcons.OpenInNew, group = watch) { vm.playExternal(channel) })
             add(
                 SheetAction(
                     key = "favourite",
@@ -157,18 +153,11 @@ fun ChannelMenu(
                 ),
             )
             add(SheetAction("rename", stringResource(R.string.content_rename), MobileIcons.Edit, group = chan) { dialog = ChannelDialog.RENAME })
-            add(SheetAction("hide", stringResource(R.string.content_hide_channel), MobileIcons.VisibilityOff, group = chan) { vm.hideChannel(channel) })
             if (selected == LiveKey.History) {
                 add(SheetAction("remove_history", stringResource(R.string.content_remove_history), MobileIcons.History, group = chan) { vm.removeFromHistory(channel.id) })
             }
-            add(SheetAction("match_epg", stringResource(R.string.content_match_epg), MobileIcons.Guide, group = guide, value = matchValue) { dialog = ChannelDialog.MATCH_EPG })
-            add(SheetAction("epg_offset", stringResource(R.string.content_epg_time_offset), MobileIcons.Schedule, group = guide, value = offsetValue) { dialog = ChannelDialog.EPG_OFFSET })
             if (canMove) {
-                add(SheetAction("move", stringResource(R.string.content_move), MobileIcons.Move, group = organise) { dialog = ChannelDialog.MOVE })
                 add(SheetAction("move_to_category", stringResource(R.string.content_move_to_category), MobileIcons.Folder, group = organise) { dialog = ChannelDialog.MOVE_TO_CATEGORY })
-            }
-            if (selected is LiveKey.Custom) {
-                add(SheetAction("remove_from_category", stringResource(R.string.content_remove_from_category), MobileIcons.Close, group = organise) { vm.removeFromCustomCategory(channel, selected) })
             }
         }
         val sep = stringResource(R.string.content_epg_bits_separator)
@@ -182,7 +171,6 @@ fun ChannelMenu(
             groupLabels = mapOf(
                 watch to stringResource(R.string.content_menu_group_watch),
                 chan to stringResource(R.string.content_menu_group_channel),
-                guide to stringResource(R.string.content_menu_group_guide_data),
                 organise to stringResource(R.string.content_menu_group_organise),
             ),
             leading = {
@@ -202,27 +190,6 @@ fun ChannelMenu(
         ChannelDialog.RENAME -> RenameChannelDialog(
             channel = channel,
             onSet = { vm.renameChannel(channel, it) },
-            onDismiss = { dialog = null },
-        )
-        ChannelDialog.MATCH_EPG -> EpgMatchSheet(
-            channelName = channel.name,
-            currentMatch = vm.currentEpgMatch(channel),
-            search = { vm.availableEpgChannels(channel.name, it) },
-            onPick = { vm.setEpgMatch(channel, it) },
-            onDismiss = { dialog = null },
-        )
-        ChannelDialog.EPG_OFFSET -> EpgOffsetDialog(
-            channelName = channel.name,
-            currentMinutes = vm.currentEpgShift(channel),
-            globalMinutes = vm.globalEpgShift(),
-            onSet = { vm.setEpgShift(channel, it) },
-            onDismiss = { dialog = null },
-        )
-        ChannelDialog.MOVE -> ReorderSheet(
-            title = stringResource(R.string.content_reorder_channel),
-            openAt = channel.id,
-            load = { vm.moveList(selected) },
-            onSave = { ids, moved -> vm.contextKeyOf(selected)?.let { vm.commitMove(it, ids, moved) } },
             onDismiss = { dialog = null },
         )
         ChannelDialog.MOVE_TO_CATEGORY -> MoveToCategorySheet(

@@ -303,6 +303,15 @@ class LiveViewModel(
         else -> null
     }
 
+    /** Rename the long-pressed category; a blank name restores the provider's own. */
+    fun renameCategory(key: LiveKey, name: String?) {
+        viewModelScope.launch {
+            val pid = ctx.value.profileId.takeIf { it >= 0 } ?: return@launch
+            val contextKey = categoryContextKey(key) ?: return@launch
+            customize.renameCategory(pid, MediaType.LIVE, contextKey, name?.trim()?.takeIf { it.isNotEmpty() })
+        }
+    }
+
     /** Hide and reorder a category from the strip, through the same editor Settings → Customize uses. */
     private val categoryEditor = CategoryRailEditor(customize, categoryDao, profileDao)
 

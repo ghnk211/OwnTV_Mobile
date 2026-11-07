@@ -301,6 +301,19 @@ class LibraryViewModel(
         }
     }
 
+    /** Rename the long-pressed category; a blank name restores the provider's own. */
+    fun renameCategory(key: LiveKey, name: String?) {
+        viewModelScope.launch {
+            val pid = ctx.value.profileId.takeIf { it >= 0 } ?: return@launch
+            val contextKey = when (key) {
+                is LiveKey.Folder -> folderContextKeys.value[key.id]
+                is LiveKey.Custom -> key.id
+                else -> null
+            } ?: return@launch
+            customize.renameCategory(pid, mediaType.value, contextKey, name?.trim()?.takeIf { it.isNotEmpty() })
+        }
+    }
+
     /** Move the long-pressed category one step through the strip, and keep it there. */
     fun moveCategory(key: LiveKey, kind: MoveKind) {
         viewModelScope.launch {

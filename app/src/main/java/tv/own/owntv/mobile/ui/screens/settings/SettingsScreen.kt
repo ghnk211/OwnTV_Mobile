@@ -47,7 +47,7 @@ import tv.own.owntv.mobile.ui.stage.stageText
 
 /**
  * Settings: the line "Hold a row to pin it to Quick" under the title, the search over every setting,
- * then the twelve groups as cards in two columns — icon, count, name and what the group holds. Searching
+ * then the eight groups as cards in two columns — icon, count, name and what the group holds. Searching
  * lists every setting whose own name matches (names only), its path above it and its value beside.
  */
 @Composable

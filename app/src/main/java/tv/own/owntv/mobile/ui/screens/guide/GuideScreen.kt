@@ -87,7 +87,6 @@ import tv.own.owntv.mobile.ui.screens.home.durationText
 import tv.own.owntv.mobile.ui.screens.home.formatCount
 import tv.own.owntv.mobile.ui.screens.home.formatYear
 import tv.own.owntv.mobile.ui.screens.home.timeLeftText
-import tv.own.owntv.mobile.ui.screens.live.CategoryRestoreConfirm
 import tv.own.owntv.mobile.ui.screens.live.LiveCategoriesSheet
 import tv.own.owntv.mobile.ui.screens.live.LiveCategory
 import tv.own.owntv.mobile.ui.screens.live.LiveCategoryMenu
@@ -96,6 +95,7 @@ import tv.own.owntv.mobile.ui.screens.live.LiveViewModel
 import tv.own.owntv.mobile.ui.screens.live.STARTUP_ROW_WAIT_MS
 import tv.own.owntv.mobile.ui.screens.live.epgShiftLabel
 import tv.own.owntv.mobile.ui.screens.live.label
+import tv.own.owntv.mobile.ui.screens.settings.customize.TextPromptDialog
 import tv.own.owntv.mobile.ui.shell.LocalMiniRequested
 import tv.own.owntv.mobile.ui.shell.ProvidePageCrumb
 import tv.own.owntv.mobile.ui.shell.LocalStreamOnScreen
@@ -185,7 +185,7 @@ fun GuideScreen(
     var categoriesOpen by remember { mutableStateOf(false) }
     var categoryMenuFor by remember { mutableStateOf<LiveCategory?>(null) }
     val lock = tv.own.owntv.mobile.ui.categorylock.rememberCategoryLock(tv.own.owntv.core.model.MediaType.LIVE)
-    var restoreFor by remember { mutableStateOf<LiveCategory?>(null) }
+    var renamingFor by remember { mutableStateOf<LiveCategory?>(null) }
     var dayOpen by remember { mutableStateOf(false) }
     var orderOpen by remember { mutableStateOf(false) }
     var searching by remember { mutableStateOf(query.isNotEmpty()) }
@@ -425,31 +425,22 @@ fun GuideScreen(
     categoryMenuFor?.let { category ->
         LiveCategoryMenu(
             title = remember(category) { ProviderTags.parse(category.title.orEmpty()).name },
-            custom = category.key is LiveKey.Custom,
-            onMove = { kind -> lock.guarded(category.key, category.sealed, SealedCategoryAction.MOVE) { live.moveCategory(category.key, kind) } },
+            onRename = { renamingFor = category },
             onHide = {
                 lock.guarded(category.key, category.sealed, SealedCategoryAction.HIDE) {
                     live.hideCategory(category.key)
                     if (selected == category.key) vm.select(tv.own.owntv.core.live.liveLandingKey(categories.filter { it.key != category.key }, { it.key }, { it.sealed }))
                 }
             },
-            onRestore = {
-                categoryMenuFor = null
-                lock.guarded(category.key, category.sealed, SealedCategoryAction.RESTORE) { restoreFor = category }
-            },
             onDismiss = { categoryMenuFor = null },
-            locked = tv.own.owntv.mobile.ui.categorylock.lockMenuState(category.key, category.locked),
-            onToggleLock = { lock.toggleLock(category.key) },
         )
     }
-    restoreFor?.let { category ->
-        val plan by produceState<tv.own.owntv.core.customize.CategoryRestorePlan?>(null, category.key) { value = live.categoryRestorePlan(category.key) }
-        CategoryRestoreConfirm(
-            title = remember(category) { ProviderTags.parse(category.title.orEmpty()).name },
-            custom = category.key is LiveKey.Custom,
-            plan = plan,
-            onRestore = { live.restoreCategory(category.key) },
-            onDismiss = { restoreFor = null },
+    renamingFor?.let { category ->
+        TextPromptDialog(
+            title = stringResource(R.string.settings_customize_rename),
+            initial = remember(category) { ProviderTags.parse(category.title.orEmpty()).name },
+            onConfirm = { live.renameCategory(category.key, it.takeIf { t -> t.isNotBlank() }); renamingFor = null },
+            onDismiss = { renamingFor = null },
         )
     }
     if (dayOpen) {

@@ -222,7 +222,7 @@ fun MobileNavHost(
                 },
             )
         }
-        // The twelve group pages and the full pages under them. Each is a route, so the
+        // The eight group pages and the full pages under them. Each is a route, so the
         // system back gesture is what closes it; a row that opens a page navigates through LocalSettingsNav.
         val openRoute: (String) -> Unit = { navController.navigate(it) { launchSingleTop = true } }
         SettingsGroup.entries.forEach { group ->

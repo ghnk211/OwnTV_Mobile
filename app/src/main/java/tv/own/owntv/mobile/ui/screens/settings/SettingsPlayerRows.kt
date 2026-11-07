@@ -76,7 +76,7 @@ private fun savedItem(key: String, titleRes: Int, lineRes: Int, count: Int, conf
 
 @Composable
 internal fun pictureSections(vm: SettingsViewModel): List<SettingSection> {
-    val g = SettingsGroup.PICTURE
+    val g = SettingsGroup.PLAYER
     val s = vm.settings
     val savedZoom by vm.savedZoomCount.collectAsStateWithLifecycle()
     val zoomName = s.defaultZoom.pref(ZoomMode.FIT.name)
@@ -110,6 +110,8 @@ internal fun soundSections(vm: SettingsViewModel): List<SettingSection> {
     val s = vm.settings
     val surround = s.surroundMode.pref(SurroundMode.AUTO)
     val subStyle = s.subtitleStyleEnabled.pref(false)
+    val osVm: OpenSubtitlesViewModel = koinViewModel()
+    val os by osVm.state.collectAsStateWithLifecycle()
     return listOf(
         SettingSection(
             null,
@@ -124,6 +126,12 @@ internal fun soundSections(vm: SettingsViewModel): List<SettingSection> {
                     "vp_sub_style", MobileIcons.Subtitles, stringResource(R.string.settings_subtitle_appearance),
                     stringResource(R.string.settings_line_sub_style_mobile), stringResource(if (subStyle) R.string.common_on else R.string.common_off),
                     SettingsLeaf.SUBTITLE_APPEARANCE.route,
+                ),
+                pageItem(
+                    "tab_OPEN_SUBTITLES", MobileIcons.Subtitles, stringResource(R.string.settings_open_subtitles),
+                    stringResource(R.string.settings_line_open_subtitles),
+                    stringResource(if (os is OpenSubtitlesViewModel.UiState.SignedIn) R.string.settings_open_subtitles_connected else R.string.settings_signed_out),
+                    SettingsLeaf.OPEN_SUBTITLES.route,
                 ),
             ),
         ),

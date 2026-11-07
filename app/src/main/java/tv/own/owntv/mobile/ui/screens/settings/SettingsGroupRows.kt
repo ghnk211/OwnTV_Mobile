@@ -60,15 +60,12 @@ val LocalSettingsNav = staticCompositionLocalOf<(String) -> Unit> { {} }
 @Composable
 fun groupSections(group: SettingsGroup, vm: SettingsViewModel): List<SettingSection> = when (group) {
     SettingsGroup.QUICK -> emptyList()
-    SettingsGroup.SOURCES -> sourcesSections(vm)
-    SettingsGroup.APPEARANCE -> appearanceSections(vm)
-    SettingsGroup.LAYOUT -> layoutSections(vm)
-    SettingsGroup.CONTENT -> contentSections(vm)
-    SettingsGroup.PLAYER -> playerSections(vm)
-    SettingsGroup.PICTURE -> pictureSections(vm)
+    SettingsGroup.SOURCES -> sourcesSections(vm) + contentSections(vm)
+    SettingsGroup.PLAYER -> pictureSections(vm) + playerSections(vm)
     SettingsGroup.SOUND -> soundSections(vm)
     SettingsGroup.LIVE -> liveSections(vm)
     SettingsGroup.WATCHING -> watchingSections(vm)
+    SettingsGroup.APPEARANCE -> appearanceSections(vm) + layoutSections(vm)
     SettingsGroup.APP -> appSections(vm)
 }
 
@@ -334,7 +331,7 @@ private fun layoutSections(vm: SettingsViewModel): List<SettingSection> {
     val vodViews = SettingsRepository.VodViewMode.entries
     return listOf(
         SettingSection(
-            null,
+            stringResource(R.string.settings_group_layout),
             listOf(
                 SettingItem(
                     "navigation", MobileIcons.MoreHoriz, stringResource(R.string.settings_navigation), stringResource(R.string.settings_line_navigation_mobile),
@@ -398,8 +395,6 @@ private const val GUIDE_DENSITY_MAX = 130
 private fun contentSections(vm: SettingsViewModel): List<SettingSection> {
     val mode = vm.settings.metadataMode.pref(MetadataMode.PROVIDER)
     val tier by vm.metadataTier.collectAsStateWithLifecycle()
-    val osVm: OpenSubtitlesViewModel = koinViewModel()
-    val os by osVm.state.collectAsStateWithLifecycle()
     var hidden = 0
     for (type in listOf(MediaType.LIVE, MediaType.MOVIE, MediaType.SERIES)) {
         val c = androidx.compose.runtime.key(type) { remember(type) { vm.customizations(type) }.pref(null) }
@@ -422,7 +417,7 @@ private fun contentSections(vm: SettingsViewModel): List<SettingSection> {
     }
     return listOf(
         SettingSection(
-            null,
+            stringResource(R.string.settings_group_content_metadata),
             listOf(
                 switchItem(
                     "kids_mode", MobileIcons.Person, stringResource(R.string.settings_profile_kids),
@@ -443,12 +438,6 @@ private fun contentSections(vm: SettingsViewModel): List<SettingSection> {
                         },
                     ),
                     SettingsLeaf.METADATA.route,
-                ),
-                pageItem(
-                    "tab_OPEN_SUBTITLES", MobileIcons.Subtitles, stringResource(R.string.settings_open_subtitles),
-                    stringResource(R.string.settings_line_open_subtitles),
-                    stringResource(if (os is OpenSubtitlesViewModel.UiState.SignedIn) R.string.settings_open_subtitles_connected else R.string.settings_signed_out),
-                    SettingsLeaf.OPEN_SUBTITLES.route,
                 ),
             ),
         ),

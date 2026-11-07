@@ -26,9 +26,9 @@ import tv.own.owntv.mobile.ui.stage.LocalStagePalette
 import tv.own.owntv.mobile.ui.stage.stageText
 
 /**
- * The TV's twelve settings groups, in its order, each a page of rows. The Video player level of the
- * old tree is gone: its categories are groups of their own — Player, Picture, Sound & subtitles,
- * Live TV, Watching & recording.
+ * The settings groups, in the order the root page shows them, each a page of rows. A group only
+ * earns its own card when it holds more than a handful of rows: Picture lives inside Player, Layout
+ * inside Appearance, and Content & metadata inside Sources.
  */
 enum class SettingsGroup(
     slug: String,
@@ -38,14 +38,11 @@ enum class SettingsGroup(
 ) {
     QUICK("quick", R.string.settings_group_quick, R.string.settings_group_summary_quick, MobileIcons.AutoAwesome),
     SOURCES("sources", R.string.settings_group_sources, R.string.settings_card_sources, MobileIcons.FormatListBulleted),
-    APPEARANCE("appearance", R.string.settings_appearance_group, R.string.settings_card_appearance, MobileIcons.Palette),
-    LAYOUT("layout", R.string.settings_group_layout, R.string.settings_card_layout_mobile, MobileIcons.GridView),
-    CONTENT("content", R.string.settings_group_content_metadata, R.string.settings_card_content, MobileIcons.Folder),
     PLAYER("player", R.string.settings_vp_cat_player, R.string.settings_card_player, MobileIcons.PlayCircle),
-    PICTURE("picture", R.string.settings_vp_cat_picture, R.string.settings_card_picture, MobileIcons.OpenInFull),
     SOUND("sound", R.string.settings_group_sound_subtitles, R.string.settings_card_sound, MobileIcons.Headphones),
     LIVE("live", R.string.settings_live_tv, R.string.settings_card_live, MobileIcons.LiveTv),
     WATCHING("watching", R.string.settings_group_watching_recording, R.string.settings_card_watching_mobile, MobileIcons.Record),
+    APPEARANCE("appearance", R.string.settings_appearance_group, R.string.settings_card_appearance, MobileIcons.Palette),
     APP("app", R.string.settings_app_group, R.string.settings_card_app, MobileIcons.Info),
     ;
 

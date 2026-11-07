@@ -81,7 +81,7 @@ fun CustomizeCategoriesPane(
     var moreMenu by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
     val restorePlaylist by vm.restorePlaylistName.collectAsStateWithLifecycle()
-    SettingsCrumb(tv.own.owntv.mobile.ui.screens.home.groupedCountText(R.plurals.settings_customize_categories_count, rows.size), SettingsGroup.CONTENT)
+    SettingsCrumb(tv.own.owntv.mobile.ui.screens.home.groupedCountText(R.plurals.settings_customize_categories_count, rows.size), SettingsGroup.SOURCES)
 
     SettingsStagePage(modifier) {
         // The sections as tools with ⋯ at the end, then Sort · Filter · +.

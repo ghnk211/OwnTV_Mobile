@@ -37,8 +37,8 @@ fun CustomizeItemsPane(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // The page's crumb stays while a folder is open: "‹ Settings · Content & metadata".
-    tv.own.owntv.mobile.ui.screens.settings.SettingsCrumb(null, tv.own.owntv.mobile.ui.screens.settings.SettingsGroup.CONTENT)
+    // The page's crumb stays while a folder is open: "‹ Settings · Sources & guide".
+    tv.own.owntv.mobile.ui.screens.settings.SettingsCrumb(null, tv.own.owntv.mobile.ui.screens.settings.SettingsGroup.SOURCES)
     val catInfo by vm.catInfo.collectAsStateWithLifecycle()
     val items = vm.items.collectAsLazyPagingItems()
     val visibilityFilter by vm.visibilityFilter.collectAsStateWithLifecycle()
