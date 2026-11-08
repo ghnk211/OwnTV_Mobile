@@ -251,7 +251,7 @@ internal object CompanionHtml {
                   ${autoRefreshSelect(c)}
                 </div>
                 <label>${c.playlistUrl.h()} <input id="m3uUrl" name="server" placeholder="${c.playlistExample.h()}"></label>
-                <label>${c.playlistFile.h()} <input id="m3uFile" type="file" accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl,text/plain"></label>
+                <label>${c.playlistFile.h()} <input id="m3uFile" type="file" accept=".m3u,.m3u8,.txt,text/plain,audio/x-mpegurl,application/vnd.apple.mpegurl"></label>
                 <label>${c.userAgent.h()} <input name="userAgent" placeholder="${c.optional.h()}"></label>
                 <label>${c.epgUrl.h()} <input name="epgUrl" placeholder="${c.optional.h()}"></label>
                 <input type="hidden" name="isDefault" value="false">
@@ -358,7 +358,7 @@ internal object CompanionHtml {
                 fields = """
                     ${field(c.name, "name", prefill.name, c.defaultPlaylist)}
                     <label>${c.playlistUrl.h()} <input id="m3uUrl" name="server" placeholder="${c.keepCurrent.h()}"></label>
-                    <label>${c.playlistFile.h()} <input id="m3uFile" type="file" accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl,text/plain"></label>
+                    <label>${c.playlistFile.h()} <input id="m3uFile" type="file" accept=".m3u,.m3u8,.txt,text/plain,audio/x-mpegurl,application/vnd.apple.mpegurl"></label>
                     ${field(c.userAgent, "userAgent", prefill.userAgent, c.optional)}
                     ${field(c.epgUrl, "epgUrl", prefill.epgUrl, c.optional)}
                 """.trimIndent()

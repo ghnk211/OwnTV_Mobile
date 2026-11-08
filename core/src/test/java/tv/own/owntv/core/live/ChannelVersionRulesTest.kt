@@ -5,7 +5,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import tv.own.owntv.core.database.entity.ChannelEntity
-import tv.own.owntv.core.sports.ChannelFacets
 
 /** Which channels the player's Sources list offers as versions of the one playing. */
 class ChannelVersionRulesTest {

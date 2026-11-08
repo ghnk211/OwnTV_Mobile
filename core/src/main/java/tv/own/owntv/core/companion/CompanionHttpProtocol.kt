@@ -92,7 +92,7 @@ internal object CompanionHttpProtocol {
             .trim()
             .lowercase()
         val type = when (rawType) {
-            "m3u", "m3u8" -> SourceType.M3U
+            "m3u", "m3u8", "txt" -> SourceType.M3U
             "stalker" -> SourceType.STALKER
             else -> SourceType.XTREAM
         }

@@ -14,6 +14,7 @@ import tv.own.owntv.core.download.DownloadManager
 import tv.own.owntv.core.network.ConnectivityObserver
 import tv.own.owntv.core.network.HttpClient
 import tv.own.owntv.core.parser.M3uParser
+import tv.own.owntv.core.parser.TxtPlaylistParser
 import tv.own.owntv.core.parser.XtreamClient
 import tv.own.owntv.core.launcher.LauncherIntegrationRepository
 import tv.own.owntv.core.launcher.LauncherLaunchResolver
@@ -27,7 +28,6 @@ import tv.own.owntv.core.update.UpdateManager
 import tv.own.owntv.core.sync.SyncManager
 import tv.own.owntv.core.sync.work.CatalogSyncScheduler
 import tv.own.owntv.core.sync.work.EpgSyncScheduler
-import tv.own.owntv.core.weather.WeatherRepository
 import java.util.concurrent.TimeUnit
 
 /** Networking, parsers, sync engine, and repositories. */
@@ -112,6 +112,7 @@ val dataModule = module {
     // store, sourceDao, epgRepository
     single { tv.own.owntv.core.epg.EpgMigration(get(), get(), get()) }
     single { M3uParser() }
+    single { TxtPlaylistParser(get()) }
     single { XtreamClient(get()) }
     // Stalker portal: protocol client on the shared OkHttpClient + in-memory sessions.
     single { tv.own.owntv.core.stalker.StalkerClient(get()) }
@@ -151,57 +152,6 @@ val dataModule = module {
     single { tv.own.owntv.core.subtitles.OpenSubtitlesAccountManager(get(), get()) }
     // context, client, accountManager, okHttpClient, subtitleDao — search/download/cache orchestration
     single { tv.own.owntv.core.subtitles.SubtitleRepository(androidContext(), get(), get(), get(), get()) }
-    single { WeatherRepository(get(), get()) }
-    // Sports Hub: ESPN straight from the device on the shared client (no Worker, no key). Lazy like
-    // everything here — none of it exists, let alone fetches, until a sports screen asks (startup zero-work).
-    single<tv.own.owntv.core.sports.SportsSource> { tv.own.owntv.core.sports.EspnSportsSource(get()) }
-    single { tv.own.owntv.core.sports.SportsRefreshPolicy() }
-    single { tv.own.owntv.core.sports.SportsGate(get()) }
-    single {
-        val settings = get<tv.own.owntv.core.settings.SettingsRepository>()
-        tv.own.owntv.core.sports.SportsRepository(
-            source = get(),
-            policy = get(),
-            gate = get(),
-            // The active profile's follow list (every catalogue league with "All sports").
-            followed = settings.activeSportsConfig.map { it.followedLeagues() },
-            liveRefreshSeconds = settings.activeSportsConfig.map { it.liveRefreshSeconds },
-            autoRebuild = settings.activeSportsConfig.map { it.autoRebuild },
-            dataDir = androidContext().filesDir,
-            activity = get(),
-            scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default),
-        ).also { repository ->
-            // Goal alerts re-arm from every board built — and so start only with the repository, never at launch.
-            get<tv.own.owntv.core.sports.MatchAlertScheduler>()
-                .follow(repository.board, settings.activeSportsConfig)
-        }
-    }
-    single {
-        val settings = get<tv.own.owntv.core.settings.SettingsRepository>()
-        tv.own.owntv.core.sports.SportsCalendar(
-            source = get(),
-            gate = get(),
-            board = get<tv.own.owntv.core.sports.SportsRepository>().board,
-            followed = settings.activeSportsConfig.map { it.followedLeagues() },
-            refreshDays = settings.activeSportsConfig.map { it.calendarRefreshDays },
-            dataDir = androidContext().filesDir,
-            scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default),
-        )
-    }
-    single { tv.own.owntv.core.sports.SportsTeams(get(), get(), get()) }
-    // "Where is it live": the database reads (Search's own channel ↔ guide mapping) and the cached ranking.
-    single<tv.own.owntv.core.sports.WatchData> {
-        tv.own.owntv.core.sports.RoomWatchData(get(), get(), get(), get(), get(), get(), get())
-    }
-    single { tv.own.owntv.core.sports.WatchReader(get()) }
-    single { tv.own.owntv.core.sports.SportOnChannels(get()) }
-    single { tv.own.owntv.core.sports.SportsActivityTracker() }
-    // Goal alerts (phone): state file in filesDir so a cache clear cannot drop a match being watched.
-    single { tv.own.owntv.core.sports.MatchNotifications(androidContext(), get()) }
-    single {
-        tv.own.owntv.core.sports.MatchAlertScheduler(androidContext(), get(), java.io.File(androidContext().filesDir, "sports"))
-    }
-    single { tv.own.owntv.core.sports.SportsAlertsSetup(androidContext(), get(), get(), get(), get(), get()) }
     // Per-item VOD engine pins made with the player's gear toggle (VOD counterpart of ForceMpvStore).
     single { tv.own.owntv.core.player.VodEngineStore(androidContext(), get()) }
     // Remote (companion) add-source LAN server — one shared instance for Setup + Settings.
@@ -267,6 +217,7 @@ val dataModule = module {
             catalogBackfillDao = get(),
             catalogSyncScheduler = get(),
             catalogPriority = get(),
+            txt = get(),
         )
     }
     // App-wide "sync running" signal for the shell status pill (every sync funnels through SyncManager).

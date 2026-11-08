@@ -72,16 +72,6 @@ class PlayerControlsTest {
     }
 
     @Test
-    fun `the match tools follow previous channel, in the media cluster, on both apps`() {
-        // Other channels and Match sit right after the channel-history tools.
-        listOf(true, false).forEach { tv ->
-            val media = PlayerControl.clusterFor(tv, ControlCluster.MEDIA)
-            val i = media.indexOf(PlayerControl.PREVIOUS_CHANNEL)
-            assertEquals(listOf(PlayerControl.OTHER_CHANNELS, PlayerControl.MATCH), media.subList(i + 1, i + 3))
-        }
-    }
-
-    @Test
     fun `speed is on both apps now`() {
         // It was television-only for no reason anybody could name, which is exactly the kind of
         // difference this definition exists to remove.
@@ -127,8 +117,6 @@ class PlayerControlsTest {
                 PlayerControl.FAVOURITE,
                 PlayerControl.CATCH_UP,
                 PlayerControl.PREVIOUS_CHANNEL,
-                PlayerControl.OTHER_CHANNELS,
-                PlayerControl.MATCH,
                 PlayerControl.SOURCES,
                 PlayerControl.ENGINE,
                 PlayerControl.ASPECT,

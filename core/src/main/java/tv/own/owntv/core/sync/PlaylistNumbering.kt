@@ -2,6 +2,7 @@ package tv.own.owntv.core.sync
 
 import tv.own.owntv.core.database.dao.ChannelDao
 import tv.own.owntv.core.database.entity.ChannelNumberProjection
+import tv.own.owntv.core.live.ChannelLines
 
 /**
  * Channel numbers for an M3U playlist that carries none.
@@ -36,7 +37,14 @@ internal object PlaylistNumbering {
         unnumberedKeys: Set<String>,
     ): List<Change> =
         if (!providerNumbered) {
-            rows.mapIndexedNotNull { i, row -> Change(row.id, i + 1).takeIf { row.number != it.number } }
+            // One number per channel, not per line: a playlist that lists a channel six times keeps
+            // six rows (one URL each), and every list folds them into one — numbering each row left
+            // the number the row shows counting lines that were never listed. The fold is the one
+            // the lists use (the name it is called by, and which country's feed), so the count, the
+            // row and its number cannot disagree.
+            val numbers = LinkedHashMap<String, Int>()
+            rows.forEach { row -> numbers.getOrPut(keyOf(row)) { numbers.size + 1 } }
+            rows.mapNotNull { row -> Change(row.id, numbers[keyOf(row)]).takeIf { row.number != it.number } }
         } else {
             // The playlist numbers its channels now: clear what was derived when it did not.
             rows.mapNotNull { row ->
@@ -44,6 +52,9 @@ internal object PlaylistNumbering {
                 Change(row.id, null).takeIf { derivedLeftOver }
             }
         }
+
+        /** The row's family: the name the lines of one channel agree on. */
+    private fun keyOf(row: ChannelNumberProjection) = ChannelLines.keyOf(row.providerName ?: row.name)
 
     /** Applies [changes] to source [sourceId]; returns how many channels were renumbered. */
     suspend fun apply(channelDao: ChannelDao, sourceId: Long, providerNumbered: Boolean, unnumberedKeys: Set<String>): Int {

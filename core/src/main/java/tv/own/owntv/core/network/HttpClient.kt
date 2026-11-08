@@ -25,12 +25,23 @@ class HttpClient(private val client: OkHttpClient) {
     /** Non-2xx response. Thrown before the body block runs, so retrying it never re-emits parsed items. */
     class HttpStatusException(val code: Int, message: String) : IOException(message)
 
+    /** The URL answered with something that cannot be a text playlist (image, archive, HTML page). */
+    class NonTextResponseException(val contentType: String?) :
+        IOException("playlist_non_text_content: ${contentType.orEmpty()}")
+
     suspend fun <T> get(
         url: String,
         userAgent: String? = null,
         onProgress: ((Long, Long?) -> Unit)? = null,
         maxAttempts: Int = 1,
         headers: Map<String, String> = emptyMap(),
+        /**
+         * Reject a response whose Content-Type unambiguously says it is not a playlist. Opt-in, and
+         * used only for `.txt` sources: plenty of M3U panels serve their list as `application/octet-stream`
+         * or `audio/x-mpegurl`, so turning this on for the existing M3U path would break real sources.
+         * Payloads with a missing or generic type are still checked by the parser's content sniff.
+         */
+        requireText: Boolean = false,
         block: suspend (InputStream) -> T,
     ): T = withContext(Dispatchers.IO) {
         val ua = userAgent?.takeIf { it.isNotBlank() } ?: DEFAULT_USER_AGENT
@@ -60,6 +71,7 @@ class HttpClient(private val client: OkHttpClient) {
                     responseReceived = true
                     val headersAt = SystemClock.elapsedRealtime()
                     if (!response.isSuccessful) throw HttpStatusException(response.code, "HTTP ${response.code} for ${redactUrl(url)}")
+                    if (requireText) assertTextPlaylist(response.header("Content-Type"))
                     val body = response.body
                     val totalBytes = body.contentLength().takeIf { it >= 0 }
                     // Info, not debug, and deliberately so: release builds strip Log.d, and this one
@@ -107,6 +119,20 @@ class HttpClient(private val client: OkHttpClient) {
             attempt++
         }
         throw IOException("GET failed for $safeUrl")
+    }
+
+    private fun assertTextPlaylist(contentType: String?) {
+        val type = contentType.orEmpty().substringBefore(';').trim().lowercase()
+        if (type.isEmpty()) return // no header: the parser's byte sniff decides instead
+        val clearlyBinary = type.startsWith("image/") ||
+            (type.startsWith("audio/") && !type.contains("mpegurl")) ||
+            type.startsWith("video/") ||
+            type.startsWith("font/") ||
+            type in setOf(
+                "application/pdf", "application/zip", "application/gzip", "application/x-gzip",
+                "application/x-7z-compressed", "application/x-rar-compressed", "text/html",
+            )
+        if (clearlyBinary) throw NonTextResponseException(type)
     }
 
     /** Convenience for small responses (e.g. Xtream category lists). */

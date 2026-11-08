@@ -6,4 +6,7 @@ data class ChannelNumberProjection(
     val remoteId: String?,
     val sortOrder: Int,
     val number: Int?,
+    val name: String,
+    /** The name before the user's rename, which is what the lines of one channel agree on. */
+    val providerName: String? = null,
 )

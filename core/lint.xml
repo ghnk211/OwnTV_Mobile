@@ -32,8 +32,8 @@
         <ignore path="src/main/AndroidManifest.xml" />
     </issue>
 
-    <!-- Both apps ship as APKs carrying every packaged language; there are no language splits to
-         download. -->
+    <!-- Both apps ship as APKs carrying all three languages (English, 简体中文, 繁體中文); there are
+         no language splits to download. -->
     <issue id="AppBundleLocaleChanges">
         <ignore path="src/main/java/tv/own/owntv/core/i18n/AppLocale.kt" />
     </issue>

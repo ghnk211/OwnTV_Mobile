@@ -29,7 +29,7 @@
     <string name="setup_get_started">开始使用</string>
     <string name="setup_display_size_title">调整到看着舒服的大小</string>
     <string name="setup_before_you_start">开始之前</string>
-    <string name="setup_disclaimer">OwnTV 仅是一款媒体播放器。其中不包含任何频道、播放列表或内容。你有责任自行添加具有合法访问权限的 Xtream、M3U 或 Stalker 源。</string>
+    <string name="setup_disclaimer">OwnTV 仅是一款媒体播放器。其中不包含任何频道、播放列表或内容。你有责任自行添加具有合法访问权限的 Xtream、M3U / M3U8 / TXT 或 Stalker 源。</string>
     <string name="setup_i_understand">我明白了</string>
     <string name="setup_set_up_owntv">设置 OwnTV</string>
     <string name="setup_setup_choice_description">你可以从头开始，也可以从备份文件或另一台设备恢复用户档案、播放列表和收藏夹。</string>
@@ -71,11 +71,15 @@
     <string name="setup_pick_backup_local">选择此设备上的备份文件</string>
     <string name="setup_run_in_background">在后台运行</string>
     <string name="setup_importing_catalog">正在导入目录…</string>
+    <string name="setup_import_loading_playlist">正在读取播放列表…</string>
     <string name="setup_preparing_catalog">正在准备目录</string>
     <string name="setup_watching_during_import">加载目录其余内容时，你可以立即开始观看。</string>
     <string name="setup_all_set">一切就绪！</string>
     <plurals name="setup_restored_items">
         <item quantity="other"><xliff:g id="items">%1$d</xliff:g> 个项目已恢复。请重新同步源以加载内容。</item>
+    </plurals>
+    <plurals name="setup_import_success_channels">
+        <item quantity="other">已导入 <xliff:g id="count">%1$d</xliff:g> 个频道。</item>
     </plurals>
     <string name="setup_passwords_omitted">之后请重新输入所有已保存的密码。</string>
     <string name="setup_need_password">未保存密码，因此尚未加载：<xliff:g id="names">%1$s</xliff:g>。请在设置中打开该播放列表并输入其密码。</string>
@@ -91,10 +95,16 @@
     <string name="setup_edit_source">编辑源</string>
     <string name="setup_edit_from_phone">从其他设备编辑</string>
     <string name="setup_edit_source_description">更新此源的详细信息，或更改其自动刷新设置。</string>
-    <string name="setup_byo_source_description">OwnTV 是一款播放器——请自行添加 Xtream、M3U 或 Stalker 源。</string>
+    <string name="setup_byo_source_description">OwnTV 是一款播放器——请自行添加 Xtream、M3U / M3U8 / TXT 或 Stalker 源。</string>
     <string name="setup_xtream">Xtream</string>
-    <string name="setup_m3u">M3U / M3U8</string>
+    <string name="setup_m3u">M3U / M3U8 / TXT</string>
     <string name="setup_stalker_mac">Stalker (MAC)</string>
+    <string name="setup_tvbox">TVbox</string>
+    <string name="setup_tvbox_url">配置网址（JSON）</string>
+    <string name="setup_tvbox_url_example">https://example.com/tvbox.json</string>
+    <string name="setup_tvbox_local_file">选择本地 .json 文件…</string>
+    <string name="setup_tvbox_json_hint">仅支持 TVBox .json 配置文件</string>
+    <string name="setup_tvbox_json_invalid">网址或文件必须是 .json 格式</string>
     <string name="setup_source_name_optional">名称（可选）</string>
     <string name="setup_default_iptv">我的 IPTV</string>
     <string name="setup_name_default_playlist">我的播放列表</string>
@@ -106,10 +116,10 @@
     <string name="setup_password">密码</string>
     <string name="setup_password_keep">密码（留空以保留当前密码）</string>
     <string name="setup_playlist_url_local_file">播放列表网址或本地文件</string>
-    <string name="setup_playlist_example">http://…/playlist.m3u</string>
+    <string name="setup_playlist_example">http://…/list.m3u8 或 /list.txt</string>
     <string name="setup_playlist_file_unavailable">无法打开播放列表文件。请重新选择；该文件可能已被移动。</string>
     <string name="setup_playlist_path_unsupported">不支持此本地播放列表路径。</string>
-    <string name="setup_local_file_choose">选择本地 .m3u / .m3u8 文件…</string>
+    <string name="setup_local_file_choose">选择本地 .m3u / .m3u8 / .txt 文件…</string>
     <string name="setup_local_file_prefix">本地文件：<xliff:g id="name">%1$s</xliff:g></string>
     <string name="setup_portal_url">门户网址</string>
     <string name="setup_portal_example">http://host:port/c/</string>
@@ -138,7 +148,7 @@
     <string name="setup_tv_series_catalog">电视剧集目录</string>
     <string name="setup_start_import">开始导入</string>
     <string name="setup_update_source_save">保存</string>
-    <string name="setup_pick_playlist_file">选择播放列表文件（.m3u / .m3u8）</string>
+    <string name="setup_pick_playlist_file">选择播放列表文件（.m3u / .m3u8 / .txt）</string>
     <string name="setup_device_model_preset_title">设备型号预设</string>
     <string name="setup_auto_refresh_title">自动刷新</string>
     <string name="setup_on">开启</string>
@@ -191,8 +201,8 @@
     <string name="companion_backup_description">选择 OwnTV 备份文件（.own 或较旧的 .json 文件），然后按下“发送”。文件将传输到电视——拿起遥控器并在电视上选择要恢复的内容。</string>
     <string name="companion_backup_file">备份文件</string>
     <string name="companion_choose_backup">请先选择备份文件。</string>
-    <string name="companion_playlist_file">或上传播放列表文件</string>
-    <string name="companion_playlist_url_or_file">请输入播放列表网址或选择文件。</string>
+    <string name="companion_playlist_file">或上传播放列表文件（.m3u / .m3u8 / .txt）</string>
+    <string name="companion_playlist_url_or_file">请输入播放列表网址（.m3u / .m3u8 / .txt）或选择文件。</string>
     <string name="companion_sending">正在发送…</string>
     <string name="companion_upload_failed">上传失败（HTTP <xliff:g id="status">%1$d</xliff:g>）。请检查 PIN 后重试。</string>
     <string name="companion_could_not_reach">无法连接到电视。请确保设备连接到同一 Wi-Fi 后重试。</string>

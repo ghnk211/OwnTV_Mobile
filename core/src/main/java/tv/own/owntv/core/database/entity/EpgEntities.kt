@@ -111,22 +111,6 @@ data class EpgChannelName(
     val normId: String?,
 )
 
-/**
- * A programme as the Sports hub's matcher reads it: what it is called and how the feed files it, never
- * its synopsis — see [tv.own.owntv.core.database.dao.EpgDao.sportsProgrammes].
- */
-data class EpgProgrammeLite(
-    val id: Long,
-    val epgChannelId: String,
-    val startMs: Long,
-    val stopMs: Long,
-    val title: String,
-    val categories: String?,
-)
-
-/** One programme's synopsis, read only for the programmes the title alone did not match. */
-data class EpgProgrammeText(val id: Long, val description: String?)
-
 data class EpgHashProjection(
     val id: Long,
     val epgChannelId: String,

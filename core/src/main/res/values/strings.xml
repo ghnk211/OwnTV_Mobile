@@ -257,6 +257,14 @@
     <string name="sync_error_guide_empty">This guide is empty right now. The provider may not have published it yet \u2014 please try again later.</string>
     <!-- Translators: shown on a guide source that fetched successfully and has programmes, but none of its channels is one of the playlist's channels, so nothing was kept. "TV Guide" and "Auto-match EPG" are the screen and button names used elsewhere in the app. -->
     <string name="sync_error_guide_no_matching_channels">None of this guide\'s channels match your playlist\'s yet. Open the TV Guide and use Auto-match EPG to pair them by name.</string>
+    <!-- Translators: Shown when a playlist was downloaded but contained no usable stream address. -->
+    <string name="sync_error_playlist_empty">No playable addresses were found in this playlist. Check the file or the URL.</string>
+    <!-- Translators: Shown when a playlist URL returns an image, archive, HTML page or other non-text payload. -->
+    <string name="sync_error_playlist_non_text">The URL returned something other than a text playlist (for example an image or a web page). Check the address.</string>
+    <!-- Translators: Shown when a playlist exceeds the TXT parser safety cap. -->
+    <string name="sync_error_playlist_too_large">This playlist is too large to import. Check the address.</string>
+    <!-- Translators: Shown when a playlist URL redirects in a loop or too many times. -->
+    <string name="sync_error_redirect">The address redirects in a loop. Check the URL.</string>
 
     <!-- Translators: Label above the number field in a minutes input dialog, e.g. the recording start-early and run-over times. -->
     <string name="common_minutes">Minutes</string>
@@ -295,8 +303,6 @@
     </plurals>
     <!-- Translators: Small tag after Now playing in the navigation menu while only the sound of a stream is playing (Audio mode). -->
     <string name="shell_now_playing_audio">Audio</string>
-    <!-- Translators: Weather under the clock: the temperature as a bare number with the degree sign (the unit is the one chosen in Settings), then the city, e.g. 26° Düsseldorf. -->
-    <string name="common_weather_degrees_city"><xliff:g id="temperature">%1$d</xliff:g>° <xliff:g id="city">%2$s</xliff:g></string>
     <!-- Translators: Button that closes a prompt without acting on it, e.g. a programme reminder. -->
     <string name="common_dismiss">Dismiss</string>
 </resources>

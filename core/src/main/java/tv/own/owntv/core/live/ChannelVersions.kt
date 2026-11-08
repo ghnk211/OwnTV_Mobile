@@ -16,7 +16,6 @@ import tv.own.owntv.core.database.entity.matchName
 import tv.own.owntv.core.model.MediaType
 import tv.own.owntv.core.repository.activeProfileSources
 import tv.own.owntv.core.settings.SettingsRepository
-import tv.own.owntv.core.sports.ChannelFacets
 
 /**
  * One version of a live channel: the same channel in another quality, category or playlist. [name] is

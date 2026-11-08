@@ -153,34 +153,6 @@
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
-
-        <!-- Sports goal alerts (phone): a match check or a match reminder is due. Not
-             exported, like the reminder pair above; the boot half re-arms after a reboot or update. -->
-        <receiver
-            android:name="tv.own.owntv.core.sports.MatchAlertReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="tv.own.owntv.core.action.MATCH_DUE" />
-            </intent-filter>
-        </receiver>
-        <receiver
-            android:name="tv.own.owntv.core.sports.MatchAlertBootReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
-            </intent-filter>
-        </receiver>
-
-        <!-- The live score card. dataSync: it keeps one match's score in sync while the
-             app is closed; a match fits Android 15's six-hour daily dataSync allowance, and the
-             service ends itself in onTimeout if it is ever reached. Started only by the user, from a
-             match, with the app in front. -->
-        <service
-            android:name="tv.own.owntv.core.sports.LiveMatchCardService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
     </application>
 
 </manifest>
