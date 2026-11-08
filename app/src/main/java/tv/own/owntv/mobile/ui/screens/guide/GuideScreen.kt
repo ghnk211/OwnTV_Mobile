@@ -92,7 +92,6 @@ import tv.own.owntv.mobile.ui.screens.live.LiveCategory
 import tv.own.owntv.mobile.ui.screens.live.LiveCategoryMenu
 import tv.own.owntv.mobile.ui.screens.live.LiveTuner
 import tv.own.owntv.mobile.ui.screens.live.LiveViewModel
-import tv.own.owntv.mobile.ui.screens.live.STARTUP_ROW_WAIT_MS
 import tv.own.owntv.mobile.ui.screens.live.epgShiftLabel
 import tv.own.owntv.mobile.ui.screens.live.label
 import tv.own.owntv.mobile.ui.screens.settings.customize.TextPromptDialog
@@ -1214,3 +1213,6 @@ private val TOOLS_TOP = 10.dp
 
 /** The top block's default re-reads its programme this often. */
 private const val NOW_STEP_MS = 60_000L
+
+/** How long a start-up channel's row is waited for before the grid is left where it is. */
+private const val STARTUP_ROW_WAIT_MS = 3_000L

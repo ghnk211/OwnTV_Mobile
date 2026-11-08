@@ -11,7 +11,7 @@ import kotlin.math.abs
 import kotlinx.coroutines.withTimeoutOrNull
 
 /** What the finger turned out to be doing. Decided once per gesture and never revised. */
-private enum class Mode { UNDECIDED, SCRUB, LEFT_COLUMN, RIGHT_COLUMN, MIDDLE_COLUMN, PINCH, HOLD }
+private enum class Mode { UNDECIDED, SCRUB, LEFT_COLUMN, RIGHT_COLUMN, MIDDLE_COLUMN, PINCH, HOLD, LONG_PRESS }
 
 /**
  * How far up or down the middle of the screen a finger has to travel before it counts as a swipe.
@@ -49,7 +49,21 @@ fun Modifier.playerGestures(
     onSpeedHold: (held: Boolean) -> Unit,
     onTwoFingerTap: () -> Unit,
     sensitivity: Float = 1f,
-): Modifier = pointerInput(sensitivity) {
+    /**
+     * A tap in the left third, when it means something other than the screen's own tap. Live TV
+     * uses it to bring out the categories/channels panel; everywhere else it is null and a tap is
+     * just a tap.
+     */
+    onTapLeft: (() -> Unit)? = null,
+    /**
+     * A hold that never moved, begun in the right half — the live channel's settings panel.
+     *
+     * The gesture is already classified here, so this is a branch of [onSpeedHold]'s own timeout
+     * rather than a second `combinedClickable` on top: a second detector would have taken the taps
+     * it covered with it, and tap-to-show-controls would have stopped working on that half.
+     */
+    onLongPressRight: (() -> Unit)? = null,
+): Modifier = pointerInput(sensitivity, onTapLeft != null, onLongPressRight != null) {
     val slop = viewConfiguration.touchSlop
     val longPress = viewConfiguration.longPressTimeoutMillis
     val doubleTap = viewConfiguration.doubleTapTimeoutMillis
@@ -64,11 +78,17 @@ fun Modifier.playerGestures(
         var pinchStart = 0f
         var twoFingers = false
 
-        // A finger that neither moves nor lifts within the long-press timeout is holding for 2× speed.
+        // A finger that neither moves nor lifts within the long-press timeout is holding for 2× speed —
+        // or, on the right half of a live channel, asking for the settings panel.
         val firstEvent = withTimeoutOrNull(longPress) { awaitPointerEvent() }
         if (firstEvent == null) {
-            mode = Mode.HOLD
-            onSpeedHold(true)
+            if (onLongPressRight != null && startX > size.width / 2f) {
+                mode = Mode.LONG_PRESS
+                onLongPressRight()
+            } else {
+                mode = Mode.HOLD
+                onSpeedHold(true)
+            }
         } else {
             travel += firstEvent.changes.firstOrNull()?.positionChange() ?: Offset.Zero
         }
@@ -87,7 +107,7 @@ fun Modifier.playerGestures(
                         mode = Mode.PINCH
                         onPinch(distance > pinchStart)
                     }
-                } else if (mode != Mode.HOLD && mode != Mode.PINCH) {
+                } else if (mode != Mode.HOLD && mode != Mode.PINCH && mode != Mode.LONG_PRESS) {
                     val change: PointerInputChange = pressed[0]
                     val delta = change.positionChange()
                     travel += delta
@@ -122,6 +142,8 @@ fun Modifier.playerGestures(
 
         when (mode) {
             Mode.HOLD -> onSpeedHold(false)
+            // The panel is already up; letting go is the end of the hold and nothing else.
+            Mode.LONG_PRESS -> Unit
             Mode.SCRUB -> onScrubEnd()
             // A swipe has to be a real one. What classified this gesture was the system's touch slop
             // — about three millimetres — so *any* slip past it counted: reaching for the pause
@@ -143,9 +165,13 @@ fun Modifier.playerGestures(
                         if (startX < size.width / 2f) onDoubleTapLeft() else onDoubleTapRight()
                     }
                     else -> {
-                        lastTapUpMs = now
+                        // A left tap that has its own meaning is not half of a double tap: adding
+                        // the panel and then skipping would answer the second tap with a gesture
+                        // nobody made.
+                        val leftTap = onTapLeft?.takeIf { startX < size.width / 3f }
+                        lastTapUpMs = if (leftTap != null) 0L else now
                         lastTapX = startX
-                        onTap()
+                        if (leftTap != null) leftTap() else onTap()
                     }
                 }
             }

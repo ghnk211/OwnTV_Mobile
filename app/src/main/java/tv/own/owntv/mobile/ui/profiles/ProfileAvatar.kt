@@ -6,23 +6,30 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import tv.own.owntv.core.profile.PROFILE_AVATAR_COUNT
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import tv.own.owntv.mobile.ui.components.MobileIcons
 import tv.own.owntv.mobile.ui.stage.LocalStagePalette
+import tv.own.owntv.mobile.ui.stage.stageText
 
 /**
  * A profile's picture, drawn rather than loaded — ten object tiles (lightning, sword, tree, car,
@@ -74,6 +81,32 @@ fun ProfileAvatar(avatarId: Int, modifier: Modifier = Modifier, imagePath: Strin
 
 /** The silhouette reads as a person rather than as a filled circle at this share of the tile. */
 private const val SILHOUETTE_FRACTION = 0.62f
+
+/**
+ * The face a profile has when none has been drawn or photographed: its name's initial, uppercased,
+ * on the warm gradient the app has always used for this. Shared by the shell's avatar and the
+ * wizard's new-profile page so the picture under the name field is the one the profile will have.
+ */
+@Composable
+fun ProfileInitial(name: String?, diameter: Dp, modifier: Modifier = Modifier) {
+    Box(
+        modifier.drawBehind {
+            drawRect(Brush.linearGradient(listOf(INITIAL_TOP, INITIAL_BOTTOM), Offset.Zero, Offset(size.width, size.height)))
+        },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            name?.firstOrNull()?.uppercase().orEmpty(),
+            style = stageText(if (diameter == 32.dp) 14f else diameter.value * 0.41f, 800, lineHeight = 1f),
+            color = Color(0xFF2A0D12),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+private val INITIAL_TOP = Color(0xFFFFB35C)
+private val INITIAL_BOTTOM = Color(0xFFFF5F7A)
 
 private val BG = listOf(
     Color(0xFFF59E0B), // 0 lightning — amber

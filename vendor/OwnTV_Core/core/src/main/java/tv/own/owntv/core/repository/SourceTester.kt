@@ -7,6 +7,7 @@ import tv.own.owntv.core.database.entity.SourceEntity
 import tv.own.owntv.core.model.SourceType
 import tv.own.owntv.core.network.HttpClient
 import tv.own.owntv.core.parser.XtreamClient
+import tv.own.owntv.core.parser.TvBoxPlaylistParser
 import tv.own.owntv.core.parser.XtreamM3uLink
 import tv.own.owntv.core.stalker.StalkerAuthManager
 import tv.own.owntv.core.stalker.StalkerClient
@@ -124,7 +125,11 @@ class SourceTester(
             // Some providers answer an expired line with an HTML error page instead of a status code.
             // U+FEFF is the byte-order mark, written as an escape: a literal one in the source is
             // both invisible to read and a lint error (ByteOrderMark).
-            if (head.trimStart('\uFEFF', ' ', '\n', '\r', '\t').startsWith("#EXTM3U", ignoreCase = true)) {
+            val trimmed = head.trimStart('\uFEFF', ' ', '\n', '\r', '\t')
+            if (trimmed.startsWith("#EXTM3U", ignoreCase = true) ||
+                // A TVBox config is JSON, so its `lives` section starts with an object, not an M3U header.
+                (TvBoxPlaylistParser.isTvBoxLocation(source.url) && trimmed.startsWith("{"))
+            ) {
                 SourceTestResult.Ok()
             } else {
                 SourceTestResult.AuthFailed

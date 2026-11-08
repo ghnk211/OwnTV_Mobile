@@ -13,8 +13,8 @@ import tv.own.owntv.core.sync.PlaylistNumbering.Change
  */
 class PlaylistNumberingTest {
 
-    private fun row(id: Long, key: String, sortOrder: Int, number: Int? = null) =
-        ChannelNumberProjection(id = id, remoteId = key, sortOrder = sortOrder, number = number)
+    private fun row(id: Long, key: String, sortOrder: Int, number: Int? = null, name: String = key) =
+        ChannelNumberProjection(id = id, remoteId = key, sortOrder = sortOrder, number = number, name = name)
 
     private fun table(rows: List<ChannelNumberProjection>, changes: List<Change>): Map<String, Int?> {
         val byId = changes.associate { it.id to it.number }
@@ -62,6 +62,24 @@ class PlaylistNumberingTest {
     fun `a mixed playlist that is already clean writes nothing`() {
         val rows = listOf(row(1, "News", 0, 101), row(2, "Movies", 1))
         assertTrue(PlaylistNumbering.changes(rows, providerNumbered = true, unnumberedKeys = setOf("Movies")).isEmpty())
+    }
+
+    @Test
+    fun `the lines of one channel share one number`() {
+        // A playlist that lists 北京卫视 six times keeps six rows — one URL each — and every list
+        // draws one. Numbering the rows left that number counting the five lines behind it: the
+        // next channel's number skipped to 7 and the row's own said 1 of a channel with 6 lines.
+        val rows = listOf(
+            row(1, "北京卫视\u0001卫视频道", 0, name = "北京卫视"),
+            row(2, "北京卫视\u0001卫视频道\u0001#2", 1, name = "北京卫视"),
+            row(3, "北京卫视\u0001卫视频道\u0001#3", 2, name = "北京卫视"),
+            row(4, "湖南卫视\u0001卫视频道", 3, name = "湖南卫视"),
+        )
+        val changes = PlaylistNumbering.changes(rows, providerNumbered = false, unnumberedKeys = rows.map { it.remoteId!! }.toSet())
+        assertEquals(
+            mapOf(rows[0].remoteId to 1, rows[1].remoteId to 1, rows[2].remoteId to 1, rows[3].remoteId to 2),
+            table(rows, changes),
+        )
     }
 
     @Test

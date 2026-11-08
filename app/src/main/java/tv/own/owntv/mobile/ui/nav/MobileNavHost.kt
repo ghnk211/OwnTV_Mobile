@@ -18,9 +18,6 @@ import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavBackStackEntry
 import androidx.compose.animation.AnimatedContentScope
 import org.koin.compose.koinInject
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.mobile.ui.screens.live.LiveTuner
 import tv.own.owntv.mobile.ui.shell.ReportShownPage
 import androidx.navigation.navArgument
@@ -37,6 +34,7 @@ import tv.own.owntv.mobile.ui.screens.library.LibraryScreen
 import tv.own.owntv.mobile.ui.screens.library.LibraryTab
 import tv.own.owntv.mobile.ui.screens.live.LiveScreen
 import tv.own.owntv.mobile.ui.screens.search.SearchScreen
+import tv.own.owntv.mobile.ui.screens.vod.VodScreen
 import tv.own.owntv.mobile.ui.screens.settings.SettingsGroup
 import tv.own.owntv.mobile.ui.screens.settings.SettingsGroupScreen
 import tv.own.owntv.mobile.ui.screens.settings.LocalSettingsNav
@@ -57,7 +55,7 @@ import tv.own.owntv.mobile.ui.theme.LocalMobileMotion
  *
  * The `when` below is exhaustive over [MobileDestination] and deliberately has no `else`: a
  * destination added without a screen is then a compile error rather than a blank page at runtime.
- * Every destination has a real screen, so there is no placeholder.
+ * VOD is the one placeholder: its screen says the page is still being built.
  */
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -71,7 +69,6 @@ fun MobileNavHost(
     val tuner: LiveTuner = koinInject()
     // A channel opened from Home, Favourites or History plays full screen, as on the television.
     val playChannel = { channelId: Long -> tuner.tune(channelId); navController.navigate(PLAYER_ROUTE) }
-    val previewOn by koinInject<SettingsRepository>().livePreviewEnabled.collectAsStateWithLifecycle(true)
     // The Settings PIN asks once per visit: a route outside the guarded pages ends the visit.
     // A relock stopped what the player showed: its page closes rather than staying up empty.
     val sealedHost: tv.own.owntv.mobile.ui.categorylock.SealedPlaybackHost = koinInject()
@@ -136,12 +133,14 @@ fun MobileNavHost(
                     MobileDestination.LIVE -> LiveScreen(
                         scrollToTop = scrollToTop,
                         onOpenPlayer = { navController.navigate(PLAYER_ROUTE) },
+                        // Nothing to watch: the same Add a source step Settings' own row opens.
+                        onOpenSetup = { navController.navigate(setupRoute(SetupEntry.ADD_CONTENT)) },
                     )
                     MobileDestination.DOWNLOADS -> DownloadsScreen(
                         onPlayerOpened = { navController.navigate(PLAYER_ROUTE) },
                         onOpenGuide = { navController.navigateToTab(MobileDestination.GUIDE) },
                     )
-                    MobileDestination.MOVIES, MobileDestination.SERIES, MobileDestination.LIBRARY ->
+                    MobileDestination.MOVIES, MobileDestination.SERIES ->
                         LibraryScreen(
                             scrollToTop = scrollToTop,
                             route = destination.route,
@@ -151,6 +150,7 @@ fun MobileNavHost(
                             },
                             onPlay = { navController.navigate(PLAYER_ROUTE) },
                         )
+                    MobileDestination.VOD -> VodScreen()
                     MobileDestination.SETTINGS -> tv.own.owntv.mobile.ui.categorylock.SettingsPinGate(leaveGuarded) {
                         SettingsScreen(onOpenRoute = { navController.navigate(it) })
                     }
@@ -198,21 +198,14 @@ fun MobileNavHost(
             val startupLive: tv.own.owntv.mobile.ui.shell.StartupLiveSelection = koinInject()
             SearchScreen(
                 initialQuery = entry.arguments?.getString(ARG_QUERY).orEmpty(),
-                // Search goes to the channel (TV): Live TV, with it in the preview on top — or full
-                // screen when Live preview is off, as a tap in Live TV does then. Either way Live TV
-                // opens on that channel's own category, so Back from the player lands on the folder
-                // the channel lives in, not on the one that was open before the search.
+                // Search goes to the channel: Live TV first, so the tab's stack keeps the page the
+                // player will return to, then the player on top of it. There is no preview to play
+                // it in any more — Live TV lists categories, not channels — so this is always the
+                // full screen, and Back lands on the category the channel lives in.
                 onOpenChannel = { channelId ->
                     startupLive.requestReveal(channelId) // taken by the Live TV tab, once
-                    if (previewOn) {
-                        tuner.preview(channelId)
-                        openLiveTab()
-                    } else {
-                        // Full screen over Live TV rather than over the results: Back then returns to
-                        // the channel's category, as it does for a channel picked in the list.
-                        openLiveTab()
-                        playChannel(channelId)
-                    }
+                    openLiveTab()
+                    playChannel(channelId)
                 },
                 onOpenMovie = { id ->
                     navController.navigate(detailRoute(LibraryTab.MOVIES.parent.route, LibraryTab.MOVIES, id))
@@ -273,6 +266,9 @@ fun MobileNavHost(
                     miniRequested.value = true
                     navController.popBackStack()
                 },
+                // The long-press panel's rows open the real settings pages, pushed over the
+                // player so Back returns to the picture.
+                onOpenRoute = { navController.navigate(it) { launchSingleTop = true } },
             )
         }
         page(
@@ -314,7 +310,6 @@ private fun isPinGuardedRoute(route: String?): Boolean =
 private val LIBRARY_PARENTS = listOf(
     MobileDestination.MOVIES,
     MobileDestination.SERIES,
-    MobileDestination.LIBRARY,
     MobileDestination.HOME,
 )
 

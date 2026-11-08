@@ -60,6 +60,7 @@ import tv.own.owntv.mobile.ui.components.MobileBottomSheet
 import tv.own.owntv.mobile.ui.setup.AddSourceForm
 import tv.own.owntv.mobile.ui.setup.SourceFormValues
 import tv.own.owntv.mobile.ui.setup.SourceKind
+import tv.own.owntv.mobile.ui.setup.isJsonLocation
 import tv.own.owntv.mobile.ui.setup.labelRes
 
 /**
@@ -279,7 +280,7 @@ private fun typeLine(source: SourceEntity, counts: String?): String {
         when (source.type) {
             SourceType.XTREAM -> R.string.setup_xtream
             SourceType.STALKER -> R.string.setup_stalker_mac
-            SourceType.M3U -> R.string.setup_m3u
+            SourceType.M3U -> if (isJsonLocation(source.url)) R.string.setup_tvbox else R.string.setup_m3u
             SourceType.LOCAL_BACKUP -> R.string.settings_sources_backup
         },
     )
@@ -404,7 +405,8 @@ private fun SourceEntity.toFormValues(): SourceFormValues {
         kind = when (type) {
             SourceType.XTREAM -> SourceKind.XTREAM
             SourceType.STALKER -> SourceKind.STALKER
-            else -> SourceKind.M3U
+            // A TVBox config is stored as an M3U source; the .json location is what tells them apart.
+            else -> if (isJsonLocation(url)) SourceKind.TVBOX else SourceKind.M3U
         },
         name = name,
         urlOrServer = url,

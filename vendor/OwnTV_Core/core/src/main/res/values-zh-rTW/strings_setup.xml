@@ -95,6 +95,12 @@
     <string name="setup_xtream">Xtream</string>
     <string name="setup_m3u">M3U / M3U8</string>
     <string name="setup_stalker_mac">Stalker (MAC)</string>
+    <string name="setup_tvbox">TVbox</string>
+    <string name="setup_tvbox_url">設定網址（JSON）</string>
+    <string name="setup_tvbox_url_example">https://example.com/tvbox.json</string>
+    <string name="setup_tvbox_local_file">選擇本機 .json 檔案…</string>
+    <string name="setup_tvbox_json_hint">僅支援 TVBox .json 設定檔</string>
+    <string name="setup_tvbox_json_invalid">網址或檔案必須是 .json 格式</string>
     <string name="setup_source_name_optional">名稱（選填）</string>
     <string name="setup_default_iptv">我的 IPTV</string>
     <string name="setup_name_default_playlist">我的播放清單</string>

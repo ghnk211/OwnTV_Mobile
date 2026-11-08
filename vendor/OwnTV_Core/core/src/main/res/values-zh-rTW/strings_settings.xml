@@ -194,7 +194,7 @@
     <string name="settings_ch_paging">遙控器捷徑</string>
     <string name="settings_ch_paging_description">將遙控器的空閒按鍵指派給導覽、播放和瀏覽操作。必要的導覽按鍵會保持受保護。</string>
     <string name="settings_content_menus_title">長按選單</string>
-    <string name="settings_content_menus_description">重新排列或隱藏頻道、電影、影集與分集選單中的動作</string>
+    <string name="settings_content_menus_description">重新排列或隱藏頻道和分集選單中的動作</string>
     <string name="settings_content_menus_hint">在某個動作上按「確定」可顯示或隱藏它。長按「確定」拿起它，用上下鍵移動，再次按「確定」放下。</string>
     <string name="settings_content_menus_note">部分動作只會在適用的地方出現。</string>
     <string name="settings_browsing_lists">瀏覽與清單</string>

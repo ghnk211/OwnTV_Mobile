@@ -78,9 +78,7 @@ fun NavigationSheet(vm: SettingsViewModel, onDismiss: () -> Unit) {
             },
         ) { StageRowValue(stringResource(if (dynamic) R.string.settings_dynamic else R.string.settings_static), StageChevron.DOWN) }
         if (!dynamic) {
-            // Home is never offered: hiding it would leave a playlist with no channels and no films with
-            // nothing at all in the bar.
-            MainSection.browseOrder.filter { it != MainSection.HOME }.forEach { section ->
+            NAV_MENU_TOGGLES.forEach { section ->
                 val shown = section.name !in hidden
                 StageSettingRow(
                     title = stringResource(section.labelRes),
@@ -98,6 +96,12 @@ fun NavigationSheet(vm: SettingsViewModel, onDismiss: () -> Unit) {
         ) { StageSwitch(counts) }
     }
 }
+
+/**
+ * The browse sections the sheet offers as switches. Home stays pinned (hiding it would leave a playlist
+ * with nothing in the bar), and sports, movies, series and the guide are no longer offered at all.
+ */
+private val NAV_MENU_TOGGLES = listOf(MainSection.LIVE_TV, MainSection.DOWNLOADS)
 
 /** `.row2 span`: one of two side-by-side choices, 40 dp; the chosen one accent-tinted with its ring. */
 @Composable

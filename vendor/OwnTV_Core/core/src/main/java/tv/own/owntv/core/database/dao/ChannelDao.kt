@@ -207,7 +207,7 @@ interface ChannelDao {
     }
 
     /** Every channel of a source in playlist order, with its number — what `PlaylistNumbering` works from. */
-    @Query("SELECT id, remoteId, sortOrder, number FROM channels WHERE sourceId = :sourceId ORDER BY sortOrder ASC, id ASC")
+    @Query("SELECT id, remoteId, sortOrder, number, name, providerName FROM channels WHERE sourceId = :sourceId ORDER BY sortOrder ASC, id ASC")
     suspend fun numbersForSource(sourceId: Long): List<ChannelNumberProjection>
 
     /** Sets only the number, for the same reason [setSortOrder] sets only the position. */
@@ -337,6 +337,15 @@ interface ChannelDao {
     /** Bounded snapshot of the Catch-up rail in provider order — the in-player category sheet's pick. */
     @Query("SELECT * FROM channels WHERE sourceId IN (:sourceIds) AND catchup = 1 ORDER BY sourceId ASC, sortOrder ASC, name ASC LIMIT :limit")
     suspend fun snapshotCatchup(sourceIds: List<Long>, limit: Int): List<ChannelEntity>
+
+    /** Bounded snapshot of the History rail in watch order — the player's overlay column for it. */
+    @Query(
+        "SELECT c.* FROM channels c " +
+            "INNER JOIN watch_history h ON h.itemId = c.id AND h.mediaType = 'LIVE' " +
+            "WHERE h.profileId = :profileId AND c.sourceId IN (:sourceIds) " +
+            "ORDER BY h.watchedAt DESC LIMIT :limit",
+    )
+    suspend fun snapshotHistory(profileId: Long, sourceIds: List<Long>, limit: Int): List<ChannelEntity>
 
     /** Bounded snapshot of Favorites in manual order, for the Move session's in-memory reorder. */
     @Query(

@@ -313,9 +313,6 @@ private fun layoutSections(vm: SettingsViewModel): List<SettingSection> {
     val s = vm.settings
     val labels = s.phoneNavLabels.pref(true)
     val dynamic = s.navMenuMode.pref(SettingsRepository.NavMenuMode.DYNAMIC) == SettingsRepository.NavMenuMode.DYNAMIC
-    val liveView = s.liveView.pref(SettingsRepository.LiveView.LIST)
-    val vodView = s.vodViewMode.pref(SettingsRepository.VodViewMode.GRID)
-    val density = s.guideDensityPct.pref(100)
     val profileId = s.activeProfileId.pref(-1L)
     val home = remember(profileId) { if (profileId < 0) flowOf(HomeConfig()) else s.homeConfig(profileId) }.pref(HomeConfig())
     // Exactly the rows the Home screen page lists: Trending is not one of the toggleable rows, and the
@@ -327,8 +324,6 @@ private fun layoutSections(vm: SettingsViewModel): List<SettingSection> {
         s.rememberLastLive.pref(false), s.rememberLastMovies.pref(false), s.rememberLastSeries.pref(false),
     )
     val sep = stringResource(R.string.content_epg_bits_separator)
-    val liveViews = SettingsRepository.LiveView.entries
-    val vodViews = SettingsRepository.VodViewMode.entries
     return listOf(
         SettingSection(
             stringResource(R.string.settings_group_layout),
@@ -340,20 +335,6 @@ private fun layoutSections(vm: SettingsViewModel): List<SettingSection> {
                             stringResource(if (dynamic) R.string.settings_dynamic else R.string.settings_static),
                     ),
                     sheet = { dismiss -> NavigationSheet(vm = vm, onDismiss = dismiss) },
-                ),
-                SettingItem(
-                    "live_opens_in", MobileIcons.LiveTv, stringResource(R.string.settings_live_opens_in), stringResource(R.string.settings_line_live_opens_in),
-                    SettingValue.Segmented(
-                        liveViews.map { stringResource(if (it == SettingsRepository.LiveView.LIST) R.string.settings_view_list else R.string.settings_seg_guide) },
-                        liveViews.indexOf(liveView),
-                    ) { i -> vm.edit { setLiveView(liveViews[i]) } },
-                ),
-                SettingItem(
-                    "vod_view", MobileIcons.Movie, stringResource(R.string.settings_vod_view_mobile), stringResource(R.string.settings_line_vod_view_mobile),
-                    SettingValue.Segmented(
-                        vodViews.map { stringResource(if (it == SettingsRepository.VodViewMode.LIST) R.string.settings_view_list else R.string.settings_view_grid) },
-                        vodViews.indexOf(vodView),
-                    ) { i -> vm.edit { setVodViewMode(vodViews[i]) } },
                 ),
                 pageItem(
                     "tab_HOME", MobileIcons.Home, stringResource(R.string.settings_home_screen), stringResource(R.string.settings_line_home),
@@ -372,22 +353,10 @@ private fun layoutSections(vm: SettingsViewModel): List<SettingSection> {
                     "tab_CONTENT_MENUS", MobileIcons.MoreHoriz, stringResource(R.string.settings_content_menus_title),
                     stringResource(R.string.settings_line_content_menus), null, SettingsLeaf.CONTENT_MENUS.route,
                 ),
-                SettingItem(
-                    "guide_size", MobileIcons.Guide, stringResource(R.string.settings_guide_size_mobile), stringResource(R.string.settings_line_guide_size_mobile),
-                    SettingValue.Stepper(
-                        stringResource(R.string.common_percent, density),
-                        { vm.edit { setGuideDensityPct((density - 10).coerceAtLeast(GUIDE_DENSITY_MIN)) } },
-                        { vm.edit { setGuideDensityPct((density + 10).coerceAtMost(GUIDE_DENSITY_MAX)) } },
-                        density > GUIDE_DENSITY_MIN, density < GUIDE_DENSITY_MAX,
-                    ),
-                ),
             ),
         ),
     )
 }
-
-private const val GUIDE_DENSITY_MIN = 70
-private const val GUIDE_DENSITY_MAX = 130
 
 // ---------------------------------------------------------------------------------------------- Content
 

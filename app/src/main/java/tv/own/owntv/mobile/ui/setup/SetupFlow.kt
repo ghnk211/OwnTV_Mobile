@@ -83,19 +83,20 @@ object SetupHandoff {
 }
 
 private enum class Step {
-    WELCOME, DISPLAY_SIZE, DISCLAIMER, CHOICE, SYNC_DEVICE, ADD_CONTENT, FORM, IMPORTING, RESTORE
+    WELCOME, DISCLAIMER, CHOICE, PROFILE, SYNC_DEVICE, ADD_CONTENT, FORM, IMPORTING, RESTORE
 }
 
 /**
  * Getting content onto the phone: type a playlist in, or bring everything back from a backup.
  *
- * **The first run is the television's wizard**, in its order and with its words — Welcome, Display,
- * the disclaimer, start-fresh-or-restore, then where the content comes from, Importing and All set.
- * Opening the same flow later from Settings' Add a source starts at the way that page chose instead.
+ * **The first run is the television's wizard**, in its order and with its words — Welcome (language
+ * and display in one page), the disclaimer, start-fresh-or-restore, then where the content comes
+ * from, Importing and All set. Opening the same flow later from Settings' Add a source starts at the
+ * way that page chose instead.
  *
- * There is no "who is watching" step any more. One profile per app means the wizard creates it
- * itself — the importer's, or a default when the user skips — and the profile step, its avatar strip
- * and its optional PIN left with it.
+ * There is no separate "who is watching" step. The profile is made by the importer, by the default
+ * when the user skips, or from the name, picture and PIN the "New profile" card collects; whichever
+ * of those lands first is the one the wizard ends on.
  */
 @Composable
 fun SetupFlow(
@@ -169,9 +170,9 @@ fun SetupFlow(
     BackHandler(enabled = !atStart || onCancel != null) {
         when (step) {
             Step.WELCOME -> onCancel?.invoke()
-            Step.DISPLAY_SIZE -> step = Step.WELCOME
-            Step.DISCLAIMER -> step = Step.DISPLAY_SIZE
+            Step.DISCLAIMER -> step = Step.WELCOME
             Step.CHOICE -> step = Step.DISCLAIMER
+            Step.PROFILE -> step = Step.CHOICE
             // The step owns its own Back: it has sheets to dismiss first, and once the data has
             // landed there is nothing to go back to.
             Step.SYNC_DEVICE -> Unit
@@ -192,16 +193,22 @@ fun SetupFlow(
 
     Box(modifier = modifier.fillMaxSize()) {
         when (step) {
-            Step.WELCOME -> WelcomeStep(onNext = { step = Step.DISPLAY_SIZE })
-            // Before the disclaimer, which is the first screen that is mostly words: if the text is
-            // too small to read, that is the screen it first hurts on.
-            Step.DISPLAY_SIZE -> DisplaySizeStep(onNext = { step = Step.DISCLAIMER }, onBack = { step = Step.WELCOME })
-            Step.DISCLAIMER -> DisclaimerStep(onAgree = { step = Step.CHOICE }, onBack = { step = Step.DISPLAY_SIZE })
+            // Language and display share the first page: the disclaimer that follows is mostly words,
+            // so the text has to be comfortable to read before it.
+            Step.WELCOME -> WelcomeStep(onNext = { step = Step.DISCLAIMER })
+            Step.DISCLAIMER -> DisclaimerStep(onAgree = { step = Step.CHOICE }, onBack = { step = Step.WELCOME })
             Step.CHOICE -> SetupChoiceStep(
-                onStartFresh = { step = Step.ADD_CONTENT },
+                onNewProfile = { step = Step.PROFILE },
                 onRestore = { backupOrigin = Step.CHOICE; step = Step.RESTORE; pickBackup() },
                 onSyncDevice = { step = Step.SYNC_DEVICE },
                 onBack = { step = Step.DISCLAIMER },
+            )
+            // A profile made here is kept as a draft: creating the row now and switching to it would
+            // take the wizard off the screen before the rest of setup had a chance to run.
+            Step.PROFILE -> NewProfileStep(
+                initial = vm.profileDraft,
+                onSave = { draft -> vm.setProfileDraft(draft); step = Step.ADD_CONTENT },
+                onBack = { step = Step.CHOICE },
             )
             // A sync brings profiles with it, which this app no longer keeps: the step says so and
             // refuses rather than inventing a second ending (§5.10).

@@ -107,13 +107,18 @@ private const val NOTCHES = 20
  * has running — going full screen and coming back out is a change of view, never a restart. Back and
  * the swipe down both leave it playing, which is what puts it into the mini player.
  *
- * The screen asks for landscape when it opens and then lets go of the orientation again, so a video
- * lands the right way up without a user who prefers portrait being trapped in landscape.
+ * The screen **is landscape only**: it asks the activity for landscape while it is up and hands the
+ * request back on the way out. The picture, the categories and channels beside it and the settings
+ * panel are all laid out for a phone held sideways; upright they would each be a third of 360 dp.
+ * The upright layout still exists as a fallback — a device that ignores the request, a split screen —
+ * and it is the same three columns at wider shares, with the decorations the width can afford.
  */
 @Composable
 fun PlayerScreen(
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Opens a settings page from the long-press panel; the player stays underneath it. */
+    onOpenRoute: (String) -> Unit = {},
     tuner: LiveTuner = koinInject(),
     vodTuner: VodTuner = koinInject(),
     pip: PipController = koinInject(),
@@ -305,6 +310,44 @@ fun PlayerScreen(
     val replaying by tuner.replaying.collectAsStateWithLifecycle()
     val isLive = channel != null && !replaying
 
+    // B7: a line that gives out is swapped for the next line of the same channel — a playlist
+    // often offers one channel on several URLs, and the list folds them into one row — and only
+    // when the family has no line left, for the next channel of the folder. The channel the user
+    // asked for is still the channel they get; only its URL changes.
+    var failedId by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(channel?.id, isLive) {
+        val current = channel ?: return@LaunchedEffect
+        if (!isLive) return@LaunchedEffect
+        val id = current.id
+        val openedAt = android.os.SystemClock.elapsedRealtime()
+        // The three ways a line gives out: the engine gave up on it (an error), it had a picture and
+        // stopped (a stall), or it never started one at all — a dead URL the engine may retry for
+        // ever when "Give up on a channel" is set to Never. Whichever comes first is the cue.
+        var stallSince: Long? = null
+        while (true) {
+            val age = android.os.SystemClock.elapsedRealtime() - openedAt
+            // The engine may still be carrying the failure of the line before this one: give the
+            // line its own moment before believing a message is about it.
+            if (activeEngine.error.value != null && age >= FAILOVER_GRACE_MS) break
+            val stalled = activeEngine.stalledSinceMs.value
+            if (stalled != null) {
+                if (stallSince == null) stallSince = stalled
+                // The same ten seconds the "reconnecting" note under the spinner gives it.
+                if (android.os.SystemClock.elapsedRealtime() - stallSince >= STALL_SWITCH_MS) break
+            } else {
+                stallSince = null
+                // Nothing to watch and nothing wrong on record: this line is going nowhere.
+                if (android.os.SystemClock.elapsedRealtime() - openedAt >= LINE_START_BUDGET_MS && !isPlaying) break
+            }
+            delay(500)
+        }
+        if (failedId == id) return@LaunchedEffect
+        failedId = id
+        if (!tuner.failoverToNextLine()) tuner.failoverToNext()
+    }
+    // A picture came back: whatever the ladder had counted is spent.
+    LaunchedEffect(isLive, isPlaying) { if (isLive && isPlaying) tuner.notePlaying() }
+
     // "Go back to…", for a live channel whose provider keeps an archive — or its own saved copy,
     // which exists only once the tune has started saving. Recomputed per channel, since the depth of
     // the archive is the channel's, not the playlist's.
@@ -381,12 +424,25 @@ fun PlayerScreen(
         secondsToAdvance != null && !autoNextDismissed
 
     var controlsVisible by remember { mutableStateOf(true) }
+    // Which of the two live overlays is out — the categories/channels/guide panel on the left, the
+    // settings on the right. Both are full-screen layers, so only one can be out at a time.
+    var livePanel by remember { mutableStateOf(LivePanel.NONE) }
     // Derived, so the screen recomposes only when the live edge is crossed, not on every tick.
     val atLiveEdge by remember { derivedStateOf { (offsetSecState.value ?: 0) <= 1 } }
     // Pure except for the channel (and the cast route) it reads: recompute on those, not on ticks.
     val archiveWindowSec = remember(isLive, channel?.id, castDevice) { tuner.archiveWindowSec() }
     var sheet by remember { mutableStateOf<PlayerSheet?>(null) }
     var showSources by remember { mutableStateOf(false) }
+    // The channel menu's "Go back to…": its offsets are the channel's, so the sheet waits for the
+    // switch to land instead of opening with the previous channel's window.
+    var pendingJumpBackId by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(pendingJumpBackId, channel?.id) {
+        val wanted = pendingJumpBackId ?: return@LaunchedEffect
+        if (channel?.id == wanted) {
+            pendingJumpBackId = null
+            sheet = PlayerSheet.CATCHUP
+        }
+    }
     // Closing the sheet forgets which category was open, so the next press starts at the categories.
     LaunchedEffect(sheet) { if (sheet != PlayerSheet.CHANNELS) playerCategory = null }
     val recordWatchingEnabled by settings.recordWhatImWatching.collectAsStateWithLifecycle(initialValue = false)
@@ -460,6 +516,10 @@ fun PlayerScreen(
                 applied
             }
         }
+        // The player is a landscape screen: the picture, the two columns beside it and the
+        // settings panel are laid out for a phone held sideways, and a phone held upright has no
+        // width to give any of them. Held back on the way out (below), so the rest of the app
+        // follows the user's own rotation again.
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         pip.playerOnScreen.value = true
         onDispose {
@@ -476,11 +536,6 @@ fun PlayerScreen(
                 }
             }
         }
-    }
-    // Once the rotation has actually happened, hand the orientation back: the request above was to
-    // arrive in landscape, not to stay there.
-    LaunchedEffect(landscape) {
-        if (landscape) activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
     fun setBrightness(value: Float) {
@@ -501,11 +556,14 @@ fun PlayerScreen(
             showHud(null)
         }
     }
-    // The controls go away on their own, but never while a picker is open over them and never in the
-    // middle of a scrub — the bar is the only thing saying where letting go would land.
+    // The chrome goes away on its own, but never while a picker is open over it and never in the
+    // middle of a scrub — the HUD is the only thing saying where letting go would land.
+    //
+    // Deliberately not gated on `isPlaying`: a paused or buffering stream used to keep the capsule
+    // on screen for ever, and after a tap the one visible thing left is that capsule.
     val scrubbing = scrubFraction != null
-    LaunchedEffect(controlsVisible, sheet, isPlaying, scrubbing) {
-        if (controlsVisible && sheet == null && isPlaying && !scrubbing) {
+    LaunchedEffect(controlsVisible, sheet, scrubbing) {
+        if (controlsVisible && sheet == null && !scrubbing) {
             delay(CONTROLS_TIMEOUT_MS)
             controlsVisible = false
         }
@@ -635,6 +693,19 @@ fun PlayerScreen(
                     )
                 },
                 sensitivity = gestureSensitivity / 100f,
+                // On a live channel both sides of the picture carry a panel — the categories on the
+                // left, the settings on the right — in either orientation (6.3, G3/G4). Anywhere
+                // else a tap is still only "show or hide the controls", and a hold is still 2× speed.
+                onTapLeft = if (isLive) {
+                    { livePanel = LivePanel.BROWSE; controlsVisible = false }
+                } else {
+                    null
+                },
+                onLongPressRight = if (isLive) {
+                    { livePanel = LivePanel.SETTINGS; controlsVisible = false }
+                } else {
+                    null
+                },
             ),
     ) {
         VideoStage(
@@ -715,7 +786,7 @@ fun PlayerScreen(
             // Nothing is drawn over the picture in the little window: it is a thumbnail, and the
             // system draws its own buttons on top of it.
             // Held sideways the channel list is a panel over the picture alone: the controls step aside.
-            visible = controlsVisible && !inPip && !(sheet == PlayerSheet.CHANNELS && landscape),
+            visible = controlsVisible && !inPip && livePanel == LivePanel.NONE && !(sheet == PlayerSheet.CHANNELS && landscape),
             isLive = isLive,
             offsetSec = offsetSecState,
             archiveWindowSec = archiveWindowSec,
@@ -861,6 +932,20 @@ fun PlayerScreen(
         GestureHud(hud.takeIf { !inPip })
     }
 
+    // The two live overlays. Above the picture and its controls, below the sheet host: the panels
+    // are the screen while they are out, and a tap outside either of them puts them away.
+    when (livePanel) {
+        LivePanel.NONE -> Unit
+        LivePanel.BROWSE -> LiveOverlayPanel(
+            onDismiss = { livePanel = LivePanel.NONE },
+            onJumpBackTo = { target -> pendingJumpBackId = target.id; tuner.switchTo(target) },
+        )
+        LivePanel.SETTINGS -> PlayerSettingsPanel(
+            onOpenRoute = onOpenRoute,
+            onDismiss = { livePanel = LivePanel.NONE },
+        )
+    }
+
     // Multiview draws over the whole player, including the picture it grew out of, and owns its own
     // engines. The stream behind it was stopped when the grid opened.
     multiview?.let { grid ->
@@ -900,7 +985,7 @@ fun PlayerScreen(
                     onSelect = { index ->
                         multiviewCategories.getOrNull(index)?.first?.let { catId ->
                             multiviewCategory = catId
-                            scope.launch { multiviewChannels = tuner.channelsInCategoryForPicker(catId) }
+                            scope.launch { multiviewChannels = tuner.channelsInCategoryForPicker(catId).map { it.channel } }
                         }
                     },
                     // Backing out of the categories leaves the picker entirely.
@@ -957,7 +1042,7 @@ fun PlayerScreen(
             onSelect = { index ->
                 playerCategories.getOrNull(index)?.first?.let { catId ->
                     playerCategory = catId
-                    scope.launch { playerChannels = tuner.channelsInCategoryForPicker(catId) }
+                    scope.launch { playerChannels = tuner.channelsInCategoryForPicker(catId).map { it.channel } }
                 }
             },
             onDismiss = { sheet = null },
@@ -1125,3 +1210,18 @@ private class Carry {
 
 /** How long a live stall lasts before the player says it is reconnecting (the TV's value). */
 private const val RECONNECT_NOTICE_AFTER_MS = 10_000L
+
+/** How long a freshly opened channel is given to start before its failure counts as its own. */
+private const val FAILOVER_GRACE_MS = 1_200L
+
+/** How long a line is given to come back from a stall before the next line of the channel is tried —
+ *  the same ten seconds the "reconnecting" note under the spinner waits. */
+private const val STALL_SWITCH_MS = 10_000L
+
+/** How long a line is given to show a picture at all before the next line of the channel is tried.
+ *  A URL that is down is often retried for ever ("Give up on a channel: Never"), and a viewer who
+ *  picked a channel is owed the next line, not the same dead one on a loop. */
+private const val LINE_START_BUDGET_MS = 10_000L
+
+/** Which of the player's own overlays is out; at most one at a time. */
+private enum class LivePanel { NONE, BROWSE, SETTINGS }

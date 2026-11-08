@@ -225,7 +225,7 @@ private val LEAF_ROWS: List<Pair<SettingsLeaf, Int>> = listOf(
 
 /** Quick: the pinned rows, in the pinned order, each drawn as it is on its own page. */
 @Composable
-private fun quickRows(all: Map<SettingsGroup, List<SettingSection>>, pins: QuickPins): List<SettingItem> {
+internal fun quickRows(all: Map<SettingsGroup, List<SettingSection>>, pins: QuickPins): List<SettingItem> {
     val home = all.entries.flatMap { (group, sections) -> sections.flatMap { it.items }.map { it.key to group } }.toMap()
     val byKey = all.values.flatten().flatMap { it.items }.associateBy { it.key }
     val rows = pins.keys.map { stored -> stored to (QUICK_ALIASES[stored] ?: stored) }

@@ -159,6 +159,17 @@ fun ChannelMenu(
             if (canMove) {
                 add(SheetAction("move_to_category", stringResource(R.string.content_move_to_category), MobileIcons.Folder, group = organise) { dialog = ChannelDialog.MOVE_TO_CATEGORY })
             }
+            // Hide it out of every list; Settings → Customize → Hidden channels brings it back.
+            add(
+                SheetAction(
+                    key = "hide",
+                    label = stringResource(R.string.content_hide_channel),
+                    icon = MobileIcons.VisibilityOff,
+                    destructive = true,
+                    group = organise,
+                    onClick = { vm.hideChannel(channel) },
+                ),
+            )
         }
         val sep = stringResource(R.string.content_epg_bits_separator)
         val name = remember(channel.name) { ProviderTags.parse(channel.name).name }

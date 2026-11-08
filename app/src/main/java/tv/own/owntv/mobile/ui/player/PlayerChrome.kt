@@ -85,7 +85,7 @@ internal val OnVideo = Color.White.copy(alpha = 0.78f)
 private const val HOLD_MS = 400L
 
 /** How much light a pane catches with Glass on: its top sheen, bright rim, dark far edge and cast shadow. */
-private class PaneLight(val sheen: Float, val rim: Float, val edge: Float, val shadow: Dp)
+internal class PaneLight(val sheen: Float, val rim: Float, val edge: Float, val shadow: Dp)
 
 /** The transport dock, the top row and the tool buttons: barely there, on purpose. */
 private val ControlsLight = PaneLight(sheen = 0.55f, rim = 0.10f, edge = 0.18f, shadow = 6.dp)
@@ -95,7 +95,7 @@ private val ToastLight = PaneLight(sheen = 0.78f, rim = 0.13f, edge = 0.24f, sha
 
 /** One pane of the player's chrome: black glass, hairline rim, and the glass's light when Glass is on. */
 @Composable
-private fun Modifier.playerPane(shape: Shape, light: PaneLight = ControlsLight): Modifier {
+internal fun Modifier.playerPane(shape: Shape, light: PaneLight = ControlsLight): Modifier {
     if (!LocalGlass.current.enabled) {
         return this.background(DockFill, shape).border(1.dp, DockRim, shape)
     }

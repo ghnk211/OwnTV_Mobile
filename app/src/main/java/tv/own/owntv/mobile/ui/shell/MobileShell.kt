@@ -103,8 +103,9 @@ import tv.own.owntv.mobile.ui.screens.settings.isSettingsPage
  *
  * The navigation is the bottom bar on a phone and a rail on anything wider, chosen by width rather
  * than by device type — a phone in landscape and a foldable opened flat are both "wider", and a
- * tablet in split-screen is not. Which destinations appear is core's `NavVisibility` rule, the same
- * one the TV app's sidebar uses, so a channels-only playlist loses Movies and Series in both apps at once.
+ * tablet in split-screen is not. The phone offers Home, Live TV and On demand; the rail adds
+ * Downloads and More. Which of them appear is core's `NavVisibility` rule, the same one the TV app's
+ * sidebar uses, so a channels-only playlist loses Live TV in both apps at once.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -395,7 +396,7 @@ fun MobileShell(
         )
         headerRoute in listOf(
             MobileDestination.LIVE.route, MobileDestination.GUIDE.route,
-            MobileDestination.MOVIES.route, MobileDestination.SERIES.route, MobileDestination.LIBRARY.route,
+            MobileDestination.MOVIES.route, MobileDestination.SERIES.route,
             MobileDestination.DOWNLOADS.route, SEARCH_ROUTE_PATTERN,
         ) -> ClusterPlaylist(
             label = when {

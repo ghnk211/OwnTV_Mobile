@@ -44,6 +44,8 @@ val liveModule = module {
             // for why it is not one of Multiview's pooled tiles.
             exo = get(),
             forceMpvStore = get(),
+            // Whether any guide feed exists — the player overlay's third column.
+            epgSourceStore = get(),
             player = get(),
             watchSession = get(),
             downloadWatchGuard = get(),

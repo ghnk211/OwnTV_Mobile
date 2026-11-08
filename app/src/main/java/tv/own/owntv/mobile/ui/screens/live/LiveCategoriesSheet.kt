@@ -116,11 +116,22 @@ internal fun LiveCategoriesSheet(
     }
 }
 
-private fun LiveCategory.icon() = when (builtIn) {
+internal fun LiveCategory.icon() = when (builtIn) {
     LiveCategory.BuiltIn.FAVORITES -> MobileIcons.FavoriteBorder
     LiveCategory.BuiltIn.HISTORY -> MobileIcons.History
     LiveCategory.BuiltIn.CATCHUP -> MobileIcons.Catchup
     else -> MobileIcons.LiveTv
+}
+
+/** The row's text: a translated label for the four built-in lists, the stored name otherwise. */
+@Composable
+internal fun LiveCategory.label(): String = when (builtIn) {
+    LiveCategory.BuiltIn.ALL -> stringResource(R.string.content_category_all_channels)
+    LiveCategory.BuiltIn.FAVORITES -> stringResource(R.string.content_category_favorites)
+    LiveCategory.BuiltIn.HISTORY -> stringResource(R.string.content_category_recently_watched)
+    LiveCategory.BuiltIn.CATCHUP -> stringResource(R.string.content_catchup)
+    // A provider folder by its name alone: "DE| PRIME ᴿᴬᵂ" is "PRIME" (its tags are drawn as tags).
+    null -> ProviderTags.parse(title.orEmpty()).name
 }
 
 /**

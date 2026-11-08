@@ -6,6 +6,7 @@ import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -35,6 +36,28 @@ private fun rememberPicker(onPicked: (Uri) -> Unit): () -> Unit {
     }
     return { launcher.launch(arrayOf("*/*")) }
 }
+
+/**
+ * The TVBox tab only accepts a `.json` config. File providers disagree on the MIME type of a JSON
+ * document (`application/json`, `text/plain`, `application/octet-stream`…), so filtering by MIME in
+ * the picker would hide perfectly good configs. Everything stays selectable, and the displayed name
+ * is checked instead; a non-JSON pick reports back so the form can say what went wrong.
+ */
+@Composable
+fun rememberJsonFilePicker(onPicked: (Uri) -> Unit, onRejected: () -> Unit): () -> Unit {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        when {
+            uri == null -> Unit
+            isJsonDocument(context, uri) -> onPicked(uri)
+            else -> onRejected()
+        }
+    }
+    return { launcher.launch(arrayOf("*/*")) }
+}
+
+private fun isJsonDocument(context: Context, uri: Uri): Boolean =
+    displayName(context, uri).substringAfterLast('.', "").equals("json", ignoreCase = true)
 
 /**
  * Copies the picked document into [directory], keeping its own name so the file the user chose is

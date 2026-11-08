@@ -25,8 +25,14 @@
     <string name="mobile_restore_pin_notice">加密备份可能带有账户 PIN。如果带有，恢复后打开本应用所用的 PIN 会被替换。</string>
     <string name="mobile_sync_pin_notice">同步过来的账户可能带有 PIN。如果带有，同步后打开本应用所用的 PIN 会被替换。</string>
     <string name="mobile_restore_from_settings">这个备份的账户名称与本机账户不同。请前往“设置 › 备份与恢复”恢复，在那里可以确认改名。</string>
-    <string name="mobile_start_fresh">重新开始</string>
-    <string name="mobile_start_fresh_description">现在添加播放列表，或先跳过、稍后再添加。</string>
+    <string name="mobile_new_profile">新建档案</string>
+    <string name="mobile_new_profile_description">设置名称、头像和可选 PIN。</string>
+    <string name="mobile_new_profile_sub">收藏和观看记录会单独保存。</string>
+    <string name="mobile_profile_choose_picture">选择图片</string>
+    <string name="mobile_profile_remove_picture">移除图片</string>
     <string name="mobile_restore_backup_description">从本机或另一台设备的备份恢复。</string>
     <string name="mobile_backup_single_profile_note">此备份只包含当前账户。</string>
+    <string name="mobile_nav_vod">点播</string>
+    <string name="mobile_vod_placeholder_title">正在开发中</string>
+    <string name="mobile_vod_placeholder_body">点播页面正在开发中，敬请期待。</string>
 </resources>

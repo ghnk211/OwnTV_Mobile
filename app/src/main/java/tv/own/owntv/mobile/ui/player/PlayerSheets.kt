@@ -505,6 +505,11 @@ private fun ChannelSheetBody(
     onDismiss: () -> Unit,
 ) {
     run {
+        // A star on the row the user actually favourited — this list said "not a favourite" for
+        // every channel, so a favourite was invisible here while it was starred in Live TV.
+        val actions: tv.own.owntv.mobile.ui.screens.ContentActions = koinInject()
+        val favorites by remember { actions.favoriteIds(tv.own.owntv.core.model.MediaType.LIVE) }
+            .collectAsStateWithLifecycle(emptySet())
         StageSheetHeader(
             title = heading,
             extra = formatCount(channels.size) + sep + stringResource(R.string.common_nav_live_tv),
@@ -527,7 +532,7 @@ private fun ChannelSheetBody(
                         now = now[channel.id],
                         nowMs = nowMs,
                         mark = null,
-                        isFavorite = false,
+                        isFavorite = channel.id in favorites,
                         onClick = { onPick(channel); onDismiss() },
                         onLongClick = {},
                     )

@@ -85,12 +85,15 @@ fun SettingsBrowsingPage(modifier: Modifier = Modifier, vm: SettingsViewModel = 
 
 private fun SettingItem.unpinnable() = SettingItem(key, icon, title, line, value, onClick, sheet, pinnable = false)
 
-/** Layout › Long-press menus: Live TV, Movies, Series, Episodes — each opens its actions to rearrange or hide. */
+/** The long-press menus this page offers; movies and series no longer have one. */
+private val MENU_PAGES = listOf(ContentMenu.LIVE, ContentMenu.EPISODE)
+
+/** Layout › Long-press menus: Live TV and Episodes — each opens its actions to rearrange or hide. */
 @Composable
 fun SettingsMenusPage(modifier: Modifier = Modifier, vm: SettingsViewModel = koinViewModel()) {
     var menu by remember { mutableStateOf<ContentMenu?>(null) }
     val note = stringResource(R.string.settings_content_menus_description)
-    val rows = ContentMenu.entries.map { m ->
+    val rows = MENU_PAGES.map { m ->
         SettingItem("menu_${m.name}", MobileIcons.MoreHoriz, stringResource(m.titleRes()), null, SettingValue.Opens(null), onClick = { menu = m }, pinnable = false)
     }
     SettingsStagePage(modifier) {

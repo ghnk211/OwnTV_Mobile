@@ -194,7 +194,7 @@
     <string name="settings_ch_paging">遥控器快捷键</string>
     <string name="settings_ch_paging_description">将遥控器的空闲按键分配给导航、播放和浏览操作。必要的导航按键会保持受保护。</string>
     <string name="settings_content_menus_title">长按菜单</string>
-    <string name="settings_content_menus_description">重新排列或隐藏频道、电影、剧集和分集菜单中的操作</string>
+    <string name="settings_content_menus_description">重新排列或隐藏频道和分集菜单中的操作</string>
     <string name="settings_content_menus_hint">在某个操作上按“确定”可显示或隐藏它。长按“确定”拿起它，用上下键移动，再次按“确定”放下。</string>
     <string name="settings_content_menus_note">部分操作只在适用的地方出现。</string>
     <string name="settings_browsing_lists">浏览和列表</string>

@@ -2,6 +2,7 @@ package tv.own.owntv.mobile.ui.stage
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -23,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import tv.own.owntv.mobile.R
@@ -49,8 +51,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import tv.own.owntv.mobile.ui.components.MobileIcons
 
-/** Tap and long-press without a ripple; the long press ticks like every other menu in the app. */
-@OptIn(ExperimentalFoundationApi::class)
+/**
+ * Whether a row whose title does not fit scrolls it instead of cutting it short.
+ *
+ * Off everywhere a page has the whole width: a title that runs off the end and starts moving is
+ * noise on a list that is already readable. The player's overlays turn it on — their columns are a
+ * third of the screen, where nearly every channel and setting name is too long for the row.
+ */
+val LocalScrollLongTitles = staticCompositionLocalOf { false }
+
+/** Tap and long-press without a ripple; the long press ticks like every other menu in the app. */@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun Modifier.stageClickable(
     interaction: MutableInteractionSource,
@@ -151,18 +161,30 @@ fun StageSettingRow(
             ) { StageIcon(icon, 17.dp, palette.muted) }
         }
         Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+            val scrolling = LocalScrollLongTitles.current
+            val marquee = if (scrolling) Modifier.basicMarquee() else Modifier
             overline?.let { Text(it, style = stageText(11.5f, 500, lineHeight = 1.3f), color = palette.muted, modifier = Modifier.padding(bottom = 2.dp)) }
             if (styledTitle != null) {
-                Text(styledTitle, style = stageText(14.5f, 700), color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(styledTitle, style = stageText(14.5f, 700), color = palette.text, maxLines = if (scrolling) 1 else 2, overflow = TextOverflow.Ellipsis, modifier = marquee)
             } else {
-                Text(title, style = stageText(14.5f, 700), color = palette.text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(
+                    title,
+                    style = stageText(14.5f, 700),
+                    color = palette.text,
+                    // A scrolling title is one line by definition: two lines of marquee is a wall.
+                    maxLines = if (scrolling) 1 else 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = marquee,
+                )
             }
             subtitle?.let {
                 Text(
                     it,
                     style = stageText(11.5f, 500, lineHeight = 1.3f),
                     color = subtitleColor ?: palette.muted,
-                    modifier = Modifier.padding(top = 1.dp),
+                    maxLines = if (scrolling) 1 else Int.MAX_VALUE,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 1.dp).then(marquee),
                 )
             }
         }
@@ -288,6 +310,11 @@ fun StageMenuItem(
     /** More's rows are 48 high and end in a dim 13 dp chevron. */
     height: Dp = 46.dp,
     chevron: Boolean = false,
+    /**
+     * Tighter padding, a smaller icon and a smaller label — for a column a third of a screen wide,
+     * where the full row left the name two characters and a marquee.
+     */
+    compact: Boolean = false,
 ) {
     val palette = LocalStagePalette.current
     val accent = stageAccent
@@ -312,30 +339,37 @@ fun StageMenuItem(
             .clip(shape)
             .then(if (pressed) Modifier.background(accent.accent) else Modifier)
             .stageClickable(interaction, onClick.takeIf { enabled }, onLongClick?.takeIf { enabled }, role)
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(if (leading != null) 10.dp else 12.dp),
+            .padding(horizontal = if (compact) 8.dp else 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(
+            when {
+                leading != null -> 10.dp
+                compact -> 8.dp
+                else -> 12.dp
+            },
+        ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         when {
             leading != null -> leading()
-            icon != null -> StageIcon(icon, 18.dp, iconTint)
+            icon != null -> StageIcon(icon, if (compact) 15.dp else 18.dp, iconTint)
         }
         Text(
             label,
-            style = stageText(14.5f, 600),
+            style = stageText(if (compact) 13f else 14.5f, 600),
             color = fg,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             // Takes the free width, so whatever follows sits at the end (`margin-left: auto`). With a [value]
             // (a hint like "The order your playlist uses") the label is measured first and the hint shortens.
-            modifier = if (value != null) Modifier else Modifier.weight(1f),
+            modifier = (if (value != null) Modifier else Modifier.weight(1f))
+                .then(if (LocalScrollLongTitles.current) Modifier.basicMarquee() else Modifier),
         )
         if (value != null) Spacer(Modifier.weight(1f))
         // 6 dp between the trailing parts (`.mi .tag + .n`).
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             tags?.let { Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically, content = it) }
-            value?.let { Text(it, style = stageText(12f, 700), color = sideTint, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-            count?.let { Text(it, style = stageText(12f, 600), color = sideTint, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            value?.let { Text(it, style = stageText(if (compact) 11.5f else 12f, 700), color = sideTint, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            count?.let { Text(it, style = stageText(if (compact) 11.5f else 12f, 600), color = sideTint, maxLines = 1, overflow = TextOverflow.Ellipsis) }
             if (checked) StageIcon(MobileIcons.Check, 18.dp, if (pressed) accent.onAccent else accent.accent)
             // On a filled row the playlist's own colour would vanish into the accent: it takes the row's text colour.
             mark?.let { StagePlaylistMark(it, Modifier.padding(start = 2.dp), tint = if (pressed) accent.onAccent else null) }

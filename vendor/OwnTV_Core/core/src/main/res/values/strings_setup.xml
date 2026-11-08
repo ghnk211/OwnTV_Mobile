@@ -192,6 +192,18 @@
     <string name="setup_m3u">M3U / M3U8</string>
     <!-- Translators: KindChip label for the Stalker portal source type selector. "Stalker" is a brand name that must not be translated. Only shown when Stalker support is enabled. Shown on the TV form and the companion web page. -->
     <string name="setup_stalker_mac">Stalker (MAC)</string>
+    <!-- Translators: KindChip label for the TVBox JSON source type selector. "TVbox" is a format name that must not be translated. -->
+    <string name="setup_tvbox">TVbox</string>
+    <!-- Translators: Text-field label for the TVBox JSON configuration URL. -->
+    <string name="setup_tvbox_url">Configuration URL (JSON)</string>
+    <!-- Translators: Placeholder example in the TVBox configuration URL field. -->
+    <string name="setup_tvbox_url_example">https://example.com/tvbox.json</string>
+    <!-- Translators: Button label in the TVBox form to open the storage browser for a local JSON config. -->
+    <string name="setup_tvbox_local_file">Choose a local .json file\u2026</string>
+    <!-- Translators: Hint under the TVBox file picker: both the URL and the file must be JSON. -->
+    <string name="setup_tvbox_json_hint">Only TVBox .json configs are supported</string>
+    <!-- Translators: Error shown when a TVBox URL or picked file is not a .json config. -->
+    <string name="setup_tvbox_json_invalid">The URL or file must be a .json TVBox config</string>
     <!-- Translators: Text-field label for the optional source name. Shown on the TV form and the companion web page. -->
     <string name="setup_source_name_optional">Name (optional)</string>
     <!-- Translators: Default source name placeholder for Xtream sources when the user leaves the name blank. Used as fallback on the TV form and companion web page. -->

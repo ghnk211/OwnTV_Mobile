@@ -421,7 +421,7 @@
     <!-- Translators: Settings navigation label for the long-press content menus. -->
     <string name="settings_content_menus_title">Long-press menus</string>
     <!-- Translators: Description of the long-press content menus settings. -->
-    <string name="settings_content_menus_description">Rearrange or hide the actions in the channel, movie, series &amp; episode menus</string>
+    <string name="settings_content_menus_description">Rearrange or hide the actions in the channel and episode menus</string>
     <!-- Translators: Hint shown above the list when arranging a long-press menu with the remote: OK shows or hides an action, a held OK picks it up to move it. -->
     <string name="settings_content_menus_hint">Press OK on an action to show or hide it. Hold OK to pick it up, then Up and Down to move it; press OK again to drop it.</string>
     <!-- Translators: Note on the long-press menus settings: some actions in the list are only offered in some places (Catch-up only on catch-up channels, Remove from history only in History). -->

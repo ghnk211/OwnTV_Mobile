@@ -3,6 +3,8 @@ package tv.own.owntv.mobile.ui.screens.live
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
@@ -53,6 +55,7 @@ import tv.own.owntv.core.database.dao.SourceDao
 import tv.own.owntv.core.database.entity.ChannelEntity
 import tv.own.owntv.core.database.entity.ContentOrderEntity
 import tv.own.owntv.core.database.entity.FavoriteEntity
+import tv.own.owntv.core.database.entity.SourceEntity
 import tv.own.owntv.core.epg.EpgShift
 import tv.own.owntv.core.live.LiveEpgReader
 import tv.own.owntv.core.live.LiveKey
@@ -90,6 +93,44 @@ data class LiveCategory(
     val sealed: Boolean = false,
 ) {
     enum class BuiltIn { ALL, FAVORITES, HISTORY, CATCHUP }
+}
+
+/**
+ * The Live tab's category list: the built-in rails the profile shows, then its own categories in its
+ * own arranged order. Shared with the player's overlay ([tv.own.owntv.mobile.ui.screens.live.LiveTuner.overlayCategories]),
+ * so a rename or a hide reaches both screens the moment it is made.
+ */
+internal fun buildLiveCategories(
+    cats: List<tv.own.owntv.core.database.entity.CategoryEntity>,
+    cust: SectionCustomizations,
+    alphabetical: Boolean,
+    builtIns: tv.own.owntv.core.live.LiveBuiltIns,
+    catchupCount: Int,
+    profile: tv.own.owntv.core.database.entity.ProfileEntity?,
+): List<LiveCategory> {
+    val folders = cats.railCategories(
+        cust,
+        kids = profile?.isKids == true,
+        alphabetical = alphabetical,
+    )
+    return buildList {
+        if (builtIns.showAll) add(LiveCategory(LiveKey.All, builtIn = LiveCategory.BuiltIn.ALL))
+        add(LiveCategory(LiveKey.Favorites, builtIn = LiveCategory.BuiltIn.FAVORITES))
+        add(LiveCategory(LiveKey.History, builtIn = LiveCategory.BuiltIn.HISTORY))
+        if (catchupCount > 0 && builtIns.showCatchup) add(LiveCategory(LiveKey.Catchup, builtIn = LiveCategory.BuiltIn.CATCHUP))
+        val sources = cats.associate { it.id to it.sourceId }
+        folders.forEach { e ->
+            add(
+                LiveCategory(
+                    key = e.categoryId?.let { LiveKey.Folder(it) } ?: LiveKey.Custom(e.customId!!),
+                    title = e.displayName,
+                    sourceId = e.categoryId?.let(sources::get),
+                    locked = e.locked,
+                    sealed = e.sealed,
+                ),
+            )
+        }
+    }
 }
 
 /**
@@ -217,31 +258,14 @@ class LiveViewModel(
         builtIns: tv.own.owntv.core.live.LiveBuiltIns,
         catchupCount: Int,
         profile: tv.own.owntv.core.database.entity.ProfileEntity?,
-    ): List<LiveCategory> = run {
-        val folders = cats.railCategories(
-            cust,
-            kids = profile?.isKids == true,
-            alphabetical = sort == SettingsRepository.SortMode.ALPHA,
-        )
-        buildList {
-            if (builtIns.showAll) add(LiveCategory(LiveKey.All, builtIn = LiveCategory.BuiltIn.ALL))
-            add(LiveCategory(LiveKey.Favorites, builtIn = LiveCategory.BuiltIn.FAVORITES))
-            add(LiveCategory(LiveKey.History, builtIn = LiveCategory.BuiltIn.HISTORY))
-            if (catchupCount > 0 && builtIns.showCatchup) add(LiveCategory(LiveKey.Catchup, builtIn = LiveCategory.BuiltIn.CATCHUP))
-            val sources = cats.associate { it.id to it.sourceId }
-            folders.forEach { e ->
-                add(
-                    LiveCategory(
-                        key = e.categoryId?.let { LiveKey.Folder(it) } ?: LiveKey.Custom(e.customId!!),
-                        title = e.displayName,
-                        sourceId = e.categoryId?.let(sources::get),
-                        locked = e.locked,
-                        sealed = e.sealed,
-                    ),
-                )
-            }
-        }
-    }
+    ): List<LiveCategory> = buildLiveCategories(
+        cats = cats,
+        cust = cust,
+        alphabetical = sort == SettingsRepository.SortMode.ALPHA,
+        builtIns = builtIns,
+        catchupCount = catchupCount,
+        profile = profile,
+    )
 
     /**
      * The channel count beside every category in the sheet (the TV's railCounts): each fixed entry and
@@ -264,15 +288,6 @@ class LiveViewModel(
     /** Settings › Layout › Navigation › Show counts. */
     val sheetCounts: StateFlow<Boolean> = settings.sheetCounts
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
-
-    /** List or the guide grid — core's "Live TV opens in", remembered from the Guide view tool. */
-    val liveView: StateFlow<SettingsRepository.LiveView> = settings.liveView
-        .stateIn(viewModelScope, SharingStarted.Eagerly, SettingsRepository.LiveView.LIST)
-
-    fun toggleLiveView() {
-        val next = if (liveView.value == SettingsRepository.LiveView.GUIDE) SettingsRepository.LiveView.LIST else SettingsRepository.LiveView.GUIDE
-        viewModelScope.launch { settings.setLiveView(next) }
-    }
 
     /** What restoring [key]'s category to the playlist default would undo (empty when nothing). */
     suspend fun categoryRestorePlan(key: LiveKey): CategoryRestorePlan {
@@ -352,6 +367,15 @@ class LiveViewModel(
     val providerNames: StateFlow<Map<Long, String>> = ctx
         .map { c -> if (c.sources.size > 1) c.sources.associate { it.id to it.name } else emptyMap() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /**
+     * The profile's Live playlists — the ones that carry channels. Empty is not an empty Live TV, it
+     * is a Live TV with nothing to draw it from: the tab asks for a source instead of a list (6.1).
+     * Null until the profile's sources have been read, so a normal install never flashes the card.
+     */
+    val liveSources: StateFlow<List<SourceEntity>?> = ctx
+        .map { c -> if (c.profileId < 0) null else c.sources.filter { it.syncLive } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** Channel numbers are drawn only when the setting the TV app reads is on. */
     val showChannelNumbers: StateFlow<Boolean> = settings.directTune
@@ -610,6 +634,45 @@ class LiveViewModel(
     }
 
     /**
+     * The first channel [key] holds, in the order the list draws it — what a tapped category starts
+     * playing (G2/B1).
+     *
+     * A snapshot read rather than the pager's own list: the tap asks one question ("what is first?")
+     * at one instant, and waiting for Paging to load a page would hold the screen still. A short
+     * window is read instead of one row, so a hidden first channel does not answer "empty".
+     */
+    suspend fun firstChannelOf(key: LiveKey): ChannelEntity? {
+        val c = ctx.value
+        if (c.profileId < 0) return null
+        val cust = customOnceRead.value ?: return null
+        // A locked category the PIN has not opened has nothing to play.
+        if (cust.seals(key)) return null
+        val hidden = hiddenCategoryIds.value
+        val ids = c.liveSourceIds.ifEmpty { listOf(-1L) }
+        val alpha = sortMode.value == SettingsRepository.SortMode.ALPHA
+        return withContext(Dispatchers.IO) {
+            val raw = when (key) {
+                is LiveKey.Folder -> {
+                    val category = categoryDao.getById(key.id) ?: return@withContext null
+                    channelDao.snapshotByCategoryManual(
+                        categoryId = category.id,
+                        profileId = c.profileId,
+                        contextKey = CustomizeKeys.category(category),
+                        alpha = alpha,
+                        limit = FIRST_CHANNEL_SCAN,
+                    )
+                }
+                is LiveKey.Custom -> customCategoryDao.snapshotChannels(c.profileId, key.id, ids, alpha, FIRST_CHANNEL_SCAN)
+                LiveKey.All -> channelDao.snapshotAll(ids, FIRST_CHANNEL_SCAN)
+                LiveKey.Favorites -> channelDao.snapshotFavoritesManual(c.profileId, ContentOrderEntity.FAV_CONTEXT, ids, FIRST_CHANNEL_SCAN)
+                LiveKey.History -> channelDao.snapshotHistory(c.profileId, ids, FIRST_CHANNEL_SCAN)
+                LiveKey.Catchup -> channelDao.snapshotCatchup(ids, FIRST_CHANNEL_SCAN)
+            }
+            raw.firstOrNull { tv.own.owntv.core.live.isChannelVisible(it, cust, hidden, key) }
+        }?.let { ch -> cust.itemNames[CustomizeKeys.channel(ch)]?.let { ch.copy(name = it) } ?: ch }
+    }
+
+    /**
      * Read the guide for the rows the user can see, in one query.
      *
      * Channels already answered are dropped first, so scrolling one row costs one row's worth of
@@ -633,8 +696,14 @@ class LiveViewModel(
     fun toggleFavorite(channel: ChannelEntity) {
         viewModelScope.launch {
             val pid = ctx.value.profileId.takeIf { it >= 0 } ?: return@launch
-            if (channel.id in favoriteIds.value) userDataWriter.removeFavorite(pid, MediaType.LIVE, channel.id)
-            else favoriteDao.add(FavoriteEntity(profileId = pid, mediaType = MediaType.LIVE, itemId = channel.id))
+            // Ask the row itself, not `favoriteIds.value`: that is a WhileSubscribed state flow, and
+            // the player's overlay never collects it, so its value would miss the favourite just
+            // added there and a "remove" would add it again (IGNORE) instead of deleting it.
+            if (favoriteDao.isFavorite(pid, MediaType.LIVE, channel.id).first()) {
+                userDataWriter.removeFavorite(pid, MediaType.LIVE, channel.id)
+            } else {
+                favoriteDao.add(FavoriteEntity(profileId = pid, mediaType = MediaType.LIVE, itemId = channel.id))
+            }
         }
     }
 
@@ -827,5 +896,7 @@ class LiveViewModel(
         const val MAX_NOW_PLAYING = 500
         // How long a start-up selection waits for the category list on a cold start.
         const val CATEGORIES_WAIT_MS = 2_000L
+        // Rows read to find a category's first *visible* channel (a hidden one is skipped).
+        const val FIRST_CHANNEL_SCAN = 50
     }
 }

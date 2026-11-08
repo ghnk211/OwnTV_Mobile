@@ -1,6 +1,7 @@
 package tv.own.owntv.mobile.ui.screens.live
 
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,10 +28,12 @@ import tv.own.owntv.core.database.dao.HistoryDao
 import tv.own.owntv.core.database.dao.ProfileDao
 import tv.own.owntv.core.database.dao.SourceDao
 import tv.own.owntv.core.database.entity.ChannelEntity
+import tv.own.owntv.core.database.entity.ContentOrderEntity
 import tv.own.owntv.core.database.entity.EpgProgrammeEntity
 import tv.own.owntv.core.database.entity.FavoriteEntity
 import tv.own.owntv.core.database.entity.WatchHistoryEntity
 import tv.own.owntv.core.epg.displayLogoUrl
+import tv.own.owntv.core.live.ChannelLines
 import tv.own.owntv.core.live.CatchupContinue
 import tv.own.owntv.core.live.EpgNowNext
 import tv.own.owntv.core.live.LiveArchiveUrls
@@ -38,6 +41,7 @@ import tv.own.owntv.core.live.LiveEpgReader
 import tv.own.owntv.core.live.LiveTimeshift
 import tv.own.owntv.core.customize.railCategories
 import tv.own.owntv.core.live.LiveKey
+import tv.own.owntv.core.live.liveCountFlow
 import tv.own.owntv.core.model.MediaType
 import tv.own.owntv.core.player.AudioOnlyStore
 import tv.own.owntv.core.player.catchupPinKey
@@ -105,6 +109,8 @@ class LiveTuner(
     private val exo: LivePreviewEngine,
     /** Per-channel "compatibility mode" pins — the same store, and the same meaning, as the television's. */
     private val forceMpvStore: tv.own.owntv.core.player.ForceMpvStore,
+    /** "Has any guide feed been added at all" — the player overlay's third column is drawn only then. */
+    private val epgSourceStore: tv.own.owntv.core.epg.EpgSourceStore,
     val player: OwnTVPlayer,
     /** Lets core's background catalogue drain know a playlist is in use. */
     private val watchSession: tv.own.owntv.core.live.WatchSession,
@@ -471,6 +477,12 @@ class LiveTuner(
 
     private val _siblings = MutableStateFlow<List<ChannelEntity>>(emptyList())
 
+    /**
+     * The lines the channel on screen is offered on — one channel, several URLs (B7). The lists
+     * fold them into one row; this is what the failover walks when one of them stops.
+     */
+    private var loadedLines: List<ChannelEntity> = emptyList()
+
     /** The other channels of the same folder — the Channels tab, and the swipe-up overlay. */
     val siblings: StateFlow<List<ChannelEntity>> = _siblings
 
@@ -661,6 +673,10 @@ class LiveTuner(
 
     fun switchTo(channel: ChannelEntity) {
         if (channel.id == loadedId) return
+        // Another line of the channel already on screen: the row says "this channel", and the
+        // picture is already showing it — from whichever line happened to open.
+        val showing = loadedLines.firstOrNull { it.id == loadedId } ?: _channel.value
+        if (showing != null && ChannelLines.same(showing, channel)) return
         loadedId = channel.id
         live.launch { open(channel) }
     }
@@ -676,7 +692,7 @@ class LiveTuner(
     fun step(delta: Int) {
         val list = _siblings.value
         if (list.size < 2) return
-        val index = list.indexOfFirst { it.id == loadedId }
+        val index = groupedIndex(list)
         if (index < 0) return
         val target = list[(index + delta).mod(list.size)]
         if (target.id == loadedId) return
@@ -685,6 +701,38 @@ class LiveTuner(
             kotlinx.coroutines.delay(ZAP_TUNE_DELAY_MS)
             open(target)
         }
+    }
+
+    /** Channels tried in a row since the last picture: the failover ladder's own count. */
+    private var failovers = 0
+
+    /**
+     * The channel on screen would not start (B7): move on to the next one of its folder.
+     *
+     * [step] waits [ZAP_TUNE_DELAY_MS] so a burst of Channel + presses costs one stream; here the
+     * user is staring at a failure, so the next channel opens at once. Three hops in a row without a
+     * picture and the ladder gives up: `false` leaves the player on its own error panel rather than
+     * walking the whole playlist in front of someone who only wanted to watch one channel.
+     *
+     * Returns whether a switch was made — the caller keeps the panel up when it was not.
+     */
+    fun failoverToNext(): Boolean {
+        if (failovers >= FAILOVER_LIMIT) return false
+        val list = _siblings.value
+        if (list.size < 2) return false
+        val index = groupedIndex(list)
+        if (index < 0) return false
+        val target = list[(index + 1).mod(list.size)]
+        if (target.id == loadedId) return false
+        failovers++
+        loadedId = target.id
+        live.launch { open(target) }
+        return true
+    }
+
+    /** A picture came back: whatever the failover ladder had counted is spent. */
+    fun notePlaying() {
+        failovers = 0
     }
 
     /**
@@ -874,9 +922,14 @@ class LiveTuner(
         }
     }
 
-    /** One category's channels — a provider folder or a custom category — with the same hide/rename
-     *  treatment the Live list applies. */
-    suspend fun channelsInCategoryForPicker(key: LiveKey): List<ChannelEntity> {
+    /**
+     * One category's channels — a provider folder or a custom category — with the same hide/rename
+     * treatment the Live list applies.
+     *
+     * One row per channel: a playlist that lists a channel six times is six rows of URLs, and the
+     * list shows the channel once with the lines folded under it ([ChannelLines.Group.lineCount]).
+     */
+    suspend fun channelsInCategoryForPicker(key: LiveKey): List<ChannelLines.Group> {
         val c = ctx.value
         if (c.profileId < 0) return emptyList()
         val cust = custom.value
@@ -884,6 +937,7 @@ class LiveTuner(
         return withContext(Dispatchers.IO) {
             val cats = categoryDao.observe(ids, MediaType.LIVE).first()
             val hidden = AdultCategoryClassifier.hiddenCategoryIds(cats, cust.hiddenCategories, profileDao.getById(c.profileId)?.isKids == true)
+            val alpha = settings.sortLive.first() == SettingsRepository.SortMode.ALPHA
             val raw = when (key) {
                 is LiveKey.Folder -> {
                     val category = categoryDao.getById(key.id) ?: return@withContext emptyList()
@@ -891,16 +945,55 @@ class LiveTuner(
                         categoryId = category.id,
                         profileId = c.profileId,
                         contextKey = CustomizeKeys.category(category),
-                        alpha = settings.sortLive.first() == SettingsRepository.SortMode.ALPHA,
+                        alpha = alpha,
                         limit = SIBLING_LIMIT,
                     )
                 }
-                is LiveKey.Custom -> customCategoryDao.snapshotChannels(c.profileId, key.id, ids, settings.sortLive.first() == SettingsRepository.SortMode.ALPHA, SIBLING_LIMIT)
-                else -> emptyList()
+                is LiveKey.Custom -> customCategoryDao.snapshotChannels(c.profileId, key.id, ids, alpha, SIBLING_LIMIT)
+                // The four fixed rails, so the player's overlay can open on any of them — the
+                // channel sheet above only ever asked for folders and custom categories.
+                LiveKey.All -> channelDao.snapshotAll(ids, SIBLING_LIMIT)
+                LiveKey.Favorites -> channelDao.snapshotFavoritesManual(c.profileId, ContentOrderEntity.FAV_CONTEXT, ids, SIBLING_LIMIT)
+                LiveKey.History -> channelDao.snapshotHistory(c.profileId, ids, SIBLING_LIMIT)
+                LiveKey.Catchup -> channelDao.snapshotCatchup(ids, SIBLING_LIMIT)
             }
             raw.filter { tv.own.owntv.core.live.isChannelVisible(it, cust, hidden, key) }
         }.map { ch -> cust.itemNames[CustomizeKeys.channel(ch)]?.let { ch.copy(name = it) } ?: ch }
+            .let { ChannelLines.group(it) }
     }
+
+    /**
+     * The player overlay's first column: every category the Live tab's sheet lists, each with the
+     * channels it holds — the same builder, so a rename or a hide made on one screen is on the
+     * other. Sealed categories carry no count (how much a locked folder holds is the lock's business).
+     */
+    suspend fun overlayCategories(): List<LiveCategoryRow> {
+        val c = ctx.value
+        if (c.profileId < 0) return emptyList()
+        val cust = custom.value
+        val ids = c.liveSourceIds.ifEmpty { listOf(-1L) }
+        return withContext(Dispatchers.IO) {
+            val cats = categoryDao.observe(ids, MediaType.LIVE).first()
+            val profile = profileDao.getById(c.profileId)
+            val alpha = settings.sortLive.first() == SettingsRepository.SortMode.ALPHA
+            val builtIns = settings.liveBuiltIns.first()
+            val hidden = AdultCategoryClassifier.hiddenCategoryIds(cats, cust.hiddenCategories, profile?.isKids == true)
+            val sealed = cust.sealedCategoryIds
+            // Catch-up only earns a row when the provider advertises an archive — the tab's own rule.
+            val catchup = liveCountFlow(LiveKey.Catchup, c.profileId, c.liveSourceIds, hidden, channelDao, customCategoryDao, sealed).first()
+            buildLiveCategories(cats, cust, alpha, builtIns, catchup, profile).map { category ->
+                // The number the channel column below it will show: folded to one row per channel,
+                // so the badge and the list cannot disagree. A playlist that lists a channel six
+                // times is one channel on six lines, and the list draws one row — the count is of
+                // those rows, not of the URLs behind them.
+                val count = channelsInCategoryForPicker(category.key).size
+                LiveCategoryRow(category, if (category.sealed) null else count)
+            }
+        }
+    }
+
+    /** Whether any guide feed exists at all: without one the overlay shows no EPG column (B4). */
+    suspend fun epgSupported(): Boolean = epgSourceStore.getAll().isNotEmpty()
 
     private suspend fun loadSiblings(channel: ChannelEntity) {
         val c = ctx.value
@@ -921,21 +1014,63 @@ class LiveTuner(
             }
         }
         val cust = custom.value
-        _siblings.value = list
+        val visible = list
             .filter { CustomizeKeys.channel(it) !in cust.hiddenItems && !cust.sealsItemIn(it.categoryId) }
             .map { ch -> cust.itemNames[CustomizeKeys.channel(ch)]?.let { ch.copy(name = it) } ?: ch }
+        // The lines first, from the rows as the playlist wrote them: the list below folds them into
+        // one row per channel, and the failover needs the URLs that fold hid.
+        loadedLines = ChannelLines.linesOf(channel, visible)
+        _siblings.value = ChannelLines.group(visible).map { it.channel }
+    }
+
+    /**
+     * The channel on screen is offered on several lines (B7): the same name in one folder is one
+     * channel with a URL of its own per line, and every list shows it once. A line that fails or
+     * stalls is swapped for the next one of the same channel before anything else happens — the
+     * channel the user asked for is still the channel they get, only from the next URL.
+     *
+     * False when the family has no line left, which is the caller's cue to move to the next channel.
+     */
+    fun failoverToNextLine(): Boolean {
+        val lines = loadedLines
+        val index = lines.indexOfFirst { it.id == loadedId }
+        if (index < 0 || index + 1 >= lines.size) return false
+        val target = lines[index + 1]
+        Log.i(TAG, "line ${index + 2}/${lines.size} of ${target.name}")
+        loadedId = target.id
+        live.launch { open(target) }
+        return true
+    }
+
+    /**
+     * Where the channel on screen sits in the folded list: a line counts as its family's row, so
+     * "the next channel" steps over the duplicates the list already folded together.
+     */
+    private fun groupedIndex(list: List<ChannelEntity>): Int {
+        val exact = list.indexOfFirst { it.id == loadedId }
+        if (exact >= 0) return exact
+        val current = _channel.value ?: return -1
+        val key = ChannelLines.keyOf(current)
+        return list.indexOfFirst { ChannelLines.keyOf(it) == key }
     }
 
     /** Already-aired programmes this channel's archive still holds, newest first. */
     suspend fun catchupProgrammes(): List<EpgProgrammeEntity> {
         val channel = _channel.value ?: return emptyList()
-        return epgReader.catchupProgrammes(
+        return catchupProgrammesOf(channel)
+    }
+
+    /**
+     * The archive of [channel], playing or not — the player's channel menu asks about the channel the
+     * user pressed, which may not be the one on screen.
+     */
+    suspend fun catchupProgrammesOf(channel: ChannelEntity): List<EpgProgrammeEntity> =
+        epgReader.catchupProgrammes(
             channel,
             custom.value,
             settings.epgOffsetMinutes.first(),
             ctx.value.sourceIds,
         )
-    }
 
     /**
      * Replay a past programme from the archive. Seekable, so it plays as VOD rather than as live.
@@ -1227,13 +1362,21 @@ class LiveTuner(
     }
 
     private companion object {
+        const val TAG = "LiveTuner"
         const val SIBLING_LIMIT = 2_000
 
         /** How long Channel +/− waits for the user to stop pressing before it opens a stream — the
          *  television's figure. */
         const val ZAP_TUNE_DELAY_MS = 500L
+
+        /** Channels tried without a picture before the automatic switch stands down (B7). */
+        const val FAILOVER_LIMIT = 3
     }
 }
+
+/** One row of the player overlay's first column: a category and how many channels it holds; a sealed
+ *  one carries no count. */
+data class LiveCategoryRow(val category: LiveCategory, val count: Int?)
 
 /**
  * What typing a channel number produced. Every outcome is something the user is told: a number that

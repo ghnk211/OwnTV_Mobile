@@ -1026,13 +1026,13 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	DELETE FROM channels WHERE sourceId = :sourceId AND remoteId IS NULL
 2	sql	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	FROM channels c
 4	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	INNER JOIN favorites f ON f.itemId = c.id AND f.mediaType = 'LIVE'
-4	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	INNER JOIN watch_history h ON h.itemId = c.id AND h.mediaType = 'LIVE'
+5	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	INNER JOIN watch_history h ON h.itemId = c.id AND h.mediaType = 'LIVE'
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	LEFT JOIN categories cat ON c.categoryId = cat.id
 4	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	LEFT JOIN content_order o ON o.itemId = c.id AND o.profileId = :profileId AND o.mediaType = 'LIVE' AND o.contextKey = :contextKey
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	ORDER BY (CASE WHEN o.position IS NULL THEN 1 ELSE 0 END), o.position, f.addedAt DESC
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	ORDER BY (CASE WHEN o.position IS NULL THEN 1 ELSE 0 END), o.position, f.addedAt DESC LIMIT :limit
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	ORDER BY c.name ASC LIMIT :limit
-1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	ORDER BY h.watchedAt DESC LIMIT :limit
+2	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	ORDER BY h.watchedAt DESC LIMIT :limit
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	ORDER BY number ASC, name ASC LIMIT :limit
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT * FROM channels WHERE catchup = 1
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT * FROM channels WHERE categoryId = :categoryId AND (sortOrder < :beforeSortOrder OR (sortOrder = :beforeSortOrder AND id < :beforeId)) ORDER BY sortOrder DESC, id DESC LIMIT :limit
@@ -1073,7 +1073,7 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT DISTINCT LOWER(TRIM(epgChannelId)) FROM channels
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT DISTINCT LOWER(TRIM(epgChannelId)) FROM channels WHERE epgChannelId IS NOT NULL AND epgChannelId != ''
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT DISTINCT epgChannelId FROM epg_programmes WHERE sourceId IN (:sourceIds)
-6	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT c.* FROM channels c
+7	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT c.* FROM channels c
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT c.* FROM channels c INNER JOIN favorites f ON f.itemId = c.id AND f.mediaType = 'LIVE'
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT c.* FROM channels c INNER JOIN slots sl ON sl.id = c.id ORDER BY sl.slot, sl.grp, sl.tie
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT c.* FROM channels c INNER JOIN slots sl ON sl.id = c.id ORDER BY sl.slot, sl.grp, sl.tie LIMIT :limit
@@ -1081,7 +1081,7 @@
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT c.*, cat.name AS categoryName FROM channels c
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT c.*, h.watchedAt FROM channels c
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT categoryId, COUNT(*) AS itemCount FROM channels
-1	sql	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT id, remoteId, sortOrder, number FROM channels WHERE sourceId = :sourceId ORDER BY sortOrder ASC, id ASC
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT id, remoteId, sortOrder, number, name, providerName FROM channels WHERE sourceId = :sourceId ORDER BY sortOrder ASC, id ASC
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT remoteId FROM channels WHERE sourceId = :sourceId AND categoryId IN (:categoryIds) AND remoteId IS NOT NULL
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT remoteId FROM channels WHERE sourceId = :sourceId AND remoteId IS NOT NULL
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	SELECT remoteId FROM channels WHERE sourceId = :sourceId AND remoteId IS NOT NULL LIMIT 1
@@ -1101,7 +1101,7 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	WHERE f.profileId = :profileId AND f.mediaType = 'LIVE' AND c.sourceId IN (:sourceIds)
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	WHERE f.profileId = :profileId ORDER BY LOWER(c.name) ASC, c.id ASC
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	WHERE f.profileId = :profileId ORDER BY f.addedAt DESC
-1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	WHERE h.profileId = :profileId AND c.sourceId IN (:sourceIds)
+2	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	WHERE h.profileId = :profileId AND c.sourceId IN (:sourceIds)
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	WHERE h.profileId = :profileId AND c.sourceId IN (:sourceIds) AND c.name LIKE '%' || :query || '%' ORDER BY h.watchedAt DESC
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	WHERE h.profileId = :profileId AND c.sourceId IN (:sourceIds) ORDER BY h.watchedAt DESC
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ChannelDao.kt	WHERE h.profileId = :profileId AND h.mediaType = 'LIVE' AND c.sourceId IN (:sourceIds)
@@ -2133,6 +2133,8 @@
 1	technical	core/src/main/java/tv/own/owntv/core/launcher/LauncherRecommendationPlanner.kt	episode:${show.sourceId}:${show.remoteId ?: show.name}:${episode.remoteId ?: "${episode.seasonNumber}-${episode.episodeNumber}"}
 1	technical	core/src/main/java/tv/own/owntv/core/launcher/LauncherRecommendationPlanner.kt	live:${channel.sourceId}:${channel.remoteId ?: channel.name}
 1	technical	core/src/main/java/tv/own/owntv/core/launcher/LauncherRecommendationPlanner.kt	movie:${movie.sourceId}:${movie.remoteId ?: movie.name}
+1	empty	core/src/main/java/tv/own/owntv/core/live/ChannelLines.kt	\0
+1	preference-key	core/src/main/java/tv/own/owntv/core/live/ChannelLines.kt	
 1	technical	core/src/main/java/tv/own/owntv/core/live/ChannelVersions.kt	\0
 1	technical	core/src/main/java/tv/own/owntv/core/live/ChannelVersions.kt	$it*
 1	technical	core/src/main/java/tv/own/owntv/core/live/ChannelVersions.kt	${it.id}@${it.lastSyncAt}
@@ -2516,6 +2518,53 @@
 1	protocol	core/src/main/java/tv/own/owntv/core/parser/ProgressiveVideoUrl.kt	mpg
 1	protocol	core/src/main/java/tv/own/owntv/core/parser/ProgressiveVideoUrl.kt	webm
 1	protocol	core/src/main/java/tv/own/owntv/core/parser/ProgressiveVideoUrl.kt	wmv
+2	empty	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	\0
+1	regex	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	(?m)^\\s*//
+2	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	.json
+1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	.m3u
+1	file-path	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	.php
+1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	.txt
+1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	//
+1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	://
+1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	Origin
+1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	Referer
+1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	User-Agent
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	channels
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	chs
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	epg
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	epgId
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	epgUrl
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	group
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	headers
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	icon
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	list
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	live
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	lives
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	logo
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	name
+1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	origin
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	pic
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	playUrl
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	playerType
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	referer
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	referrer
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	stream
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	streamUrl
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	title
+1	preference-key	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	tvbox_config_invalid_json
+1	preference-key	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	tvbox_config_lives_missing
+1	preference-key	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	tvbox_config_not_json
+1	preference-key	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	tvbox_config_too_large
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	tvgId
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	tvg_logo
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	tvg_name
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	type
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	ua
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	url
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	url-tvg
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	urls
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	userAgent
+1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	x-tvg-url
 1	technical	core/src/main/java/tv/own/owntv/core/parser/XmltvDetails.kt	$s $v
 1	technical	core/src/main/java/tv/own/owntv/core/parser/XmltvDetails.kt	E${episode + 1}
 1	technical	core/src/main/java/tv/own/owntv/core/parser/XmltvDetails.kt	S${season + 1}
@@ -3067,6 +3116,7 @@
 1	json	core/src/main/java/tv/own/owntv/core/repository/SourceTester.kt	num_of_devices
 1	json	core/src/main/java/tv/own/owntv/core/repository/SourceTester.kt	status
 1	log	core/src/main/java/tv/own/owntv/core/repository/SourceTester.kt	test sourceId=${source.id} type=${source.type} -> ${result::class.simpleName}
+1	uri	core/src/main/java/tv/own/owntv/core/repository/SourceTester.kt	{
 3	empty	core/src/main/java/tv/own/owntv/core/settings/ClockColors.kt	\0
 1	technical	core/src/main/java/tv/own/owntv/core/settings/ClockColors.kt	accent
 1	technical	core/src/main/java/tv/own/owntv/core/settings/CustomizePinSettings.kt	customize_pin_
@@ -4706,6 +4756,7 @@
 3	technical	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	M3U series
 1	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	M3U series flush sourceId=${s.id} final=$final shows=${shows.size} dbInserted=${inserts.size}
 1	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	M3U truncated-name rescue: ${rescued.size} row(s) relinked to their full name
+1	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	TVBox external source failed
 3	technical	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	channels
 1	technical	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	channels_fts
 1	url	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	content://
@@ -4713,6 +4764,7 @@
 1	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	dbUpdated=${upsert.updated} dbSkipped=${upsert.skippedUnchanged} processed=$moviesProcessed
 1	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	dbUpdated=${upsert.updated} dbSkipped=${upsert.skippedUnchanged} processed=$processed
 1	url	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	file://
+1	uri	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	http
 1	technical	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	movies
 2	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	ms=${SystemClock.elapsedRealtime() - start}
 1	technical	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	series

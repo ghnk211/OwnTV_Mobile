@@ -45,7 +45,7 @@ import tv.own.owntv.mobile.ui.stage.StageChevron
 import androidx.compose.ui.semantics.Role
 
 /** Which kind of provider the form is asking about. */
-enum class SourceKind { XTREAM, M3U, STALKER }
+enum class SourceKind { XTREAM, M3U, STALKER, TVBOX }
 
 /**
  * Everything the form holds, so editing an existing playlist can fill it and take it back whole.
@@ -109,7 +109,7 @@ fun AddSourceForm(
     var username by rememberSaveable { mutableStateOf(initial?.username.orEmpty()) }
     var password by rememberSaveable { mutableStateOf(initial?.password.orEmpty()) }
     var m3uUrl by rememberSaveable {
-        mutableStateOf(if (initial?.kind == SourceKind.M3U) initial.urlOrServer else "")
+        mutableStateOf(if (initial?.kind == SourceKind.M3U || initial?.kind == SourceKind.TVBOX) initial.urlOrServer else "")
     }
     var portalUrl by rememberSaveable {
         mutableStateOf(if (initial?.kind == SourceKind.STALKER) initial.urlOrServer else "")
@@ -132,6 +132,7 @@ fun AddSourceForm(
     var syncSeries by rememberSaveable { mutableStateOf(initial?.series ?: SyncScopeChoice.Now) }
     var showRefreshSheet by remember { mutableStateOf(false) }
     var showDeviceSheet by remember { mutableStateOf(false) }
+    var tvboxFileRejected by rememberSaveable { mutableStateOf(false) }
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -143,6 +144,18 @@ fun AddSourceForm(
             }
         }
     }
+    val pickTvboxJson = rememberJsonFilePicker(
+        onPicked = { uri ->
+            scope.launch {
+                copyPickedFile(context, uri, java.io.File(context.filesDir, PLAYLIST_DIR))?.let { file ->
+                    m3uUrl = file.absolutePath
+                    tvboxFileRejected = false
+                    if (name.isBlank()) name = file.nameWithoutExtension
+                }
+            }
+        },
+        onRejected = { tvboxFileRejected = true },
+    )
 
     val macValid = StalkerClient.canonicalizeMac(mac) != null
     val autoRefresh = PlaylistRefresh(refreshMode, manualDays.toIntOrNull() ?: PlaylistRefresh().manualDays)
@@ -154,6 +167,9 @@ fun AddSourceForm(
             // On an edit the password field starts empty and left empty keeps the stored one.
             server.isNotBlank() && username.isNotBlank() && (password.isNotBlank() || editing) && hasAnySection
         SourceKind.M3U -> m3uUrl.isNotBlank()
+        // TVBox is a single JSON config: both the URL and a picked file have to end in .json for
+        // core to pick the `lives` parser instead of the M3U one.
+        SourceKind.TVBOX -> isJsonLocation(m3uUrl)
         SourceKind.STALKER -> StalkerClient.isValidPortalUrl(portalUrl) && macValid && hasAnySection
     }
     fun values() = SourceFormValues(
@@ -161,8 +177,8 @@ fun AddSourceForm(
         name = name,
         urlOrServer = when (kind) {
             SourceKind.XTREAM -> server
-            SourceKind.M3U -> m3uUrl
             SourceKind.STALKER -> portalUrl
+            else -> m3uUrl
         },
         username = username,
         password = password,
@@ -191,7 +207,12 @@ fun AddSourceForm(
                 // Stalker portals answer one item at a time, so a full film catalogue on the spot is an hour of
                 // requests; the television makes the same choice for the same reason.
                 StageSegmented(
-                    options = listOf(stringResource(R.string.setup_xtream), stringResource(R.string.setup_m3u), stringResource(R.string.setup_stalker_mac)),
+                    options = listOf(
+                        stringResource(R.string.setup_xtream),
+                        stringResource(R.string.setup_m3u),
+                        stringResource(R.string.setup_stalker_mac),
+                        stringResource(R.string.setup_tvbox),
+                    ),
                     selected = kind.ordinal,
                     onSelect = { index ->
                         kind = SourceKind.entries[index]
@@ -250,6 +271,29 @@ fun AddSourceForm(
                     ) { StageIcon(MobileIcons.KeyboardArrowRight, 14.dp, palette.muted) }
                 }
             }
+            SourceKind.TVBOX -> {
+                item(key = "tvbox-url") {
+                    StageTextRow(
+                        MobileIcons.Translate, stringResource(R.string.setup_tvbox_url), m3uUrl,
+                        { m3uUrl = it; tvboxFileRejected = false },
+                        placeholder = stringResource(R.string.setup_tvbox_url_example), keyboardType = KeyboardType.Uri,
+                    )
+                }
+                item(key = "tvbox-file") {
+                    StageSettingRow(
+                        title = stringResource(R.string.setup_tvbox_local_file),
+                        icon = MobileIcons.Folder,
+                        subtitle = stringResource(R.string.setup_tvbox_json_hint),
+                        subtitleColor = palette.dim,
+                        onClick = { pickTvboxJson() },
+                    ) { StageIcon(MobileIcons.KeyboardArrowRight, 14.dp, palette.muted) }
+                }
+                if ((m3uUrl.isNotBlank() && !isJsonLocation(m3uUrl)) || tvboxFileRejected) {
+                    item(key = "tvbox-bad") {
+                        Text(stringResource(R.string.setup_tvbox_json_invalid), style = stageText(11.5f, 600), color = palette.danger, modifier = Modifier.padding(horizontal = 12.dp))
+                    }
+                }
+            }
             SourceKind.STALKER -> {
                 item(key = "portal") {
                     StageTextRow(
@@ -287,30 +331,34 @@ fun AddSourceForm(
                 }
             }
         }
-        item(key = "optional") { StageSectionHead(stringResource(R.string.settings_form_optional)) }
-        item(key = "ua") {
-            StageTextRow(MobileIcons.Edit, stringResource(R.string.setup_user_agent_optional), userAgent, { userAgent = it }, placeholder = stringResource(R.string.setup_user_agent_example))
-        }
-        item(key = "referer") {
-            StageTextRow(MobileIcons.Edit, stringResource(R.string.setup_referer_optional), httpReferer, { httpReferer = it }, placeholder = stringResource(R.string.setup_referer_example))
-        }
-        item(key = "refresh") {
-            StageSettingRow(
-                icon = MobileIcons.Schedule,
-                title = stringResource(R.string.setup_auto_refresh),
-                onClick = { showRefreshSheet = true },
-            ) { StageRowValue(stringResource(refreshMode.labelRes()), StageChevron.DOWN) }
-        }
-        if (refreshMode == PlaylistAutoRefresh.MANUAL) {
-            item(key = "days") {
-                StageTextRow(
-                    MobileIcons.CalendarMonth, stringResource(R.string.settings_sources_refresh_days_title), manualDays,
-                    { manualDays = it.filter(Char::isDigit).take(3) },
-                    placeholder = stringResource(R.string.settings_sources_refresh_days_hint), keyboardType = KeyboardType.Number,
-                )
+        // TVBox only needs a name, a .json URL or file, and the import button; per-channel headers
+        // in the config already carry the UA/referer, so the optional section would be misleading.
+        if (kind != SourceKind.TVBOX) {
+            item(key = "optional") { StageSectionHead(stringResource(R.string.settings_form_optional)) }
+            item(key = "ua") {
+                StageTextRow(MobileIcons.Edit, stringResource(R.string.setup_user_agent_optional), userAgent, { userAgent = it }, placeholder = stringResource(R.string.setup_user_agent_example))
+            }
+            item(key = "referer") {
+                StageTextRow(MobileIcons.Edit, stringResource(R.string.setup_referer_optional), httpReferer, { httpReferer = it }, placeholder = stringResource(R.string.setup_referer_example))
+            }
+            item(key = "refresh") {
+                StageSettingRow(
+                    icon = MobileIcons.Schedule,
+                    title = stringResource(R.string.setup_auto_refresh),
+                    onClick = { showRefreshSheet = true },
+                ) { StageRowValue(stringResource(refreshMode.labelRes()), StageChevron.DOWN) }
+            }
+            if (refreshMode == PlaylistAutoRefresh.MANUAL) {
+                item(key = "days") {
+                    StageTextRow(
+                        MobileIcons.CalendarMonth, stringResource(R.string.settings_sources_refresh_days_title), manualDays,
+                        { manualDays = it.filter(Char::isDigit).take(3) },
+                        placeholder = stringResource(R.string.settings_sources_refresh_days_hint), keyboardType = KeyboardType.Number,
+                    )
+                }
             }
         }
-        if (kind != SourceKind.M3U) {
+        if (kind != SourceKind.M3U && kind != SourceKind.TVBOX) {
             item(key = "sync-head") { StageSectionHead(stringResource(R.string.setup_what_to_sync)) }
             item(key = "sync-note") { PageNote(stringResource(R.string.setup_sync_choices)) }
             item(key = "sync-live") { ScopeRow(MobileIcons.LiveTv, stringResource(R.string.setup_live_tv), stringResource(R.string.setup_channels_categories), syncLive) { syncLive = it } }
@@ -326,7 +374,9 @@ fun AddSourceForm(
                             name, server, username, password, userAgent, httpReferer, autoRefresh,
                             syncLive, syncMovies, syncSeries, preferHls,
                         )
-                        SourceKind.M3U -> onStartM3u(name, m3uUrl, userAgent, httpReferer, autoRefresh)
+                        // A TVBox config is a playlist too: it is stored as an M3U source and core
+                        // switches to the `lives` parser based on the .json location.
+                        SourceKind.M3U, SourceKind.TVBOX -> onStartM3u(name, m3uUrl, userAgent, httpReferer, autoRefresh)
                         SourceKind.STALKER -> onStartStalker(
                             name, portalUrl, mac, serialNumber, deviceId, deviceId2, signature,
                             userAgent, httpReferer, autoRefresh, syncLive, syncMovies, syncSeries, username, password,
@@ -394,3 +444,12 @@ internal fun PlaylistAutoRefresh.labelRes(): Int = when (this) {
 
 /** Where a playlist picked from the phone's storage is kept. */
 private const val PLAYLIST_DIR = "playlists"
+
+/** A TVBox config is either an http(s) URL or an absolute local path, both ending in .json. */
+internal fun isJsonLocation(value: String): Boolean {
+    val trimmed = value.trim()
+    if (trimmed.isEmpty()) return false
+    val path = trimmed.substringBefore('#').substringBefore('?')
+    return path.endsWith(".json", ignoreCase = true) &&
+        (trimmed.contains("://") || trimmed.startsWith("/"))
+}

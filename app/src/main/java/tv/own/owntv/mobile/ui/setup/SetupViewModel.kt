@@ -1,6 +1,7 @@
 package tv.own.owntv.mobile.ui.setup
 
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -149,6 +150,48 @@ class SetupViewModel(
 
     fun dismissBlocked() { _blocked.value = null }
 
+    // ---- The "New profile" page's answers, kept until the flow knows it will end ----
+
+    /** The answers the page collected; null when the user did not take that path. */
+    var profileDraft: ProfileDraft? = null
+        private set
+    /** The row [profileDraft] was written as, once something needed it (an import, or the end). */
+    private var draftProfileId: Long? = null
+
+    /**
+     * Kept as a draft rather than written here: making the row and switching to it would give the
+     * shell an active profile, and the shell replaces the wizard the moment one exists — before any
+     * content could be added.
+     */
+    fun setProfileDraft(draft: ProfileDraft) {
+        profileDraft = draft
+    }
+
+    /** The drafted profile's id, creating it on first use; null when there is no draft. */
+    private suspend fun materialiseDraft(): Long? {
+        val draft = profileDraft ?: return null
+        draftProfileId?.let { return it }
+        // avatarId -1 leaves the drawn face empty, so the shell shows the name's initial.
+        val id = profiles.create(
+            name = draft.name,
+            avatarId = -1,
+            isKids = false,
+            pin = draft.pin,
+            fallbackName = draft.name,
+        )
+        draftProfileId = id
+        saveDraftAvatar(id, draft.picture)
+        return id
+    }
+
+    /** Copies the page's chosen photo into app-private storage, if one was chosen and still reads. */
+    private suspend fun saveDraftAvatar(profileId: Long, picture: String?) {
+        val uri = Uri.parse(picture ?: return)
+        val profile = profileDao.getById(profileId) ?: return
+        val stream = runCatching { context.contentResolver.openInputStream(uri) }.getOrNull() ?: return
+        stream.use { profiles.setCustomAvatar(profile, it) }
+    }
+
     /**
      * @return true when the backup was refused — core is then not called, and the picked file stays
      * where it is so the same one can be restored from Settings, where the rename can be confirmed.
@@ -188,10 +231,10 @@ class SetupViewModel(
      * Ends the flow: the profile the content landed on becomes the active one, and its id is handed
      * back so the shell knows who to show.
      *
-     * It no longer creates a profile of its own on top of that. [attachToProfile] already made one for
-     * a genuinely empty install before any import ran, so by the time the wizard finishes there is
-     * either that profile or the one a restore brought in — and the wizard's own "who is watching"
-     * step, which used to be where a name and a PIN were chosen, went with multi-profile support.
+     * The profile is the one a restore brought in, the one [attachToProfile] made before the import,
+     * or the draft the "New profile" page collected — which is written now, at the end, when
+     * switching to it can no longer cut the rest of setup short. A blank run still makes the
+     * default profile, because the app needs one to scope favorites and history against.
      *
      * The id is not an unlock. If the profile that landed carries a PIN, the shell's app lock asks for
      * it; passing a session token from here would be the wizard letting itself in.
@@ -199,7 +242,11 @@ class SetupViewModel(
     fun finish(onDone: (Long?) -> Unit) {
         appScope.launch {
             val active = settings.activeProfileIdNow()
-            val existing = if (active >= 0) active else profileDao.getAllOnce().firstOrNull()?.id
+            val existing = if (active >= 0) {
+                active
+            } else {
+                materialiseDraft() ?: profileDao.getAllOnce().firstOrNull()?.id
+            }
             if (existing != null) {
                 if (existing != active) profiles.switchTo(existing)
                 onMain { onDone(existing) }
@@ -249,11 +296,12 @@ class SetupViewModel(
 
     /**
      * The profile the new playlist belongs to. An app that has been used before already has one,
-     * and adding a second playlist must not quietly create a second profile to hang it on; only a
-     * genuinely empty install makes one, named the way the wizard would name it.
+     * and adding a second playlist must not quietly create a second profile to hang it on; the
+     * "New profile" draft comes next, and only a genuinely empty install makes the default one.
      */
     private suspend fun attachToProfile() {
         val existing = settings.activeProfileIdNow().takeIf { it >= 0 }
+            ?: materialiseDraft()
             ?: profileDao.getAllOnce().firstOrNull()?.id
         if (existing != null) {
             importer.useProfile(existing)
@@ -267,3 +315,10 @@ class SetupViewModel(
         }
     }
 }
+
+/**
+ * What the Wizard's "New profile" page collects: a name, an optional PIN, and an optional picture as
+ * a `content://` address (kept as a string so [androidx.compose.runtime.saveable.rememberSaveable]
+ * can hold it across configuration changes).
+ */
+class ProfileDraft(val name: String, val pin: String?, val picture: String?)

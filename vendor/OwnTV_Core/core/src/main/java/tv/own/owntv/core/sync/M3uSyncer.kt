@@ -26,7 +26,10 @@ import tv.own.owntv.core.network.HttpClient
 import tv.own.owntv.core.drm.DrmConfig
 import tv.own.owntv.core.player.ManifestType
 import tv.own.owntv.core.network.StreamHeaders
+import tv.own.owntv.core.parser.M3uHeader
 import tv.own.owntv.core.parser.M3uParser
+import tv.own.owntv.core.parser.TvBoxExternalSource
+import tv.own.owntv.core.parser.TvBoxPlaylistParser
 
 /**
  * The M3U import flow (split out of SyncManager). M3U playlists carry
@@ -49,6 +52,7 @@ internal class M3uSyncer(
     private val http: HttpClient,
     private val bulkInsertHelper: BulkInsertHelper,
     private val support: SyncSupport,
+    private val tvbox: TvBoxPlaylistParser = TvBoxPlaylistParser(),
 ) {
     // Channels and movies use the shared adapters: sortOrder no longer needs folding into the
     // M3U hash, because upsertStable now compares the stored sortOrder separately, so a reordered
@@ -455,10 +459,32 @@ internal class M3uSyncer(
                     }
                 }
             }
-            val header = if (isLocal) {
-                localFile.open(s.url).use { input -> m3u.parse(input, onEntry) }
+            // A `.json` location is a TVBox config: its `lives` array carries the channels, and the
+            // TVBox parser emits the same M3uEntry stream so everything below is unchanged. Any other
+            // location keeps the original M3U parser and the original stream wrapper untouched.
+            val externals = mutableListOf<TvBoxExternalSource>()
+            suspend fun parseStream(input: java.io.InputStream) =
+                if (TvBoxPlaylistParser.isTvBoxLocation(s.url)) tvbox.parse(input, onEntry) { externals += it }
+                else m3u.parse(input, onEntry)
+            var header = if (isLocal) {
+                localFile.open(s.url).use { input -> parseStream(input) }
             } else {
-                http.get(s.url, s.userAgent, reportBytes, maxAttempts = M3U_DOWNLOAD_ATTEMPTS) { input -> m3u.parse(input, onEntry) }
+                http.get(s.url, s.userAgent, reportBytes, maxAttempts = M3U_DOWNLOAD_ATTEMPTS) { input -> parseStream(input) }
+            }
+            // Published TVBox configs usually reference other playlists instead of listing channels
+            // inline. Fetch each reference and run the same M3U parser over it; one dead reference
+            // must not fail a whole import that has other working sources.
+            var externalEpg: String? = null
+            for (ext in externals.take(MAX_EXTERNAL_SOURCES)) {
+                if (!ext.url.startsWith("http", ignoreCase = true)) continue
+                runCatching {
+                    http.get(ext.url, ext.userAgent ?: s.userAgent, reportBytes,
+                        maxAttempts = M3U_DOWNLOAD_ATTEMPTS) { input -> m3u.parse(input, onEntry) }
+                }.onSuccess { h -> if (externalEpg == null) externalEpg = h.urlTvg }
+                    .onFailure { e -> Log.w(TAG, "TVBox external source failed", e) }
+            }
+            if (header.urlTvg.isNullOrBlank() && !externalEpg.isNullOrBlank()) {
+                header = M3uHeader(externalEpg)
             }
             if (buffer.isNotEmpty()) {
                 flushChannels()
@@ -561,6 +587,9 @@ internal class M3uSyncer(
 
     companion object {
         private const val TAG = SyncSupport.TAG
+
+        /** A TVBox config may reference several external lists; bound the extra downloads. */
+        private const val MAX_EXTERNAL_SOURCES = 8
 
         /** "S01E05" / "s1 e5" — the common episode marker in M3U series playlists. */
         /** Up to four digits each: a year as the season ("S2019E05") and long anime runs ("E1050"). */

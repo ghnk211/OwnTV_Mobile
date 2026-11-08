@@ -35,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -62,6 +61,7 @@ import tv.own.owntv.mobile.R
 import tv.own.owntv.mobile.ui.components.MobileIcons
 import tv.own.owntv.mobile.ui.nav.MobileDestination
 import tv.own.owntv.mobile.ui.profiles.ProfileAvatar
+import tv.own.owntv.mobile.ui.profiles.ProfileInitial
 import tv.own.owntv.mobile.ui.stage.LocalStagePalette
 import tv.own.owntv.mobile.ui.stage.StageIcon
 import tv.own.owntv.mobile.ui.stage.StagePill
@@ -547,19 +547,6 @@ internal fun ShellAvatar(profile: ProfileEntity?, onClick: (() -> Unit)?, diamet
     if (profile != null && (profile.avatarId >= 0 || !profile.avatarPath.isNullOrBlank())) {
         ProfileAvatar(profile.avatarId, modifier, profile.avatarPath.orEmpty())
     } else {
-        Box(
-            modifier.drawBehind {
-                drawRect(Brush.linearGradient(listOf(Color(0xFFFFB35C), Color(0xFFFF5F7A)), Offset.Zero, Offset(size.width, size.height)))
-            },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                profile?.name?.firstOrNull()?.uppercase().orEmpty(),
-                style = stageText(if (diameter == 32.dp) 14f else diameter.value * 0.41f, 800, lineHeight = 1f),
-                color = Color(0xFF2A0D12),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+        ProfileInitial(profile?.name, diameter, modifier)
     }
 }

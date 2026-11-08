@@ -34,8 +34,14 @@
     <string name="mobile_restore_pin_notice">A sealed backup can carry a profile PIN. If it does, the PIN you use to open this app will change after restoring.</string>
     <string name="mobile_sync_pin_notice">A synced profile can carry a PIN. If it does, the PIN you use to open this app will change after syncing.</string>
     <string name="mobile_restore_from_settings">This backup’s profile has a different name from this device’s profile. Open Settings › Backup &amp; Restore to restore it, where the rename can be confirmed.</string>
-    <string name="mobile_start_fresh">Start fresh</string>
-    <string name="mobile_start_fresh_description">Add a playlist now, or skip and add one later.</string>
+    <string name="mobile_new_profile">New profile</string>
+    <string name="mobile_new_profile_description">A name, a picture and an optional PIN.</string>
+    <string name="mobile_new_profile_sub">Its favorites and history stay its own.</string>
+    <string name="mobile_profile_choose_picture">Choose a picture</string>
+    <string name="mobile_profile_remove_picture">Remove picture</string>
     <string name="mobile_restore_backup_description">Restore a backup from this phone or another device.</string>
     <string name="mobile_backup_single_profile_note">This backup contains the current profile only.</string>
+    <string name="mobile_nav_vod">On demand</string>
+    <string name="mobile_vod_placeholder_title">Under development</string>
+    <string name="mobile_vod_placeholder_body">The on-demand page is being built. It will arrive in a later version.</string>
 </resources>

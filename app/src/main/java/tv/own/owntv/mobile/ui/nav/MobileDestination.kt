@@ -11,7 +11,8 @@ import tv.own.owntv.mobile.R
  *
  * [sections] is what ties a destination to core's visibility rule: a destination shows only when at
  * least one of its sections is in `NavVisibility.visibleSections()`, so a channels-only playlist loses
- * Movies and Series in both apps at once.
+ * Live TV in both apps at once. VOD has no section yet — its page is still a placeholder — so it is
+ * always shown.
  *
  * MORE has no section: it is always reachable — from the avatar on a phone, from the rail on a tablet —
  * because Settings, Profiles and Downloads live behind it and a user must never be able to hide their way
@@ -30,8 +31,8 @@ enum class MobileDestination(
     GUIDE("guide", R.string.common_nav_guide, MobileIcons.Guide, setOf(MainSection.EPG), R.string.common_nav_guide_short),
     MOVIES("movies", R.string.common_nav_movies, MobileIcons.Movie, setOf(MainSection.MOVIES)),
     SERIES("series", R.string.common_nav_series, MobileIcons.Series, setOf(MainSection.SERIES)),
-    /** Movies and Series as one place, for the phone's four-wide bar; the rail keeps them apart. */
-    LIBRARY("library", R.string.common_nav_library, MobileIcons.Movie, setOf(MainSection.MOVIES, MainSection.SERIES)),
+    /** On demand: movies and series in one place. Its page is a placeholder for now. */
+    VOD("vod", R.string.mobile_nav_vod, MobileIcons.Movie, emptySet()),
     MORE("more", R.string.common_nav_more, MobileIcons.MoreHoriz, emptySet()),
     DOWNLOADS(
         "downloads",
@@ -43,28 +44,26 @@ enum class MobileDestination(
 
     companion object {
         /**
-         * The bottom bar, in order — the TV rail's order, with Movies and Series as one Library.
-         * More is not on it: the avatar at the top right opens it, as the
-         * TV rail ends in the profile.
+         * The bottom bar, in order: the three places the phone offers. More is not on it: the avatar at
+         * the top right opens it, as the TV rail ends in the profile.
          */
-        val bottomBar: List<MobileDestination> = listOf(HOME, LIVE, GUIDE, LIBRARY)
+        val bottomBar: List<MobileDestination> = listOf(HOME, LIVE, VOD)
 
         /**
          * The rail (`railH`), in order: the places, Downloads, then More as the last
          * item. Settings is not on it — it is what More is for, on every width.
          */
         val rail: List<MobileDestination> =
-            listOf(HOME, LIVE, GUIDE, MOVIES, SERIES, DOWNLOADS, MORE)
+            listOf(HOME, LIVE, VOD, DOWNLOADS, MORE)
 
         /**
-         * The place selected for [route] when its own is not shown: a film under Movies keeps Library lit on
-         * the bar, and a page under Library keeps Movies lit on the rail, so turning the phone keeps a place.
+         * The place selected for [route] when its own is not shown: a film or a show opened under Movies
+         * or Series keeps VOD lit on the bar, so turning the phone keeps a place.
          */
         fun List<MobileDestination>.standingFor(route: String?): MobileDestination? {
             val place = route?.substringBefore('/') ?: return null
             return when (place) {
-                MOVIES.route, SERIES.route -> firstOrNull { it == LIBRARY }
-                LIBRARY.route -> firstOrNull { it == MOVIES || it == SERIES }
+                MOVIES.route, SERIES.route -> firstOrNull { it == VOD }
                 else -> null
             }
         }

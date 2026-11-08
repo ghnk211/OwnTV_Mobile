@@ -72,6 +72,8 @@ internal fun WizardFrame(
     backLabel: String = stringResource(R.string.common_back),
     /** More plain buttons beside Back (a password step's Skip). */
     extraLeft: List<Pair<String, () -> Unit>> = emptyList(),
+    /** Plain buttons at the row's right end, where [next] sits when there is one. */
+    extraRight: List<Pair<String, () -> Unit>> = emptyList(),
     body: @Composable ColumnScope.() -> Unit = {},
 ) {
     val palette = LocalStagePalette.current
@@ -108,11 +110,12 @@ internal fun WizardFrame(
                     Text(sub, style = stageText(12.5f, 500, lineHeight = 1.45f), color = palette.muted, modifier = Modifier.padding(top = 4.dp))
                 }
                 Column(Modifier.padding(top = 14.dp), content = body)
-                if (onBack != null || next != null || extraLeft.isNotEmpty()) {
+                if (onBack != null || next != null || extraLeft.isNotEmpty() || extraRight.isNotEmpty()) {
                     Row(Modifier.fillMaxWidth().padding(top = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                         onBack?.let { StageButton(onClick = it, text = backLabel, style = StageButtonStyle.PLAIN, small = true) }
                         extraLeft.forEach { (label, action) -> StageButton(onClick = action, text = label, style = StageButtonStyle.PLAIN, small = true) }
                         Spacer(Modifier.weight(1f))
+                        extraRight.forEach { (label, action) -> StageButton(onClick = action, text = label, style = StageButtonStyle.PLAIN, small = true) }
                         if (next != null) {
                             StageButton(
                                 onClick = onNext,

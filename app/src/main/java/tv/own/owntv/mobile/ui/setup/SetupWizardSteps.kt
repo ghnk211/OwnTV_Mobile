@@ -1,13 +1,17 @@
 package tv.own.owntv.mobile.ui.setup
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,12 +19,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
@@ -34,12 +41,17 @@ import tv.own.owntv.core.theme.UiFontScale
 import tv.own.owntv.mobile.R
 import tv.own.owntv.mobile.ui.components.BrandMark
 import tv.own.owntv.mobile.ui.components.MobileIcons
+import tv.own.owntv.mobile.ui.profiles.PIN_MAX
+import tv.own.owntv.mobile.ui.profiles.PIN_MIN
+import tv.own.owntv.mobile.ui.profiles.ProfileAvatar
+import tv.own.owntv.mobile.ui.profiles.ProfileInitial
 import tv.own.owntv.mobile.ui.screens.settings.AppIconSheet
 import tv.own.owntv.mobile.ui.screens.settings.RemoteSourceSheet
 import tv.own.owntv.mobile.ui.screens.settings.SettingsChoice
 import tv.own.owntv.mobile.ui.screens.settings.StageChoiceSheet
 import tv.own.owntv.mobile.ui.stage.LocalStagePalette
 import tv.own.owntv.mobile.ui.stage.StageChevron
+import tv.own.owntv.mobile.ui.stage.StageField
 import tv.own.owntv.mobile.ui.stage.StageRowValue
 import tv.own.owntv.mobile.ui.stage.StageSettingRow
 import tv.own.owntv.mobile.ui.stage.StageStepper
@@ -48,35 +60,18 @@ import tv.own.owntv.mobile.ui.stage.stageText
 
 /**
  * The first-run wizard's own steps, the TV's sequence and words, each in a [WizardFrame]:
- * Welcome → Display → Before you start → Set up OwnTV → Who's watching? → Add a playlist. The TV's chooser
+ * Welcome → Before you start → Set up OwnTV → Add a playlist. The TV's chooser
  * for a backup has no step here: a phone has its own file picker, so Restore goes straight to it.
  */
 
-/** The language as a row (a tap opens the list), then Get started. */
-@Composable
-fun WelcomeStep(onNext: () -> Unit) {
-    WizardFrame(
-        step = WizardStep.LANGUAGE,
-        title = stringResource(R.string.setup_welcome_title),
-        sub = stringResource(R.string.setup_welcome_sub),
-        next = stringResource(R.string.setup_get_started),
-        onNext = onNext,
-        onBack = null,
-    ) {
-        // Here and not only in Settings: every screen after this one is text, and a user who cannot read the
-        // disclaimer cannot agree to it.
-        FirstRunLanguageRow()
-    }
-}
-
 /**
- * How big the text is, before the first screen that is mostly words: Font size as a stepper, written
- * straight through — `MobileTheme` scales the whole step under the finger — the app icon, and the
- * sample row to judge them by. The interface zoom is no longer a user setting on this app, so the
- * wizard does not offer it either.
+ * The first page, language and display in one: the language as a row (a tap opens the list), how big
+ * the text is as a stepper written straight through — `MobileTheme` scales the whole page under the
+ * finger — the app icon, and the sample row to judge them by, then Get started. The interface zoom is
+ * no longer a user setting on this app, so the wizard does not offer it either.
  */
 @Composable
-fun DisplaySizeStep(onNext: () -> Unit, onBack: () -> Unit) {
+fun WelcomeStep(onNext: () -> Unit) {
     val settings: SettingsRepository = koinInject()
     val scope = rememberCoroutineScope()
     val fonts by settings.fontCustomization.collectAsStateWithLifecycle(FontCustomization())
@@ -89,14 +84,17 @@ fun DisplaySizeStep(onNext: () -> Unit, onBack: () -> Unit) {
     }
     val setFont: (Int) -> Unit = { raw -> scope.launch { settings.setFontCustomization(fonts.copy(sizePercent = UiFontScale.clamp(raw))) } }
     WizardFrame(
-        step = WizardStep.DISPLAY,
-        title = stringResource(R.string.setup_display_size_title),
-        sub = stringResource(R.string.setup_display_sub_mobile),
-        next = stringResource(R.string.setup_continue),
+        step = WizardStep.LANGUAGE,
+        title = stringResource(R.string.setup_welcome_title),
+        sub = stringResource(R.string.setup_welcome_sub),
+        next = stringResource(R.string.setup_get_started),
         onNext = onNext,
-        onBack = onBack,
+        onBack = null,
         extraLeft = listOf(stringResource(R.string.settings_reset) to resetSize),
     ) {
+        // Here and not only in Settings: every screen after this one is text, and a user who cannot read the
+        // disclaimer cannot agree to it.
+        FirstRunLanguageRow()
         StageSettingRow(title = stringResource(R.string.settings_font_size), icon = MobileIcons.Edit, subtitle = stringResource(R.string.setup_line_font), role = null) {
             StageStepper(
                 stringResource(R.string.settings_surface_transparency, fonts.sizePercent),
@@ -166,12 +164,18 @@ fun DisclaimerStep(onAgree: () -> Unit, onBack: () -> Unit) {
 }
 
 /**
- * Start fresh, or bring everything back. The three ways content arrives on an app that keeps one
- * profile: a playlist typed or sent in, a backup file, another phone. The profile is not asked for —
- * whichever of these lands first is the one it is made for.
+ * Set up a profile by name and picture, or bring everything back. The two ways content arrives on
+ * an app that keeps one profile: a playlist typed or sent in, a backup file, another phone. The
+ * profile is collected as a draft first; whichever path lands content first is the one it is
+ * made for.
  */
 @Composable
-fun SetupChoiceStep(onStartFresh: () -> Unit, onRestore: () -> Unit, onSyncDevice: () -> Unit, onBack: () -> Unit) {
+fun SetupChoiceStep(
+    onNewProfile: () -> Unit,
+    onRestore: () -> Unit,
+    onSyncDevice: () -> Unit,
+    onBack: () -> Unit,
+) {
     WizardFrame(
         step = WizardStep.CONTENT,
         title = stringResource(R.string.setup_set_up_owntv),
@@ -180,7 +184,7 @@ fun SetupChoiceStep(onStartFresh: () -> Unit, onRestore: () -> Unit, onSyncDevic
         onNext = {},
         onBack = onBack,
     ) {
-        WizardCard(MobileIcons.Person, stringResource(R.string.mobile_start_fresh), stringResource(R.string.mobile_start_fresh_description), onStartFresh)
+        WizardCard(MobileIcons.Add, stringResource(R.string.mobile_new_profile), stringResource(R.string.mobile_new_profile_description), onNewProfile)
         // The phone restores from a file it picks itself; Remote restore lives on the Backup page.
         WizardCard(MobileIcons.Download, stringResource(R.string.setup_restore_a_backup), stringResource(R.string.mobile_restore_backup_description), onRestore)
         WizardCard(MobileIcons.Phone, stringResource(R.string.setup_sync_device), stringResource(R.string.setup_sync_device_description), onSyncDevice)
@@ -188,8 +192,82 @@ fun SetupChoiceStep(onStartFresh: () -> Unit, onRestore: () -> Unit, onSyncDevic
 }
 
 /**
+ * Name, picture and an optional PIN for the profile this app will open with. The picture defaults to
+ * the name's first letter (drawn, not stored); a taken photo is remembered as a `content://` address
+ * here and copied into app-private storage when the profile row is actually created.
+ *
+ * The page does not create the profile itself: the wizard still has content to add, and switching to
+ * a profile mid-flow would replace the wizard with the shell.
+ */
+@Composable
+fun NewProfileStep(initial: ProfileDraft?, onSave: (ProfileDraft) -> Unit, onBack: () -> Unit) {
+    var name by rememberSaveable { mutableStateOf(initial?.name.orEmpty()) }
+    var pin by rememberSaveable { mutableStateOf(initial?.pin.orEmpty()) }
+    var picture by rememberSaveable { mutableStateOf(initial?.picture) }
+    val pickPicture = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) picture = uri.toString()
+    }
+    val pinTooShort = pin.isNotEmpty() && pin.length < PIN_MIN
+    // A PIN left blank is no lock; one started has to reach four digits before Continue will take it.
+    val ready = name.isNotBlank() && !pinTooShort
+    WizardFrame(
+        step = WizardStep.CONTENT,
+        title = stringResource(R.string.mobile_new_profile),
+        sub = stringResource(R.string.mobile_new_profile_sub),
+        next = stringResource(R.string.setup_continue),
+        onNext = {
+            onSave(ProfileDraft(name.trim(), pin.takeIf { it.length >= PIN_MIN }, picture))
+        },
+        nextEnabled = ready,
+        onBack = onBack,
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val face = Modifier.size(72.dp).clip(CircleShape)
+            val shown = picture
+            if (shown != null) {
+                ProfileAvatar(avatarId = -1, modifier = face, imagePath = shown)
+            } else {
+                ProfileInitial(name, 72.dp, face)
+            }
+            Column {
+                WizardLink(stringResource(R.string.mobile_profile_choose_picture)) {
+                    pickPicture.launch(arrayOf("image/*"))
+                }
+                if (picture != null) {
+                    WizardLink(stringResource(R.string.mobile_profile_remove_picture)) { picture = null }
+                }
+            }
+        }
+        StageField(
+            value = name,
+            onValueChange = { name = it },
+            label = stringResource(R.string.profiles_name),
+            placeholder = stringResource(R.string.profiles_name_hint),
+            imeAction = ImeAction.Next,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        )
+        StageField(
+            value = pin,
+            onValueChange = { if (it.length <= PIN_MAX && it.all(Char::isDigit)) pin = it },
+            label = stringResource(R.string.profiles_optional_pin),
+            placeholder = stringResource(R.string.profiles_pin_digits),
+            password = true,
+            keyboardType = KeyboardType.NumberPassword,
+            imeAction = ImeAction.Done,
+            isError = pinTooShort,
+            supportingText = if (pinTooShort) stringResource(R.string.profiles_pin_digits) else null,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        )
+    }
+}
+
+/**
  * Add a playlist: Remote first (a phone keyboard is slow for addresses too), Type it here, Import,
- * then Skip for now.
+ * and Skip for now in the footer, opposite Back.
  */
 @Composable
 fun AddContentStep(
@@ -208,6 +286,7 @@ fun AddContentStep(
         next = null,
         onNext = {},
         onBack = onBack,
+        extraRight = listOf(stringResource(R.string.setup_skip_for_now) to onSkip),
     ) {
         WizardCard(MobileIcons.Translate, stringResource(R.string.setup_from_phone), stringResource(R.string.setup_phone_card_line)) {
             vm.consumeRemotePayload()
@@ -219,7 +298,6 @@ fun AddContentStep(
             onNew()
         }
         WizardCard(MobileIcons.Folder, stringResource(R.string.setup_import), stringResource(R.string.setup_restore_backup_file), onImport)
-        WizardLink(stringResource(R.string.setup_skip_for_now), onSkip)
     }
     if (remote) RemoteSourceSheet(vm, onReceived = { remote = false; onRemoteReceived() }, onDismiss = { remote = false })
 }
