@@ -44,4 +44,6 @@
     <string name="mobile_nav_vod">On demand</string>
     <string name="mobile_vod_placeholder_title">Under development</string>
     <string name="mobile_vod_placeholder_body">The on-demand page is being built. It will arrive in a later version.</string>
+    <!-- Overrides core: this app's long-press menus cover channels and episodes. -->
+    <string name="settings_content_menus_description">Rearrange or hide the actions in the channel and episode menus</string>
 </resources>

@@ -35,4 +35,5 @@
     <string name="mobile_nav_vod">点播</string>
     <string name="mobile_vod_placeholder_title">正在开发中</string>
     <string name="mobile_vod_placeholder_body">点播页面正在开发中，敬请期待。</string>
+    <string name="settings_content_menus_description">重新排列或隐藏频道和分集菜单中的操作</string>
 </resources>

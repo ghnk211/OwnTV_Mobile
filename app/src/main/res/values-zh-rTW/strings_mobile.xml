@@ -35,4 +35,5 @@
     <string name="mobile_nav_vod">隨選視訊</string>
     <string name="mobile_vod_placeholder_title">開發中</string>
     <string name="mobile_vod_placeholder_body">隨選視訊頁面正在開發中，敬請期待。</string>
+    <string name="settings_content_menus_description">重新排列或隱藏頻道和分集選單中的動作</string>
 </resources>
