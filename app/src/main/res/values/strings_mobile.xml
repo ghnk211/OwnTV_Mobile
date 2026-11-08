@@ -46,4 +46,36 @@
     <string name="mobile_vod_placeholder_body">The on-demand page is being built. It will arrive in a later version.</string>
     <!-- Overrides core: this app's long-press menus cover channels and episodes. -->
     <string name="settings_content_menus_description">Rearrange or hide the actions in the channel and episode menus</string>
+    <!-- TVbox on demand (VOD tab). -->
+    <string name="tvbox_config_title">Sources</string>
+    <string name="tvbox_config_url_title">Config URL</string>
+    <string name="tvbox_config_url_hint">Paste a TVbox config address (http, clan, or a local path)</string>
+    <string name="tvbox_config_import">Import</string>
+    <string name="tvbox_config_local">Local file</string>
+    <string name="tvbox_config_importing">Importing…</string>
+    <string name="tvbox_config_spider_downloading">Spider component downloading in the background…</string>
+    <string name="tvbox_config_list_title">Imported sources</string>
+    <string name="tvbox_config_empty">Import a TVbox config to start.</string>
+    <string name="tvbox_config_source_local">Local import</string>
+    <string name="tvbox_config_delete_confirm">Delete this source?</string>
+    <string name="tvbox_config_delete">Delete</string>
+    <string name="tvbox_import_ok">Imported %1$d sites</string>
+    <string name="tvbox_import_downloading"> · component downloading</string>
+    <string name="tvbox_home_pick_site">Pick a site</string>
+    <string name="tvbox_home_no_site">No usable site in this config. Import another one or check the source.</string>
+    <string name="tvbox_home_empty">Nothing here yet.</string>
+    <string name="tvbox_locked_prefix">🔒 </string>
+    <string name="tvbox_search_title">Search sites</string>
+    <string name="tvbox_search_go">Search</string>
+    <string name="tvbox_searching">Searching…</string>
+    <string name="tvbox_search_empty">No results.</string>
+    <string name="tvbox_loading">Loading…</string>
+    <string name="tvbox_error_load">Could not load this category. Try again later.</string>
+    <string name="tvbox_error_detail">Could not load this title. Try again later.</string>
+    <string name="tvbox_line_name">Line %1$d · %2$s</string>
+    <string name="tvbox_episodes">%1$d episodes</string>
+    <string name="tvbox_detail_blocked_kids">This content is not available for the current profile.</string>
+    <string name="tvbox_detail_locked">This category is locked. Enter the PIN to open it.</string>
+    <string name="tvbox_detail_no_episodes">No playable episodes on this line.</string>
+    <string name="tvbox_pin_unlock_desc">Enter your Customize PIN to open this category.</string>
 </resources>

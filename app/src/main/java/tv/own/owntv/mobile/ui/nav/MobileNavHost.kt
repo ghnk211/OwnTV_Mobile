@@ -150,7 +150,9 @@ fun MobileNavHost(
                             },
                             onPlay = { navController.navigate(PLAYER_ROUTE) },
                         )
-                    MobileDestination.VOD -> VodScreen()
+                    MobileDestination.VOD -> VodScreen(
+                        onPlay = { navController.navigate(PLAYER_ROUTE) },
+                    )
                     MobileDestination.SETTINGS -> tv.own.owntv.mobile.ui.categorylock.SettingsPinGate(leaveGuarded) {
                         SettingsScreen(onOpenRoute = { navController.navigate(it) })
                     }

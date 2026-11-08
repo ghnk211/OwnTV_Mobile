@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 简体中文：与 values/strings_mobile.xml 键集合一致（由 MobileStringsParityTest 把关）。 -->
+<resources>
+    <string name="mobile_app_lock">应用锁</string>
+    <string name="mobile_app_lock_description">打开应用时要求输入 PIN</string>
+    <string name="mobile_app_lock_set">设置应用锁</string>
+    <string name="mobile_app_lock_new">新 PIN</string>
+    <string name="mobile_app_lock_confirm">确认 PIN</string>
+    <string name="mobile_app_lock_change">更改 PIN</string>
+    <string name="mobile_app_lock_remove">移除应用锁</string>
+    <string name="mobile_app_lock_warning">同一个 PIN 也用于分类锁和设置 PIN 验证。如果忘记，只能清除应用数据才能重新进入。</string>
+    <string name="mobile_unlock">解锁</string>
+    <plurals name="mobile_unlock_too_many_attempts">
+        <item quantity="other">尝试次数过多。请 %1$d 秒后再试。</item>
+    </plurals>
+    <string name="mobile_kids_mode_description">浏览范围限制为儿童适宜的分类。设置应用锁可防止它被关闭。</string>
+    <string name="mobile_multi_profile_import">这个备份包含多个账户。本应用只保留一个账户，因此无法恢复。</string>
+    <string name="mobile_multi_profile_sync">另一台设备发送了多个账户。本应用只保留一个账户，因此无法合并。</string>
+    <string name="mobile_hidden_profile_import">这个备份的账户与本机另一个未显示的账户同名。请在另一台设备上改名，或在全新安装上恢复。</string>
+    <string name="mobile_hidden_profile_sync">传入的账户与本机另一个未显示的账户同名。请在另一台设备上改名后重新同步。</string>
+    <string name="mobile_nameless_profile_import">这个备份的账户没有名称，无法匹配。请在另一台设备上为它命名后重新导出。</string>
+    <string name="mobile_nameless_profile_sync">传入的账户没有名称，无法匹配。请在另一台设备上为它命名后重新同步。</string>
+    <string name="mobile_profile_rename_notice">这个备份的账户名为“%1$s”。恢复前，本机的账户将改名为同名。</string>
+    <string name="mobile_profile_rename_notice_sync">传入的账户名为“%1$s”。合并前，本机的账户将改名为同名。</string>
+    <string name="mobile_restore_pin_notice">加密备份可能带有账户 PIN。如果带有，恢复后打开本应用所用的 PIN 会被替换。</string>
+    <string name="mobile_sync_pin_notice">同步过来的账户可能带有 PIN。如果带有，同步后打开本应用所用的 PIN 会被替换。</string>
+    <string name="mobile_restore_from_settings">这个备份的账户名称与本机账户不同。请前往“设置 › 备份与恢复”恢复，在那里可以确认改名。</string>
+    <string name="mobile_new_profile">新建档案</string>
+    <string name="mobile_new_profile_description">设置名称、头像和可选 PIN。</string>
+    <string name="mobile_new_profile_sub">收藏和观看记录会单独保存。</string>
+    <string name="mobile_profile_choose_picture">选择图片</string>
+    <string name="mobile_profile_remove_picture">移除图片</string>
+    <string name="mobile_restore_backup_description">从本机或另一台设备的备份恢复。</string>
+    <string name="mobile_backup_single_profile_note">此备份只包含当前账户。</string>
+    <string name="mobile_nav_vod">点播</string>
+    <string name="mobile_vod_placeholder_title">正在开发中</string>
+    <string name="mobile_vod_placeholder_body">点播页面正在开发中，敬请期待。</string>
+    <string name="settings_content_menus_description">重新排列或隐藏频道和分集菜单中的操作</string>
+</resources>

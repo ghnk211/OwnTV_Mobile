@@ -1,44 +1,86 @@
 package tv.own.owntv.mobile.ui.screens.vod
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import tv.own.owntv.mobile.R
-import tv.own.owntv.mobile.ui.components.MobileIcons
-import tv.own.owntv.mobile.ui.stage.LocalStagePalette
-import tv.own.owntv.mobile.ui.stage.StageIcon
-import tv.own.owntv.mobile.ui.stage.stageText
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.androidx.compose.koinViewModel
 
-/** On demand, before it ships: the place the page will take, and nothing it pretends to do yet. */
+/**
+ * The on-demand tab: TVbox sources (plan §6 rows 2-3).
+ *
+ * One destination, an internal page state machine — no new top-level routes. Pages: config (import
+ * and switch sources), home (sites / categories / grid / search), detail (lines, episodes, play).
+ * Playing hands back through [onPlay], which the nav host wires to `PLAYER_ROUTE` — after
+ * `playTvbox` has already started the stream (order matters: the player screen renders the tuner's
+ * state, navigating first would show an empty player).
+ */
 @Composable
-fun VodScreen(modifier: Modifier = Modifier) {
-    val palette = LocalStagePalette.current
-    Column(
-        modifier.fillMaxSize().padding(horizontal = 28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        StageIcon(MobileIcons.Movie, 34.dp, palette.dim)
-        Text(
-            stringResource(R.string.mobile_vod_placeholder_title),
-            style = stageText(17f, 800),
-            color = palette.text,
-            modifier = Modifier.padding(top = 14.dp),
+fun VodScreen(
+    onPlay: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val configVm: TvboxConfigViewModel = koinViewModel()
+    val homeVm: TvboxHomeViewModel = koinViewModel()
+    val detailVm: TvboxDetailViewModel = koinViewModel()
+
+    val configState by configVm.state.collectAsStateWithLifecycle()
+    val homeState by homeVm.state.collectAsStateWithLifecycle()
+    val detailState by detailVm.state.collectAsStateWithLifecycle()
+
+    detailVm.onPlayStarted = onPlay
+
+    var page by remember { mutableStateOf(VodPage.HOME) }
+    var pendingDetail by remember { mutableStateOf<Pair<String, String>?>(null) }
+
+    when (page) {
+        VodPage.CONFIG -> TvboxConfigPage(
+            state = configState,
+            onImportUrl = configVm::importFromUrl,
+            onImportText = configVm::importFromText,
+            onSwitch = configVm::switchConfig,
+            onDelete = configVm::deleteConfig,
+            onBack = { page = VodPage.HOME },
+            onConsumeBanner = configVm::consumeBanner,
         )
-        Text(
-            stringResource(R.string.mobile_vod_placeholder_body),
-            style = stageText(12.5f, 500, lineHeight = 1.45f),
-            color = palette.muted,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 6.dp),
+
+        VodPage.HOME -> TvboxHomePage(
+            configState = configState,
+            state = homeState,
+            onOpenConfig = { page = VodPage.CONFIG },
+            onOpenSite = homeVm::openSite,
+            onSelectCategory = homeVm::selectCategory,
+            onSetFilter = homeVm::setFilter,
+            onLoadMore = homeVm::loadMore,
+            onSearch = homeVm::search,
+            onClearSearch = homeVm::clearSearch,
+            onOpenDetail = { siteKey, vodId ->
+                pendingDetail = siteKey to vodId
+                detailVm.open(siteKey, vodId)
+                page = VodPage.DETAIL
+            },
         )
+
+        VodPage.DETAIL -> {
+            val target = pendingDetail
+            if (target == null) {
+                page = VodPage.HOME
+            } else {
+                TvboxDetailPage(
+                    state = detailState,
+                    onBack = { page = VodPage.HOME },
+                    onSelectLine = detailVm::selectLine,
+                    onPlay = detailVm::play,
+                    onToggleFavorite = detailVm::toggleFavorite,
+                    onUnlockPin = detailVm::unlockWithPin,
+                    onUnlocked = detailVm::markUnlocked,
+                )
+            }
+        }
     }
 }
+
+private enum class VodPage { HOME, CONFIG, DETAIL }

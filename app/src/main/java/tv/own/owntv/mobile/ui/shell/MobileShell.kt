@@ -148,6 +148,15 @@ fun MobileShell(
         SetupFlow(onDone = { _ -> }, modifier = modifier)
         return
     }
+    // TVbox relock guard (plan §5.5.8): leaving the app relocks everything, and a changed active
+    // profile must not carry a running TVbox stream from someone else's unlock. Core's own guard
+    // handles Live/Core VOD; this one only ever stops TVbox streams.
+    val tvboxGuard: tv.own.owntv.mobile.tvbox.category.TvboxSealedPlaybackGuard = koinInject()
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+        tvboxGuard.leftApp()
+    }
+    LaunchedEffect(activeId) { tvboxGuard.profileChanged() }
+
     // Authentication is profile-bound: invalidate an old unlock before a changed active id can turn
     // into a shell destination, whether it changed by a deletion, a restore, or another writer.
     LaunchedEffect(activeId) { gateSession.invalidateIfNotProfile(activeId) }

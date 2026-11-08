@@ -19,6 +19,43 @@
 # category protocol: Stable protocol or comparison identifier.
 # category technical: Reviewed non-user-facing technical literal.
 
+1	empty	app/src/main/java/com/github/catvod/Proxy.kt	\0
+1	url	app/src/main/java/com/github/catvod/Proxy.kt	http://127.0.0.1:$port/proxy
+10	empty	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	\0
+1	protocol	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	POST
+1	technical	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	SpiderApi
+1	log	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	[
+2	mime	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	application/json; charset=utf-8
+1	json	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	data
+1	json	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	form
+1	json	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	headers
+1	url	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	http://127.0.0.1:${tv.own.owntv.mobile.tvbox.engine.proxy.JarProxyHub.port}/proxy
+1	json	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	method
+1	log	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	multiReq 单项失败：%s
+1	log	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	multiReq 失败
+1	json	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	postType
+1	json	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	url
+1	technical	app/src/main/java/com/github/catvod/crawler/SpiderApi.kt	{
+1	technical	app/src/main/java/com/github/catvod/crawler/SpiderDebug.kt	Catvod
+2	log	app/src/main/java/com/github/catvod/crawler/SpiderDebug.kt	[%s] %s
+1	technical	app/src/main/java/com/github/catvod/crawler/SpiderDebug.kt	jar error
+7	empty	app/src/main/java/com/github/catvod/net/OkHttp.kt	\0
+1	log	app/src/main/java/com/github/catvod/net/OkHttp.kt	&#10;
+1	log	app/src/main/java/com/github/catvod/net/OkHttp.kt	, error=
+1	log	app/src/main/java/com/github/catvod/net/OkHttp.kt	, headers=
+1	technical	app/src/main/java/com/github/catvod/net/OkHttp.kt	CatvodOkHttp
+1	technical	app/src/main/java/com/github/catvod/net/OkHttp.kt	Cookie
+1	log	app/src/main/java/com/github/catvod/net/OkHttp.kt	OkHttp.string(url, headers) 失败：%s
+1	log	app/src/main/java/com/github/catvod/net/OkHttp.kt	OkHttp.string(url, timeout) 失败：%s
+1	protocol	app/src/main/java/com/github/catvod/net/OkHttp.kt	Set-Cookie
+1	mime	app/src/main/java/com/github/catvod/net/OkHttp.kt	application/json; charset=utf-8
+1	technical	app/src/main/java/com/github/catvod/net/OkHttp.kt	code=
+1	url	app/src/main/java/com/github/catvod/net/OkHttp.kt	http://
+1	url	app/src/main/java/com/github/catvod/net/OkHttp.kt	https://
+2	empty	app/src/main/java/com/github/catvod/util/AppExt.kt	\0
+1	technical	app/src/main/java/com/github/catvod/util/AppExt.kt	%02x
+1	technical	app/src/main/java/com/github/catvod/util/AppExt.kt	MD5
+2	protocol	app/src/main/java/com/github/catvod/util/AppExt.kt	UTF-8
 1	technical	app/src/main/java/tv/own/owntv/mobile/MainActivity.kt	back
 1	technical	app/src/main/java/tv/own/owntv/mobile/MainActivity.kt	forward
 1	uri	app/src/main/java/tv/own/owntv/mobile/MainActivity.kt	open_player
@@ -77,6 +114,1230 @@
 1	uri	app/src/main/java/tv/own/owntv/mobile/sync/LocalPlaylistSync.kt	content://
 1	uri	app/src/main/java/tv/own/owntv/mobile/sync/LocalPlaylistSync.kt	file://
 1	technical	app/src/main/java/tv/own/owntv/mobile/sync/LocalPlaylistSync.kt	source-$sourceId
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/CatvodHost.kt	CatvodHost.init not called
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryLock.kt	tvbox:$siteKey:${typeId?.takeIf { it.isNotBlank() } ?: typeName}
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	"(adult|nsfw)"\\s*:\\s*(true|1|"1"|"true")
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	18禁
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	三级
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	伦理片
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	偷拍
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	写真
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	午夜
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	情色
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	成人
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	探花
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	无码
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	激情
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	禁片
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	福利
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	里番
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxCategoryPolicy.kt	限制级
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxSealedPlaybackGuard.kt	TVbox 播放命中重锁（%s），停止播放：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxSealedPlaybackGuard.kt	TVbox 重锁检查失败，按锁定处理（%s）
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxSealedPlaybackGuard.kt	TvboxGuard
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxSealedPlaybackGuard.kt	leftApp
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/category/TvboxSealedPlaybackGuard.kt	profileChanged
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	#EXT-X-CUE-IN
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	#EXT-X-CUE-OUT
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	#EXT-X-DATERANGE
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	#EXT-X-DISCONTINUITY
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	#EXT-X-ENDLIST
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	#EXT-X-KEY
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	#EXTINF
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	-
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	.$it
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	/
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	//
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	0
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	127.
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	::1
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	[::1]
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	http:$lower
+2	url	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	http://
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	http://$lower
+2	url	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	https://
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/AdRules.kt	localhost
+13	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	\0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	"drives"
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	*
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	,
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	.js
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	.m3u
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	.txt
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	CMS XML
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	CMS接口
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	Jar 源 api 应为 csp_XXX 或实现类名，当前为：$api
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	Spider
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	[A-Za-z_$][A-Za-z0-9_$]*(?:\\.[A-Za-z_$][A-Za-z0-9_$]*)+
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	api 为空
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	csp_
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	drpy
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	live_
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	probe
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	type=$type 不在已实现的引擎路由内
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	不支持
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	搜
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	静态JSON
+7	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	\0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	${it.name}(type=${it.type})
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	${noEngine.size} 个站点当前版本无法播放（已保留，待引擎落地后可用）：
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	${reason} × ${list.size}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	${unknown.size} 个站点类型不在已知路由表内（已保留但 UI 灰显）：
+4	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	*
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	,
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	/*
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	//
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	JSON 格式错误：${e.message?.take(120)}
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	\\n
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	\\r
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	\\t
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	ads
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	api
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	catchup
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	catchup-replace
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	catchup-source
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	categories
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	channels
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	doh
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	endpoint
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	epg
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	ext
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	filterable
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	flags
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	group
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	header
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	host
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	hosts
+2	url	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	http://
+2	url	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	https://
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	ips
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	jar
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	key
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	lives
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	lives 含内联 channels 形态，暂不支持，跳过
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	logo
+6	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	name
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	null
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	parses
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	playUrl
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	playerType
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	proxy
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	proxy 条目不是对象，已跳过
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	proxy 条目缺少 hosts/urls，已跳过
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	quickSearch
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	regex
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	replace
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	rule
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	rules
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	searchable
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	show
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	sites
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	sites[$i] 不是对象，已跳过
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	sites[$i] 缺少 key/api，已跳过
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	source
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	spider
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	timeout
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	type
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	ua
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	url
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	urls
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	userAgent
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	wallpaper
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	、
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	无
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	暂不可用
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	注释剥离失败，按原文解析
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	配置JSON 解析失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	配置中没有可用站点（sites 为空或全部非法）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	配置内容为空
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	配置根节点不是 JSON 对象
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	配置解析完成：站点 %d（协议已知 %d，M1 可用 %d），parses %d，rules %d，doh %d，spider=%s
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	﻿
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	；
+1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	\0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	#$
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	$#
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	0
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	2324
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	2423
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	;pk;
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	[A-Za-z0-9]{8}\\*\\*
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	\\s+
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	img+
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	配置 2423 形态 AES-CBC 解密失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	配置 AES-ECB 解密失败（key=%s）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	配置 Base64 解码失败，按原文继续
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	配置解密异常，回退原文：%s
+3	log	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/SecureKv.kt	${tag}.${'$'}${key}
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/SecureKv.kt	catvod
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/SecureKv.kt	drpy_local
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	active_config_id
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	home_site_key
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	kids_strict
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	local_tree_uri
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	next_config_id
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	source_kind_
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	source_url_
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	tvbox_prefs
+1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Base64Compat.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Base64Compat.kt	==
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Base64Compat.kt	ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Base64Compat.kt	ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	"$key"
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.avi
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.flv
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.m3u8
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.m4v
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.mkv
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.mov
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.mp4
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.mpd
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.mpg
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.rm
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.ts
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.webm
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	.wmv
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	Base64 解码失败：含非法字符或长度不合法
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	CipherUrl
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	blob:
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	data:
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	file:
+3	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	http://
+3	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	https://
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	link
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	m3u8
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	mp4
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	playUrl
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	play_url
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	src
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	url
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	video
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	{
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/CipherUrlDecoder.kt	密文解码成功：%.20s… -> %s
+1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	\0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	$t&url=$enc
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	$t?url=$enc
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	${jsonCandidates.size} 个 JSON 解析器均失败
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	(https?://[^\\s"',\\]}]+?\\.(?:m3u8|mp4|flv|ts|m3u|webm|mkv|mov|avi))
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	.*\\.(m3u8|mp4|flv|ts|m3u|webm|mkv|mov|avi)(\\?.*)?$
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	/
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	HTTP ${resp.code}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	Referer
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	UTF-8
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	flag
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	http://
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	https://
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	parse
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	ua
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	url=
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	{url}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	前缀解析成功：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	前缀解析需 WebView 跑 JS：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	并发解析 %d 个 JSON 型解析器：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	无 JSON 型解析器
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	未知解析器类型 type=${pc.type}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	解析器地址为空
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	解析器未返回可用的播放地址
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/ParseRepository.kt	解析器请求失败：${resp.error ?: "HTTP ${resp.code}"}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayNormalize.kt	%s 播放结果无法归一化：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayNormalize.kt	[
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayNormalize.kt	null
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayNormalize.kt	{
+7	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayUrlCodec.kt	\0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayUrlCodec.kt	#
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayUrlCodec.kt	#\\s*\\d+\\s*$
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayUrlCodec.kt	$$$
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayUrlCodec.kt	\\d+
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayUrlCodec.kt	^\\[[^\\]]*\\]
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayUrlCodec.kt	第${pos + 1}集
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/PlayUrlCodec.kt	线路${lineIdx + 1}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Spider.kt	CMS接口
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Spider.kt	JS引擎
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Spider.kt	Jar引擎
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Spider.kt	Python引擎
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Spider.kt	嗅探
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Spider.kt	未实现
+1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/SpiderResult.kt	\0
+1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	\0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	"code"
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	"list"
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	"pagecount"
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	$$$
+6	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	0
+3	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	<
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	<!
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	<!\\[CDATA\\[(.*?)]]>
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	<?xml
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	<html
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	<rss
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	<script[^>]*>(.*?)</script>
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	CMS 返回 code=$code
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	CmsParser
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	JSON 解析失败：${it.message?.take(80)}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	XML DOM 解析失败（%d 字符）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	XML 响应无 video 节点
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	XML 解析失败
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	actor
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	area
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	class
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	code
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	data
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	dd
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	des
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	director
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	filters
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	flag
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	id
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	key
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	lang
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	limit
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	list
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	msg
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	n
+6	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	name
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	note
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	null
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	page
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	pagecount
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	pagesize
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	pic
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	recordcount
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	title
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	total
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	ty
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	type
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	type_id
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	type_name
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	typeid
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	typename
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	v
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	value
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	values
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	video
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_actor
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_area
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_class
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_content
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_director
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_id
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_lang
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_name
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_pic
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_play_from
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_play_url
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_remarks
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_score
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_status
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_time
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	vod_year
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	year
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	{
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	响应不是 JSON 对象
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	空响应
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsParser.kt	线路${i + 1}
+3	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	$k=$it
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	${enc(k)}=${enc(v)}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	${it.key}=${it.value}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	${site.name} 请求失败：${resp.error ?: "HTTP ${resp.code}"}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	${site.name} 返回的是网页而非接口数据
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	%s ac=detail 无播放地址，回退 ac=videolist
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	%s ac=list 无数据：%s；api=%s body(%d字节)=%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	%s 初始化完成, api=%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	%s 搜索 ac=detail 空，回退 ac=videolist
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	%s 调用失败: %s
+5	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	&
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	,
+5	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	1
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	=
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	?
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	CmsSpider
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	HTTP ${resp.code}
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	UTF-8
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	User-Agent
+8	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	ac
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	all
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	detail
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	header
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	http
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	ids
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	list
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	params
+5	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	pg
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	t
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	videolist
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	wd
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	year
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	{
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/cms/CmsSpider.kt	全部
+4	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	$m.
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	${e2.javaClass.simpleName}${e2.message?.let { "：$it" } ?: ""}$hint
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	${instance.javaClass.classLoader}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	${m}_
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	${spiderClass.name} 未继承宿主桩 Spider（类型被 jar 私有副本污染，parent-first 失效）：
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	%s → %s（jar=%s）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	%s 加载失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	%s 存在但不继承宿主桩 Spider（父类=%s），尝试下一个候选
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	%s：%s
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	.jar
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	.so
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	/
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	AowuShinidie
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	DexClassLoader 创建失败：${jarFile.name}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	DexClassLoader 失败：%s（%s）
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	JarEngine
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	Woshinidie
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	api 不是 csp_* 形式：${site.api}
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	arm
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	assets/wexguard_
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	com.github.catvod.crawler.$alias
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	com.github.catvod.crawler.$className
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	com.github.catvod.crawler.Init
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	com.github.catvod.spider.$alias
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	com.github.catvod.spider.$className
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	com.github.catvod.spider.Init
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	com.github.catvod.spider.Init$Loader
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	get
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	init
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	jar %s 是加固壳但引导失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	jar 引导 %s 失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	jar 无引导类（普通 jar），跳过：%s
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	jar_odex
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	jar引导已执行：%s（%s）
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	loader
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	spider 目录无 jar：${jarDir.absolutePath}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	spider 目录未命中配置声明的 md5（%s），退回按修改时间挑选：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	|
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	。该 jar 是加固壳，解包需访问外部存储，请在「配置管理」页授予「所有文件访问权限」后重试
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	「${site.name}」spider jar 不可用
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	公共 spider jar（${file.name}）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	公共 spider jar（${file.name}，md5 未命中，已回退最新候选）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	加固壳初始化失败（Init 未就绪）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	加固壳初始化失败：$it
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	加固壳初始化超时（loader 未就绪）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	壳 loader 超时未就绪：%s（%s）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	实例化 ${spiderClass.name} 失败：
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	宿主 Application 不可用（实际 %s），加固壳引导可能失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	引擎池已清空
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	找不到实现类 ${candidateNames(className).take(2).joinToString(" / ")}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	无可用 spider jar（配置 spider 字段为空或下载失败）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	无法将 dex/jar 设为只读：${jar.absolutePath}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	本地代理注册失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	站点私有 jar 依赖公共 jar，但公共 jar 不可用：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	站点私有 jar（${siteJar.name}）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	等 ${candidateNames(className).size} 个候选
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	该站源为 ARM 加固壳，当前设备（$abi）无法运行
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	（当前 jar=$jarKind）$fallback
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	（该站配置了私有 jar，若其下载失败已回退到公共 jar，实现类可能本就不在其中）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	：$it
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	；${boot.abiReason}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarEngine.kt	；加固壳未引导，根因见日志
+1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	\0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	${raw.javaClass.name}(${text.length}): ${text.take(max)}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	,
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	JarParser
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	String(${raw.length}): ${raw.take(max)}
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	actor
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	area
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	class
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	classes
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	content
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	danmaku
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	danmakuUrl
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	danmu
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	director
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	filterDef
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	filters
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	flag
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	get
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	getClass
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	header
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	id
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	java.
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	k
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	key
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	keys=${m.keys.take(8).joinToString(",")}, listSize=$size
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	limit
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	list
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	list 有 %d 条但全部被丢弃（requireName=%s）：首条=%s
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	n
+6	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	name
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	null
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	null/不可解析(${raw?.javaClass?.simpleName})
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	page
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	pageCount
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	pagecount
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	parse
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	pic
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	playFrom
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	playUrl
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	remarks
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	sub
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	subt
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	subtitle
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	title
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	total
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	typeId
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	typeName
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	type_id
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	type_name
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	url
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	urls
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	v
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	val
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	value
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	values
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vodId
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vodName
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_actor
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_area
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_class
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_content
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_descr
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_director
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_id
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_name
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_pic
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_pic_slide
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_play_from
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_play_url
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_remark
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_remarks
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	vod_year
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	year
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarResultParser.kt	{
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	%s %s 失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	%s destroy 异常：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	%s initApi 注入失败（不影响其余接口）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	%s 初始化完成（%s）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	%s 无方法 %s%s（该源不支持此接口）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	%s 的实现类未暴露 init(Context) / init(Context,String)，跳过初始化
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	%s 详情原始返回：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	%s 返回无法归一化：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	(
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	)
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	,
+3	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	1
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	JarSpider
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	categoryContent
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	destroy
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	detailContent
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	extend
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	homeContent
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	homeVideoContent
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	init
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	initApi
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	playerContent
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	searchContent
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	/proxy
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	JarProxyHub
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	Proxy.set 失败
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	com.github.catvod.spider.Proxy
+6	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	do
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	do=
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	http://127.
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	http://localhost
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	https://127.
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	https://localhost
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	jar 无静态 Proxy 出口：%s
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	proxy
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	proxy 完成（jar 静态 Proxy）：siteKey=%s do=%s code=%s（%d ms）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	proxy 完成（spider）：siteKey=%s do=%s code=%s（%d ms）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	proxy 找不到站点实例：siteKey=%s do=%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	proxy 请求没有 siteKey，且无当前播放源：do=%s
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	siteKey
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	spider.proxy 异常：siteKey=%s do=%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	spider.proxy 返回空：siteKey=%s do=%s（%d ms）
+2	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	$k: $v
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	/proxy
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	127.0.0.1
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Accept-Ranges: bytes
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Bad Gateway
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Connection
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Connection: close
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Content-Length
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Content-Length: ${body.size}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Content-Type: $mime
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Content-Type: text/plain; charset=utf-8
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Forbidden
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Found
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	GET
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	HEAD
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	HTTP/1.1 $code $text
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	HTTP/1.1 $code ${statusText(code)}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Internal Server Error
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	JarProxy
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Method Not Allowed
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Moved Permanently
+3	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Not Found
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	OK
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Partial Content
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Temporary Redirect
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Transfer-Encoding
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	UNCHECKED_CAST
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	UTF-8
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	accept 退出：%s
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	application/octet-stream
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	do
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	jar 本地代理启动失败：候选端口全部被占用
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	jar 本地代理已停止，端口释放
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	jar 本地代理已启动：http://127.0.0.1:$candidate/proxy
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	jar-proxy-accept
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	jar-proxy-worker
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	proxy returned empty
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	proxy 分发异常 do=%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	proxy 返回空：do=%s url=%s
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	url
+4	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	$scheme://$host/
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	${it.key}=${it.value}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	${u.host.orEmpty()}${u.path.orEmpty()}
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	.m4s
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	.mpd
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	.ts
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	0000000049454E44AE426082
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	1F15C4890000000A49444154789C63000100000500010D0A2DB4
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	89504E470D0A1A0A0000000D4948445200000001000000010806000000
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	<!doctype html> <html> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width"> <title>解析</title> </head> <body style="margin:0;background:#000"> $iframes </body> </html>
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	<iframe sandbox='allow-scripts allow-same-origin allow-forms'
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	Activity 生命周期钩子已注册
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	Cookie
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	DEPRECATION
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	HLS 分片命中，降级为兜底候选，继续等主媒体：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	HLS分片兜底
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	HTML ${it.length}B
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	OK
+3	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	Referer
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	SetJavaScriptEnabled
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	SniffEngine
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	SniffFail reason=%s sub=%d hit=%d excluded=%d rejected=%d mainErr=%d iframeErr=%d | %s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	SniffTiming %s %s | %s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	TVBox复刻 checkVideoFormat
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	UNCHECKED_CAST
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	User-Agent
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	WebView 创建失败：${it.message}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	WebView 已挂载到视图树（1x1）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	WebView 广告规则：%d 条
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	WebView 挂载失败：${it.message}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	WebView 挂载异常：${it.message}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	WebView 销毁异常：${it.message}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	about:blank
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	activity
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	android.app.ActivityThread
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	android.webkit.WebView
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	awaited
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	currentActivityThread
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	destroy
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	firstReq
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	firstSub
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	frameborder='0' allowfullscreen='true' webkitallowfullscreen='true'
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	headers
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	hex 长度必须为偶数：${clean.length}
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	hit
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	hit-in-bad-stream-list
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	http://
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	https
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	https://
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	iframes-failed
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	image/png
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	load
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	m3u8
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	mActivities
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	main-doc-failed
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	mozallowfullscreen='true' src="$src"></iframe>
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	new
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	no-adopt
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	no-hit
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	no-sub-request
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	only-parser-domain
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	only-segment
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	pageFinished
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	pageStarted
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	png
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	setMediaVolume
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	settings
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	text/html
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	unknown
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	utf-8
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	不是网页地址，无需嗅探
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	主媒体未命中，HLS 分片兜底（只能播一小段）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	全局嗅探规则：%d 条
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	分片兜底
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	取消
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	只等到解析器域名的弱命中，按兜底采用：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	命中
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	命中(未验证)
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	命中即播后验证判定坏流，上报换线：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	命中在坏流表内，跳过继续等：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	命中通过视频验证（后台）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	嗅探命中（%s）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	嗅探异常，可尝试切换线路
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	嗅探异常：$t
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	嗅探未命中（第 %d 条）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	地址为空
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	坏流已记录（%d 分钟内跳过）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	失败:$why
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	已定位
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	广告规则命中
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	开始嗅探：%s（ua=%s, referer=%s）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	异常
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	弱命中落在解析器域名上，降级为兜底候选：%s（%s）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	当前设备不支持网页嗅探
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	拿不到 Activity，WebView 将脱离视图树（嗅探大概率失败）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	无
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	未在页面中找到视频地址，可尝试切换线路
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	注册 Activity 生命周期钩子失败：${it.message}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	聚合HTML ${it.length}B
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	聚合页自身地址
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	解析器域名兜底
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	读取 Cookie 失败：${it.message}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	跳过%s（第 %d 条）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	页面加载失败，可尝试切换线路
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	验证超时（%d ms）按通过处理（已先起播）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	默认
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	*
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.66yk.cn
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.css
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.eot
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.gif
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.ico
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.jpeg
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.jpg
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.js
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.php?type=m3u8&
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.php?type=m3u8&type=
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.png
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.svg
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.ttf
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.webp
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.woff
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	.woff2
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/analytics
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/api/up_api.php?
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/beacon
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/download.aspx?
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/favicon
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/m3u8?pt=m3u8
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/manifest.json
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/manifest.webmanifest
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/pixel
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/player/m3u8play.php?url=
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/playlist/m3u8/?vid=
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/robots.txt
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/sw.js
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	/track
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	Content-Type $t
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	admob
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	admob.
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	ads.
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	adsbygoogle
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	adservice
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	adservice.
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	application/dash+xml
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	application/vnd.apple.mpegurl
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	application/x-mpegurl
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	cpc.cpm
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	default.ixigua.com/
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	doubleclick
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	dycdn-tos.pstatp
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	flag 含 m3u8
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	google-analytics
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	googleads
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	googleads.g.doubleclick.net
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	googlesyndication
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	googletagmanager
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	m3u8
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	netease.com/file/
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	pagead2.googlesyndication.com
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	player.m3u8play.php?url=
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	popads
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	propellerads
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	rtmp://
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	rtsp://
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	scorecardresearch
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	spacer.gif
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	video/
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	video/tos
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	后缀 $suffix
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	无后缀特征 $it
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	查询串含流后缀
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	自定义正则 ${e.name.ifBlank { re.pattern }}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffMatcher.kt	自定义规则 ${e.name.ifBlank { kw }}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	"$it"
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	*
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	,
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	.html
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	<!doctype html> <html> <head> <title>解析</title>
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	</head> <body> <script>
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	</script> </body> </html>
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE10" />
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	<meta name="renderer" content="webkit|ie-comp|ie-stand">
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	<meta name="viewport" content="width=device-width">
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	document.write(iframeHtml);
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	flag
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	for(var i=0;i<apiArray.length;i++){
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	frameborder='0' allowfullscreen='true' webkitallowfullscreen='true'
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http((?!http).)*?default\\.ixigua\\.com/.*|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http((?!http).)*?dycdn-tos\\.pstatp[^\\?]*|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http((?!http).)*?netease\\.com/file/.*
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http((?!http).)*?video/tos*|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http((?!http).){12,}?\\.(m3u8|mp4|flv|avi|mkv|rm|wmv|mpg|m4a|mp3|aac|mpd)\\?.*|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http((?!http).){12,}\\.(m3u8|mp4|flv|avi|mkv|rm|wmv|mpg|m4a|mp3|aac|mpd)|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http((?!http).){20,}?/m3u8\\?pt=m3u8.*|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http.*?/api/up_api.php\\?.*|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http.*?/download.aspx\\?.*|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http.*?/player/.*?[pP]lay\\.php\\?url=.*|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http.*?/player/m3u8play\\.php\\?url=.*|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http.*?/playlist/m3u8/\\?vid=.*|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	http.*?\\.php\\?type=m3u8&.*|
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	https.*?\\.66yk\\.cn.*|
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	iframeHtml=iframeHtml+"<iframe sandbox='allow-scripts allow-same-origin allow-forms'
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	mozallowfullscreen='true' src="+URL+"></iframe>";
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	url=http
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	var URL=apiArray[i]+urlPs;
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	var apiArray=[$jxs];
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	var iframeHtml="";
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	var urlPs="$url";
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/AddressFetcher.kt	AddressFetcher
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/AddressFetcher.kt	HTTP ${resp.code}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/AddressFetcher.kt	下载失败：${resp.error ?: "HTTP ${resp.code}"}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/AddressFetcher.kt	不支持的地址：$address
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/AddressFetcher.kt	本地读取失败（%s）：%s
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/MemoryCookieStore.kt	ControlFlowWithEmptyBody
+14	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	\0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	$it, ${resp.headers.value(i)}
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	${enc(k)}=${enc(v)}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	%20
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	%s %s 第%d次失败: %s
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	&
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	+
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	Content-Type
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	DELETE
+4	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	GET
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	GET %s 第 %d 次失败: %s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	GET bytes %s 失败: %s
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	HEAD
+4	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	HTTP ${resp.code}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	NetApi
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	PATCH
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	POST
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	PUT
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	UTF-8
+3	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	User-Agent
+2	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	application/x-www-form-urlencoded
+4	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	空 URL
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	请求失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	跳过非法 header %s=%s（%s）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/NetApi.kt	非法 method=%s，降级为 GET
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/OkHttpProvider.kt	OkHttp client 已重建
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/OkHttpProvider.kt	OkHttpProvider
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/OkHttpProvider.kt	TLS
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/OkHttpProvider.kt	User-Agent
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/net/OkHttpProvider.kt	download
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/net/OkHttpProvider.kt	http
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/OkHttpProvider.kt	jar 客户端 TLS 放宽失败，回退默认校验：%s
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	${url.scheme}://${url.host}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	127.
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	::1
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	DNS 解析结果落在私网段，拒绝（jar 链 SSRF 防护）：%s -> %s
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	Dns
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	PrivateNetGuardDns
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	Referer
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	UTF-8
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	X-Source-Site-Key
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	[
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	[::1]
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	]
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	localhost
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	内网地址已拦截（SSRF 防护）：$host
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	本地代理 $host:$port 未监听（宿主暂无本地代理服务），已快速失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	私网地址已拦截：$hostname
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/TvboxInterceptors.kt	系统 DNS 解析 %s 失败
+1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	\0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	${u.scheme ?: "https"}://${u.host}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	PlayResolver
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	Referer
+4	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	User-Agent
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	https
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	playerContent 失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	「${site.name}」已冷却，请切换线路或稍后重试
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	命名解析器命中：%s -> %s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	嗅探成功：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	嗅探解析失败，请切换线路或换源
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	应用站点级 playUrl 前缀：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	解析器 %s 未出直链，转嗅探
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	解析失败，可尝试切换线路或换源
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	解析结果为空地址
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	该源需要本机代理服务，服务未就绪，请重试或切换线路
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	BD
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	完整版
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	更新
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	期
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	未删减
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	正片
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	源数据异常：角标标注「$remark」但解析出 $totalEpisodes 集，实际可播放内容以本页为准
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	电影
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	蓝光
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	话
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	连载
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	集
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	高清
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	$siteKey|$tag
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	$tag: $msg
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	$tag: 源返回空（接口正常但无数据）
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	1
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	SourceRepo
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	UNCHECKED_CAST
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	all
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	cat|$tid|$pg
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	cat|$tid|$pg|$extendKey
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	d|$ids
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	home
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	homeVideo
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	全部
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	搜索跳过未 init 的 JS 源（预热中）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	源统计写入失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s %s 返回空（未计为故障）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s init 失败（不计健康）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s init 超时（%dms，不计健康）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s 冷却中，跳过调用
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s 用 homeVideoContent 兜底，%d 条
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s 调用失败（%s）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s 调用超时：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s 首页为空，借用 %s 的推荐（%d 条）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s(type=%d) 无可用引擎（M1 仅支持 CMS 型源）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	详情缓存命中：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	超时或无结果
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	超时（${effectiveTimeout}ms）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	预热中，本轮暂不参与
+1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	\0
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	"_cacheVersion"\\s*:\\s*(\\d+)
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	"sites":[
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	"spider":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	"wallpaper":
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	$expected.jar
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	$id.json
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	$m.
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	$m.jar
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	$name.jar
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	${Md5Util.md5(a.url)}.jar
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	${entity.id}.json
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	${m}_
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"ads":[
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"api":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"catchup":{"type":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"categories":[
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"epg":
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"ext":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"filterable":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"flags":[
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"group":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"header":{
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"hosts":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"hosts":[
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"jar":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"lives":[
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"logo":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"name":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"parses":[
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"playUrl":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"playerType":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"proxy":[
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"quickSearch":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"regex":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"replace":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"rule":[
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"rules":[
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"searchable":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"source":
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"timeout":
+3	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"type":
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"url":
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"userAgent":
+6	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	.jar
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	ConfigRepo
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	HTTP ${resp.code}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	UA 门控兜底成功，拿到合法 jar：%d 字节
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	UA 门控兜底成功，拿到配置正文：%d 字节
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	\\"
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	\\\\
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	\\n
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	\\r
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	\\t
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	\\u%04x
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	]
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	],"urls":[
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	]}
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	addedAt
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	file
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	http://
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	https://
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	id
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	image/*
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	img+ 图片藏 jar 解析失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	img+ 形态已解出 jar：%d 字节
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	index.json
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	local
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	local/${Md5Util.md5(spiderField.orEmpty())}
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	name
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	site
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	siteCount
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	source
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	spider jar 后台预下载异常：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	spider jar 已缓存：%s（%d 字节）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	spider jar 未命中配置声明 md5，按需下载（%d 个候选）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	spider jar 缓存命中：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	spider jar 落盘失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	spider jar 预下载失败，将在 obtain 时重试
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	spider 下载内容不是 jar/dex（%d 字节，疑似 HTML 落地页），已丢弃：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	spider 下载到 HTML 落地页（%d 字节），以 okhttp UA 重试：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	spider 下载失败：%s (%s)
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	spider 摘要校验失败，仍按声明名落盘（jar 可能已热更新）：%s 期望 %s
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	url
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	www.
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	{"_cacheVersion":
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	{"key":
+4	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	{"name":
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	下载配置失败：${resp.error ?: "HTTP ${resp.code}"}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	切换配置后刷新失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	地址为空
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	局域网配置
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	已从缓存恢复配置：%s（%d 站点）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	恢复期间 active 配置已变更（%d），跳过回写
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	无可用配置，等待用户导入
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	无标记
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	无法读取所选文件（权限不足或文件已移动）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 spider jar 不可用，回退到网络候选
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 spider jar 已缓存：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 spider jar 沿用缓存：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 spider jar 读取失败（%s）：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 spider 不是 jar/dex（%d 字节）：%s —— 请确认选的是 .jar 文件
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 spider 摘要校验失败：%s
+3	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地配置
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	此配置已存在：${exist.name}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	清理非法 jar 缓存：%s（%d 字节）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	缓存内容不是合法 jar，已删除重下：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	远程 md5 取回失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	远程 md5 返回 HTML 页面，以 okhttp UA 重试：%s
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置 %s 无缓存且无 URL，无法恢复
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置内容是网页而非配置数据（请检查地址或文件是否正确）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置刷新失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置刷新失败：无可用缓存且原地址已失效
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置地址返回 HTML 页面，以 okhttp UA 重试：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置地址返回的是网页而非配置数据（站点按 User-Agent 分流，已自动重试）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置已刷新：%s（%d 站点）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置已存在，跳过导入：%s（id=%d）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置无 spider 字段，csp_* 源不可用
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置缓存版本过期（缓存=%s，当前=%d），将按原地址重新拉取：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置解密后仍非 JSON（前 80 字符：%s）
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置解析失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	重新拷贝本地 spider jar：%s（%d 字节）
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxSourceStats.kt	${site.key}:${site.api}
+2	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	\0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	$siteKey|$vodId|$episodeFlag|$episodeId
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	addedAt
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	durationMs
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	episodeFlag
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	episodeId
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	episodeIndex
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	favorites.json
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	history.json
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	name
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	pic
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	positionMs
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	progress.json
+6	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	siteKey
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	updatedAt
+6	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	vodId
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Aes.kt	$base/PKCS5Padding
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Aes.kt	$base/PKCS7Padding
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Aes.kt	0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Aes.kt	ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Aes.kt	AES
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Aes.kt	AES/CBC
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Aes.kt	AES/CBC 解密失败：%s
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Aes.kt	AES/ECB
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Aes.kt	AES/ECB 解密失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/CoroutineUtil.kt	源返回空
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	$bytes B
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	%.1f KB
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	%.1f MB
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	%.2f GB
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	.tmp
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	configs
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	spiders
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	tvbox
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	无法删除旧文件：${file.absolutePath}
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	无法解除文件只读属性：${file.absolutePath}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<!--
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<!doctype
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<?xml
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<body
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<div
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<form
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<head
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<header
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<html
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<img
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<link
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<meta
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<nav
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<script
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<span
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<style
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<svg
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<table
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/HtmlGuard.kt	<title
+8	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/util/JsonExt.kt	\0
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/util/JsonExt.kt	<(script|style)[^>]*>.*?</\\1>
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/JsonExt.kt	</?(div|p|ul|ol|li|tr|td|th|table|h[1-6]|section|article|blockquote)[^>]*>
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/JsonExt.kt	</p>
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/JsonExt.kt	<[^>]+>
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/util/JsonExt.kt	<br\\s*/?>
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/util/JsonExt.kt	[ \\t\\x0B\\f\\r]+
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/util/JsonExt.kt	[!#$%&'*+\\-.^_`|~0-9A-Za-z]+
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/util/JsonExt.kt	\\n{2,}
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/util/JsonExt.kt	\\s*\\n\\s*
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	"$dirPrefix
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	"./
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	"\\./
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	./
+5	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	/
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	127.0.0.1
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	://
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	LocalSource
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	RemoteClan 应走网络层：${src.httpUrl}
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	UTF-8
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	Uri 授权失效：%s
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	clan://
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	content://
+3	url	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	file://
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	file://${it.absolutePath.trimEnd('/')}/
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	http
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	http://
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	http://$host/file/$path
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	https://
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	localhost
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	package:${context.packageName}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	…
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	不是一个文件：${rel.joinToString("/")}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	授权目录下找不到：$full
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	授权目录下找不到：${rel.joinToString("/")}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	授权目录不可访问
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	文件不存在：${file.absolutePath}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	文件授权已失效，请重新选择文件
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	无法打开：${rel.joinToString("/")}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	无法打开：${short(uri.toString())}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	无法访问该路径（需要先授予文件访问权限）：${file.absolutePath}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	无读取权限：${file.absolutePath}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	目录授权已失效，请重新授权文件夹
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	系统拒绝读取：${e.message}
+3	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	读取失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/LocalSource.kt	路径不在外部存储根下：${file.absolutePath}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Md5Util.kt	0123456789abcdef
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Md5Util.kt	;
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Md5Util.kt	;;
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Md5Util.kt	MD5
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Md5Util.kt	SHA-256
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Md5Util.kt	^[0-9a-fA-F]{32}$|^[0-9a-fA-F]{64}$
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/Md5Util.kt	http
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TbLog.kt	$text ${Log.getStackTraceString(t)}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TbLog.kt	Tvbox.
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TbLog.kt	core
+3	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	\0
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	"
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	${host.scheme}://${host.authority}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	&
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	&#([xX]?[0-9a-fA-F]+);
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	&#34;
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	&#39;
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	&amp;
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	&apos;
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	&gt;
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	&lt;
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	&nbsp;
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	&quot;
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	'
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	(${QUERY_SAFE_SUFFIXES.joinToString("|") { Regex.escape(it) }})(?=[&"'\\s]|$)
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.3gp
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.aac
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.avi
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.flac
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.flv
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.m3u8
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.m4a
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.m4v
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.mkv
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.mov
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.mp3
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.mp4
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.mpd
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.mpg
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.ogg
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.rm
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.rmvb
+3	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.ts
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.wav
+2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.webm
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	.wmv
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	/
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	//
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	<
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	>
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	Mobile Safari/537.36
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	Mozilla/5.0 (Linux; Android 12; V1938CT Build/QP1A.190711.020; wv)
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	UTF-8
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	X
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	\\s+
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	android
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	application/dash+xml
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	application/vnd.apple.mpegurl
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	audio/flac
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	audio/mp4
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	audio/mp4a-latm
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	audio/mpeg
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	audio/ogg
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	audio/wav
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	content://
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	data:
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	file://
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	http
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	http://
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	http://$b
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	https:$u
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	https://
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	iphone
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	magnet:
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	mime_type=video%2fmp4
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	mime_type=video/mp4
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	mime_type=video_mp4
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	mobile
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	okhttp/4.12.0
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	rtmp://
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	rtsp://
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	video/*
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	video/3gpp
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	video/mp2t
+2	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	video/mp4
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	video/quicktime
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	video/webm
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	video/x-flv
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	video/x-m4v
+1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	video/x-matroska
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	x
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/TextUtil.kt	|
 1	empty	app/src/main/java/tv/own/owntv/mobile/ui/LocalizedContent.kt	\0
 1	empty	app/src/main/java/tv/own/owntv/mobile/ui/categorylock/CategoryLockPrompts.kt	\0
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/components/AirDateLabel.kt	yMMMd
@@ -259,6 +1520,7 @@
 1	protocol	app/src/main/java/tv/own/owntv/mobile/ui/screens/library/VodTuner.kt	EPISODE
 1	protocol	app/src/main/java/tv/own/owntv/mobile/ui/screens/library/VodTuner.kt	MOVIE
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/library/VodTuner.kt	SERIES
+1	preference-key	app/src/main/java/tv/own/owntv/mobile/ui/screens/library/VodTuner.kt	tvbox:${resolved.siteKey}:${resolved.vodId}
 1	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/live/ChannelActions.kt	\0
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/live/ChannelActions.kt	+
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/live/ChannelActions.kt	add_to_multiview
@@ -663,6 +1925,17 @@
 2	log	app/src/main/java/tv/own/owntv/mobile/ui/screens/settings/customize/CustomizeItemsViewModel.kt	EPISODE not applicable to category items
 3	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/settings/customize/CustomizeSpanUi.kt	\0
 1	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/settings/customize/CustomizeViewModel.kt	\0
+5	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	\0
+1	mime	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	*/*
+1	mime	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	application/json
+1	protocol	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	site-
+1	mime	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	text/plain
+1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	·
+11	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	$k=$v
+1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	&
+1	json	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	http
+2	preference-key	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	tvbox:${site.key}:${s.vodId}:$i
 14	empty	app/src/main/java/tv/own/owntv/mobile/ui/setup/AddSourceForm.kt	\0
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/setup/AddSourceForm.kt	.json
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/setup/AddSourceForm.kt	/

@@ -26,3 +26,12 @@
 # --- Cast: the SDK reads the OptionsProvider's class name out of the manifest and instantiates it
 #     reflectively, so neither the name nor the no-argument constructor may be touched. ---
 -keep class tv.own.owntv.mobile.cast.CastOptionsProvider { *; }
+
+# --- TVbox jar spider (DexClassLoader): a jar's Spider class is loaded by name and its result
+#     beans are read via Gson reflection, so neither the catvod stubs nor the jar-facing API
+#     surface may be renamed or stripped. The stubs are a hard ABI contract with third-party
+#     jars compiled against com.github.catvod.crawler.Spider. ---
+-keep class com.github.catvod.** { *; }
+-keep class tv.own.owntv.mobile.tvbox.engine.** { *; }
+-keep class tv.own.owntv.mobile.tvbox.config.model.** { *; }
+-keepclassmembers class * implements android.webkit.WebViewClient { *; }

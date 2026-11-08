@@ -25,9 +25,16 @@ graphicsShapes = "1.1.0"
 
 # --- Kotlin libs ---
 coroutines = "1.11.0"
+# TVbox config parsing (JsonObject/JsonElement) — runtime only. The ported parsers build/inspect
+# JSON trees by hand; no @Serializable classes and no compiler plugin (AGP 9 ships its own Kotlin).
+serializationJson = "1.9.0"
 
 # --- Third party ---
 coil = "3.6.2"
+# TVbox jar spider: JarSpider/JarResultParser/Aes parse what a jar's Spider returns via Gson's
+# JsonParser and bean reflection. Small, stable; kept out of the core catalog on purpose — core has
+# no use for it.
+gson = "2.11.0"
 # Media3 — only the subtitle view. The player itself is core's; this app draws the image
 # subtitles (PGS/VOBSUB/DVB) the engine hands to ExoPlayer, and nothing else from media3.
 media3 = "1.11.1"
@@ -45,8 +52,12 @@ camerax = "1.6.2"
 # The decoder itself is zxing, which core already carries for GENERATING these codes. Same library,
 # other direction; no ML Kit, no Play-services dependency, nothing extra to ship.
 zxing = "3.5.4"
+# SAF tree traversal for the TVbox local-source paths (clan://localhost/ via a granted tree).
+documentfile = "1.0.1"
 
 # --- Test ---
+# Kept at the OkHttp the app runs on so the mock server behaves like real stacks.
+okhttpTest = "5.5.0"
 junit = "4.13.2"
 junitExt = "1.3.0"
 espressoCore = "3.7.0"
@@ -112,6 +123,15 @@ androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", 
 
 # Coroutines
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+# Runtime only — see the versions block above for why there is no serialization plugin here.
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serializationJson" }
+
+# TVbox jar spider result parsing
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+# Tests for the ported CMS/jar chains spin up a local HTTP server.
+# (the okhttp3.mockwebserver package, which the ported tests import)
+mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttpTest" }
 
 # Image loading
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
@@ -125,6 +145,9 @@ koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compos
 # Casting
 play-services-cast-framework = { group = "com.google.android.gms", name = "play-services-cast-framework", version.ref = "playServicesCast" }
 androidx-mediarouter = { group = "androidx.mediarouter", name = "mediarouter", version.ref = "mediarouter" }
+
+# SAF tree traversal (TVbox local config/jar sources)
+androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
 
 # QR scanning for local sync pairing
 androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }

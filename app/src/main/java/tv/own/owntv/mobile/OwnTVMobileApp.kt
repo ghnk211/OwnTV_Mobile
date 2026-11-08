@@ -27,6 +27,7 @@ import tv.own.owntv.core.di.databaseModule
 import tv.own.owntv.core.i18n.AppLocale
 import tv.own.owntv.core.i18n.LocaleStore
 import tv.own.owntv.core.sync.work.KoinWorkerFactory
+import tv.own.owntv.mobile.tvbox.di.tvboxModule
 import tv.own.owntv.core.util.CrashRecorder
 import tv.own.owntv.mobile.di.downloadsModule
 import tv.own.owntv.mobile.di.guideModule
@@ -160,7 +161,7 @@ class OwnTVMobileApp : Application(), androidx.work.Configuration.Provider {
             modules(
                 coreModule, databaseModule, dataModule, playerModule, shellModule,
                 liveModule, libraryModule, guideModule, homeModule, searchModule,
-                downloadsModule, settingsModule,
+                downloadsModule, settingsModule, tvboxModule,
             )
         }
         // The language whitelist enforced on the stored value, not only on the read. An install upgraded

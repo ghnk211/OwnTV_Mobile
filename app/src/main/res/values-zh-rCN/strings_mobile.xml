@@ -36,4 +36,36 @@
     <string name="mobile_vod_placeholder_title">正在开发中</string>
     <string name="mobile_vod_placeholder_body">点播页面正在开发中，敬请期待。</string>
     <string name="settings_content_menus_description">重新排列或隐藏频道和分集菜单中的操作</string>
+    <!-- TVbox 点播（VOD 页）。 -->
+    <string name="tvbox_config_title">配置源</string>
+    <string name="tvbox_config_url_title">配置地址</string>
+    <string name="tvbox_config_url_hint">粘贴 TVbox 配置地址（http / clan / 本地路径）</string>
+    <string name="tvbox_config_import">导入</string>
+    <string name="tvbox_config_local">本地文件</string>
+    <string name="tvbox_config_importing">导入中…</string>
+    <string name="tvbox_config_spider_downloading">Spider 组件正在后台下载…</string>
+    <string name="tvbox_config_list_title">已导入的配置</string>
+    <string name="tvbox_config_empty">先导入一份 TVbox 配置即可开始。</string>
+    <string name="tvbox_config_source_local">本地导入</string>
+    <string name="tvbox_config_delete_confirm">删除这份配置？</string>
+    <string name="tvbox_config_delete">删除</string>
+    <string name="tvbox_import_ok">已导入 %1$d 个站点</string>
+    <string name="tvbox_import_downloading"> · 组件后台下载中</string>
+    <string name="tvbox_home_pick_site">选择站点</string>
+    <string name="tvbox_home_no_site">当前配置没有可用站点，请换一份配置或检查源。</string>
+    <string name="tvbox_home_empty">这里还没有内容。</string>
+    <string name="tvbox_locked_prefix">🔒 </string>
+    <string name="tvbox_search_title">聚合搜索</string>
+    <string name="tvbox_search_go">搜索</string>
+    <string name="tvbox_searching">搜索中…</string>
+    <string name="tvbox_search_empty">没有结果。</string>
+    <string name="tvbox_loading">加载中…</string>
+    <string name="tvbox_error_load">分类加载失败，请稍后重试。</string>
+    <string name="tvbox_error_detail">详情获取失败，请稍后重试。</string>
+    <string name="tvbox_line_name">线路 %1$d · %2$s</string>
+    <string name="tvbox_episodes">%1$d 集</string>
+    <string name="tvbox_detail_blocked_kids">当前档案不可观看此内容。</string>
+    <string name="tvbox_detail_locked">该分类已上锁，请输入 PIN 解锁。</string>
+    <string name="tvbox_detail_no_episodes">该线路没有可播放的分集。</string>
+    <string name="tvbox_pin_unlock_desc">输入 Customize PIN 以打开该分类。</string>
 </resources>

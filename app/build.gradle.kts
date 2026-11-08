@@ -25,7 +25,8 @@ android {
     // the repo. Gradle only reads gradle.properties from GRADLE_USER_HOME or the project dir, so this
     // one is loaded by hand. Declared here because defaultConfig below already needs it.
     val localSigningProps = Properties().apply {
-        val f = File("E:/MEGA/CODE/OwnTV_Gradle/owntv-signing.properties")
+        // 本机签名与开关统一放在仓库外的 keyStroe 目录（以当前本机路径为准）。
+        val f = File("D:/AndroidStudioProjects/git/Qwn/keyStroe/owntv-signing.properties")
         if (f.isFile) f.inputStream().use { load(it) }
     }
 
@@ -93,6 +94,7 @@ android {
             ?: localSigningProps.getProperty(property)
 
     val releaseKeystore = signingValue("KEYSTORE_FILE", "owntv.keystoreFile")
+    val testKeystore = signingValue("TEST_KEYSTORE_FILE", "owntv.testKeystoreFile")
     signingConfigs {
         if (releaseKeystore != null) {
             create("release") {
@@ -100,6 +102,15 @@ android {
                 storePassword = signingValue("KEYSTORE_PASSWORD", "owntv.keystorePassword")
                 keyAlias = signingValue("KEY_ALIAS", "owntv.keyAlias")
                 keyPassword = signingValue("KEY_PASSWORD", "owntv.keyPassword")
+            }
+        }
+        // 测试包使用独立 keystore；缺失时回退到 Android 默认 debug 签名。
+        if (testKeystore != null) {
+            create("test") {
+                storeFile = file(testKeystore)
+                storePassword = signingValue("TEST_KEYSTORE_PASSWORD", "owntv.testKeystorePassword")
+                keyAlias = signingValue("TEST_KEY_ALIAS", "owntv.testKeyAlias")
+                keyPassword = signingValue("TEST_KEY_PASSWORD", "owntv.testKeyPassword")
             }
         }
     }
@@ -117,6 +128,9 @@ android {
             // ever sees it. localeFilters below would otherwise strip them, so the debug-only
             // qualifiers are added back through the per-variant API in the androidComponents block.
             isPseudoLocalesEnabled = true
+            if (testKeystore != null) {
+                signingConfig = signingConfigs.getByName("test")
+            }
         }
         release {
             isMinifyEnabled = true
@@ -336,6 +350,16 @@ dependencies {
 
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+
+    // TVbox VOD: config parsing (kotlinx-serialization JSON tree API, runtime only - no plugin,
+    // see libs.versions.toml) and jar-spider result parsing (Gson reflection in JarResultParser).
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.gson)
+    // TVbox ported-chain tests: CMS header/URL behaviour against a local server.
+    testImplementation(libs.mockwebserver)
+    testImplementation(libs.kotlinx.coroutines.test)
+    // SAF tree traversal for TVbox local sources (clan://localhost/ granted directory).
+    implementation(libs.androidx.documentfile)
 
     // Casting. The sender half only: the Chromecast decodes the stream itself, so nothing of the
     // playback engine crosses over — see tv.own.owntv.mobile.cast.
