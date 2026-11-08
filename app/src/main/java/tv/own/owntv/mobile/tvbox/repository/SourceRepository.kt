@@ -49,8 +49,6 @@ class SourceRepository(
     private val configRepository: TvboxConfigRepository,
     private val engines: List<Engine>,
     private val scope: CoroutineScope,
-    /** 无效源标记（本移植为进程内统计空实现）：搜索/借源/换源候选都必须跳过 */
-    private val sourceStatRepository: TvboxSourceStats,
 ) {
 
     /** 全局并发上限 4，防止某源拖垮全局 */
@@ -79,7 +77,10 @@ class SourceRepository(
     )
 
     /** 聚合搜索的流式结果（先到先显示） */
-    val searchProgress: Flow<SourceSearchResult> = _searchProgress.asSharedFlow()
+    val searchProgress: kotlinx.coroutines.flow.SharedFlow<SourceSearchResult> = _searchProgress.asSharedFlow()
+
+    /** 订阅数：调用方先等它 >0 再触发搜索，快源 emission 才不会丢在订阅前 */
+    val searchProgressSubscribers = _searchProgress.subscriptionCount
 
     fun siteOf(siteKey: String): SiteConfig? = configRepository.siteMap[siteKey]
 
@@ -98,7 +99,7 @@ class SourceRepository(
      */
     fun supportedSites(): List<SiteConfig> =
         configRepository.sites.value.filter {
-            it.isSupported && !sourceStatRepository.isExcluded(it) && engineFor(it) != null
+            it.isSupported && engineFor(it) != null
         }
 
     private fun engineFor(site: SiteConfig): Engine? =
@@ -299,11 +300,6 @@ class SourceRepository(
                 TIMEOUT_MARKER -> {
                     if (countHealth) {
                         SourceHealth.recordEmpty(site.key, "$tag: 源返回空（接口正常但无数据）")
-                        recordHealth(site) {
-                            sourceStatRepository.recordEmpty(
-                                site, "$tag: 源返回空（接口正常但无数据）",
-                            )
-                        }
                     }
                     TbLog.tag(TAG).d( "站点 %s %s 返回空（未计为故障）", site.name, tag)
                     null
@@ -312,9 +308,6 @@ class SourceRepository(
                 null -> {
                     if (countHealth) {
                         SourceHealth.recordFailure(site.key, "超时（${effectiveTimeout}ms）")
-                        recordHealth(site, evaluateAutoMark = true) {
-                            sourceStatRepository.recordFailure(site, "超时（${effectiveTimeout}ms）")
-                        }
                     }
                     TbLog.tag(TAG).w( "站点 %s 调用超时：%s", site.name, tag)
                     null
@@ -324,9 +317,6 @@ class SourceRepository(
                     if (countHealth) {
                         val cost = System.currentTimeMillis() - start
                         SourceHealth.recordSuccess(site.key, cost)
-                        recordHealth(site) {
-                            sourceStatRepository.recordSuccess(site, cost)
-                        }
                     }
                     @Suppress("UNCHECKED_CAST")
                     outcome as T
@@ -345,9 +335,6 @@ class SourceRepository(
             } else {
                 if (countHealth) {
                     SourceHealth.recordFailure(site.key, "$tag: $msg")
-                    recordHealth(site, evaluateAutoMark = true) {
-                        sourceStatRepository.recordFailure(site, "$tag: $msg")
-                    }
                 }
                 TbLog.w("站点 %s 调用失败（%s）：%s", site.name, tag, t.toString())
             }
@@ -355,30 +342,7 @@ class SourceRepository(
         }
     }
 
-    /**
-     * 异步写持久统计，不占请求响应路径。
-     *
-     * 记账前校验"该 siteKey 仍是当前配置且 api 未变"：切配置/重新导入后，
-     * 旧配置的在途请求不能回写覆盖新配置的统计。统计失败只记日志。
-     */
-    private fun recordHealth(
-        site: SiteConfig,
-        evaluateAutoMark: Boolean = false,
-        block: suspend () -> Unit,
-    ) {
-        if (siteOf(site.key)?.api?.trim() != site.api.trim()) return
-        scope.launch {
-            runCatching { block() }
-                .onSuccess {
-                    if (evaluateAutoMark) {
-                        runCatching {
-                            sourceStatRepository.evaluateAutoMarks(configRepository.sites.value)
-                        }
-                    }
-                }
-                .onFailure { TbLog.tag(TAG).w("源统计写入失败：%s", it.toString()) }
-        }
-    }
+
 
     // ---------------- 聚合搜索（方案 10.3） ----------------
 

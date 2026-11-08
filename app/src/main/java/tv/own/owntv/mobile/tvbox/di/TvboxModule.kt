@@ -4,7 +4,6 @@ import android.content.Context
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import okhttp3.OkHttpClient
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -32,7 +31,6 @@ import tv.own.owntv.mobile.tvbox.net.OkHttpProvider
 import tv.own.owntv.mobile.tvbox.play.TvboxPlayResolver
 import tv.own.owntv.mobile.tvbox.repository.SourceRepository
 import tv.own.owntv.mobile.tvbox.repository.TvboxConfigRepository
-import tv.own.owntv.mobile.tvbox.repository.TvboxSourceStats
 import tv.own.owntv.mobile.tvbox.repository.TvboxStore
 import tv.own.owntv.mobile.ui.screens.library.VodTuner
 import tv.own.owntv.mobile.ui.screens.vod.TvboxConfigViewModel
@@ -50,10 +48,13 @@ val tvboxModule = module {
     single { TvboxPrefs(androidContext()) }
     single { TvboxStore(androidContext()) }
 
-    // Network: fresh chains (main / download / jar) with the TVbox interceptors. The Core global
-    // client is left untouched — it forces HTTP/1.1 and its own trust set, which the jar chain
-    // must not inherit.
-    single<OkHttpClient> { OkHttpProvider.get() }
+    // Network: fresh chains (main / download / jar) with the TVbox interceptors.
+    //
+    // Deliberately NOT registered as `single<OkHttpClient>`: Koin resolves duplicates
+    // last-one-wins, and tvboxModule loads after coreModule — a same-key definition here would
+    // silently replace the CORE client for the whole app (image loading, sync, backup all read
+    // `get<OkHttpClient>()`), which the plan forbids ("派生不改 Core 单例"). The TVbox chains are
+    // reached through OkHttpProvider / NetApi's providers instead.
     single {
         NetApi(
             clientProvider = { OkHttpProvider.get() },
@@ -63,7 +64,6 @@ val tvboxModule = module {
     single { AddressFetcher(androidContext(), get(), get<TvboxPrefs>()) }
 
     single { TvboxConfigRepository(androidContext(), get(), get(), get()) }
-    single { TvboxSourceStats() }
 
     // Engines: CMS first (its api-suffix check yields .js sites to nothing else in this port —
     // the JS engine is P5), then jar.
@@ -82,17 +82,16 @@ val tvboxModule = module {
             configRepository = get(),
             engines = listOf<Engine>(get<CmsEngine>(), get<JarEngine>()),
             scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
-            sourceStatRepository = get(),
         )
     }
 
     single { ParseRepository(get()) }
     single { SniffEngine(androidContext()) }
 
-    single { TvboxCategoryPolicy(get<ProfileDao>(), get<TvboxPrefs>()) }
+    single { TvboxCategoryPolicy(kidsStrict = { get<TvboxPrefs>().kidsStrict }) }
     single {
         TvboxCategoryLock(
-            customize = get<CustomizationStore>(),
+            store = tv.own.owntv.mobile.tvbox.category.CoreLockStore(get()),
             unlocks = get<CategoryUnlockSession>(),
             customizePinSettings = get<SettingsRepository>() as CustomizePinSettings,
             pinLimiter = get<PinAttemptLimiter>(),

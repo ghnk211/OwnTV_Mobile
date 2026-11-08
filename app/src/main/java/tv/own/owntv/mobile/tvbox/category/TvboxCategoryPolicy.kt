@@ -1,10 +1,8 @@
 package tv.own.owntv.mobile.tvbox.category
 
 import tv.own.owntv.core.content.AdultCategoryClassifier
-import tv.own.owntv.core.database.dao.ProfileDao
 import tv.own.owntv.core.database.entity.ProfileEntity
 import tv.own.owntv.mobile.tvbox.config.model.SiteConfig
-import tv.own.owntv.mobile.tvbox.data.prefs.TvboxPrefs
 import tv.own.owntv.mobile.tvbox.engine.ClassInfo
 import tv.own.owntv.mobile.tvbox.engine.Movie
 
@@ -20,11 +18,11 @@ import tv.own.owntv.mobile.tvbox.engine.Movie
  * 6. 未命中 → 放行（与 Core 一致，不 fail-closed）。
  *
  * 两边都不按标题判定，避免「Sex and the City」类误杀。
+ *
+ * 依赖只有 `kidsStrict` 一个布尔读数（构造传入读数函数），档案由调用方查好传入 ——
+ * 整个类无 Android 依赖，判定矩阵可直接 JVM 单测。
  */
-class TvboxCategoryPolicy(
-    private val profileDao: ProfileDao,
-    private val prefs: TvboxPrefs,
-) {
+class TvboxCategoryPolicy(private val kidsStrict: () -> Boolean) {
 
     /** TVbox 中文成人词表（方案 §5.5.5 拍板清单，子串命中即隐藏）。 */
     private val zhAdultWords = listOf(
@@ -54,21 +52,31 @@ class TvboxCategoryPolicy(
     /**
      * 详情/播放层的单点判定：这个站点+分类名在当前档案下是否整体不可见。
      * 列表层三个函数都归到这里，保证口径唯一。
+     *
+     * 严格模式（`kidsStrict`，方案 §5.5.5"词表漏判兜底"）在普通判定之上收窄两处 fail-open：
+     * - 站点名本身也过词表（"午夜资源"这类站点名，普通模式不查）；
+     * - 分类名缺失（typeName 空）视为不可判定 → 隐藏，而不是放行。
      */
-    suspend fun blockedByKids(profile: ProfileEntity?, site: SiteConfig, typeName: String?): Boolean {
+    fun blockedByKids(profile: ProfileEntity?, site: SiteConfig, typeName: String?): Boolean {
         if (profile?.isKids != true) return false
-        if (prefs.kidsStrict) return !siteWhitelisted(site)
+        if (kidsStrict()) {
+            val siteHit = extMarkedAdult(site) || zhAdultHit(site.name)
+            return siteHit ||
+                AdultCategoryClassifier.isAdult(typeName) ||
+                zhAdultHit(typeName) ||
+                typeName.isNullOrBlank()
+        }
         return hiddenName(site, typeName)
     }
 
     /** 儿童档案下可见的站点（聚合搜索与站点列表共用）。 */
-    suspend fun visibleSites(profile: ProfileEntity?, sites: List<SiteConfig>): List<SiteConfig> {
+    fun visibleSites(profile: ProfileEntity?, sites: List<SiteConfig>): List<SiteConfig> {
         if (profile?.isKids != true) return sites
         return sites.filter { !blockedByKids(profile, it, null) }
     }
 
     /** 儿童档案下可见的分类行。 */
-    suspend fun visibleCategories(
+    fun visibleCategories(
         profile: ProfileEntity?,
         site: SiteConfig,
         classes: List<ClassInfo>,
@@ -78,12 +86,9 @@ class TvboxCategoryPolicy(
     }
 
     /** 列表行过滤：`Movie.typeName` 命中即隐藏（`typeName` 为空按站点级标记处理）。 */
-    suspend fun movieAllowed(profile: ProfileEntity?, site: SiteConfig, movie: Movie): Boolean =
+    fun movieAllowed(profile: ProfileEntity?, site: SiteConfig, movie: Movie): Boolean =
         !blockedByKids(profile, site, movie.typeName)
 
     /** 严格模式（`kidsStrict`）下唯一放行的形态：无结构化 adult 标记的站点。 */
     private fun siteWhitelisted(site: SiteConfig): Boolean = !extMarkedAdult(site)
-
-    /** 供 VM 组装一次档案后反复使用的便捷重载。 */
-    suspend fun currentProfile(profileId: Long): ProfileEntity? = profileDao.getById(profileId)
 }

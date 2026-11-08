@@ -621,175 +621,19 @@ class TvboxConfigRepository(
     private fun loadFromCache(entity: ConfigMeta, allowStale: Boolean = false): TvBoxConfig? {
         val file = File(FileUtil.configDir(context), "${entity.id}.json")
         val text = FileUtil.readText(file) ?: return null
-        val version = CACHE_VERSION_REGEX.find(text)?.groupValues?.get(1)?.toIntOrNull()
-        if (version != CACHE_VERSION && !allowStale) {
+        val version = TvboxConfigCacheCodec.VERSION_REGEX.find(text)?.groupValues?.get(1)?.toIntOrNull()
+        if (version != TvboxConfigCacheCodec.VERSION && !allowStale) {
             TbLog.i(
                 "配置缓存版本过期（缓存=%s，当前=%d），将按原地址重新拉取：%s",
-                version?.toString() ?: "无标记", CACHE_VERSION, entity.name,
+                version?.toString() ?: "无标记", TvboxConfigCacheCodec.VERSION, entity.name,
             )
             return null
         }
         return ConfigParser.parse(text).config
     }
 
-    /** 序列化配置回缓存（保留未知字段由模型覆盖范围决定，此处只存核心字段） */
-    private fun encodeConfig(config: TvBoxConfig): String = buildString {
-        append("{\"_cacheVersion\":").append(CACHE_VERSION).append(',')
-        config.spider?.let { append("\"spider\":").append(quote(it)).append(',') }
-        config.wallpaper?.let { append("\"wallpaper\":").append(quote(it)).append(',') }
-        append("\"sites\":[")
-        config.sites.forEachIndexed { i, s ->
-            if (i > 0) append(',')
-            append(siteToJson(s))
-        }
-        append("]")
-        if (config.flags.isNotEmpty()) {
-            append(",\"flags\":[")
-            config.flags.forEachIndexed { i, f ->
-                if (i > 0) append(',')
-                append(quote(f))
-            }
-            append(']')
-        }
-        if (config.rules.isNotEmpty()) {
-            append(",\"rules\":[")
-            config.rules.forEachIndexed { i, r ->
-                if (i > 0) append(',')
-                append("{\"name\":").append(quote(r.name))
-                    .append(",\"hosts\":").append(quote(r.hosts))
-                    .append(",\"rule\":[")
-                r.rule.forEachIndexed { j, rule ->
-                    if (j > 0) append(',')
-                    append(quote(rule))
-                }
-                append(']')
-                if (r.ads.isNotEmpty()) {
-                    append(",\"ads\":[")
-                    r.ads.forEachIndexed { j, ad ->
-                        if (j > 0) append(',')
-                        append(quote(ad))
-                    }
-                    append(']')
-                }
-                append('}')
-            }
-            append(']')
-        }
-        if (config.ads.isNotEmpty()) {
-            append(",\"ads\":[")
-            config.ads.forEachIndexed { i, ad ->
-                if (i > 0) append(',')
-                append(quote(ad))
-            }
-            append(']')
-        }
-        if (config.proxy.isNotEmpty()) {
-            append(",\"proxy\":[")
-            config.proxy.forEachIndexed { i, p ->
-                if (i > 0) append(',')
-                append("{\"name\":").append(quote(p.name)).append(",\"hosts\":[")
-                p.hosts.forEachIndexed { j, h ->
-                    if (j > 0) append(',')
-                    append(quote(h))
-                }
-                append("],\"urls\":[")
-                p.urls.forEachIndexed { j, u ->
-                    if (j > 0) append(',')
-                    append(quote(u))
-                }
-                append("]}")
-            }
-            append(']')
-        }
-        if (config.parses.isNotEmpty()) {
-            append(",\"parses\":[")
-            config.parses.forEachIndexed { i, p ->
-                if (i > 0) append(',')
-                append("{\"name\":").append(quote(p.name))
-                    .append(",\"type\":").append(p.type)
-                    .append(",\"url\":").append(quote(p.url))
-                    .append('}')
-            }
-            append(']')
-        }
-        if (config.lives.isNotEmpty()) {
-            append(",\"lives\":[")
-            config.lives.forEachIndexed { i, l ->
-                if (i > 0) append(',')
-                append("{\"name\":").append(quote(l.name))
-                    .append(",\"type\":").append(l.type)
-                    .append(",\"api\":").append(quote(l.api))
-                    .append(",\"url\":").append(quote(l.api))
-                l.jar?.let { append(",\"jar\":").append(quote(it)) }
-                l.ext?.let { append(",\"ext\":").append(quote(it)) }
-                l.userAgent?.let { append(",\"userAgent\":").append(quote(it)) }
-                l.epg?.let { append(",\"epg\":").append(quote(it)) }
-                l.logo?.let { append(",\"logo\":").append(quote(it)) }
-                l.playerType?.let { append(",\"playerType\":").append(it) }
-                l.timeout?.let { append(",\"timeout\":").append(it) }
-                l.group?.let { append(",\"group\":").append(quote(it)) }
-                l.catchup?.let { c ->
-                    append(",\"catchup\":{\"type\":").append(quote(c.type))
-                        .append(",\"source\":").append(quote(c.source))
-                        .append(",\"replace\":").append(quote(c.replace))
-                        .append(",\"regex\":").append(quote(c.regex))
-                        .append('}')
-                }
-                append('}')
-            }
-            append(']')
-        }
-        append('}')
-    }
-
-    private fun siteToJson(s: SiteConfig): String = buildString {
-        append("{\"key\":").append(quote(s.key))
-        append(",\"name\":").append(quote(s.name))
-        append(",\"type\":").append(s.type)
-        append(",\"api\":").append(quote(s.api))
-        append(",\"searchable\":").append(s.searchable)
-        append(",\"quickSearch\":").append(s.quickSearch)
-        append(",\"filterable\":").append(s.filterable)
-        s.ext?.let { append(",\"ext\":").append(quote(it)) }
-        s.jar?.let { append(",\"jar\":").append(quote(it)) }
-        s.userAgent?.let { append(",\"userAgent\":").append(quote(it)) }
-        s.playUrl?.let { append(",\"playUrl\":").append(quote(it)) }
-        s.timeout?.let { append(",\"timeout\":").append(it) }
-        s.header?.let { h ->
-            append(",\"header\":{")
-            h.entries.forEachIndexed { i, (k, v) ->
-                if (i > 0) append(',')
-                append(quote(k)).append(':').append(quote(v.toString().trim('"')))
-            }
-            append('}')
-        }
-        if (s.categories.isNotEmpty()) {
-            append(",\"categories\":[")
-            s.categories.forEachIndexed { i, c ->
-                if (i > 0) append(',')
-                append(quote(c))
-            }
-            append(']')
-        }
-        append('}')
-    }
-
-    private fun quote(s: String): String {
-        val sb = StringBuilder(s.length + 8)
-        sb.append('"')
-        s.forEach { c ->
-            when (c) {
-                '"' -> sb.append("\\\"")
-                '\\' -> sb.append("\\\\")
-                '\n' -> sb.append("\\n")
-                '\r' -> sb.append("\\r")
-                '\t' -> sb.append("\\t")
-                else -> if (c < ' ') sb.append("\\u%04x".format(c.code)) else sb.append(c)
-            }
-        }
-        sb.append('"')
-        return sb.toString()
-    }
+    /** 序列化配置回缓存：见 [TvboxConfigCacheCodec.encode]（字段集由 round-trip 单测锁定）。 */
+    private fun encodeConfig(config: TvBoxConfig): String = TvboxConfigCacheCodec.encode(config)
 
     // ---------------- spider jar 预下载 ----------------
 
@@ -1193,10 +1037,179 @@ class TvboxConfigRepository(
 
     companion object {
         private const val TAG = "ConfigRepo"
-
-        /** 缓存格式版本号：增删缓存字段必须 +1。 */
-        private const val CACHE_VERSION = 3
-
-        private val CACHE_VERSION_REGEX = Regex("\"_cacheVersion\"\\s*:\\s*(\\d+)")
     }
+}
+
+
+/**
+ * 配置缓存的序列化器（纯函数，供 JVM round-trip 单测锁字段集）。
+ *
+ * 缓存正文带 `_cacheVersion` 标记：旧缓存版本不符即视为过期，强制按原地址重取。
+ * 给缓存正文增删字段必须 [VERSION] +1 —— 这是"缓存静默丢字段"坑（方案 §10 已知）的唯一防线。
+ */
+object TvboxConfigCacheCodec {
+    /** 缓存格式版本号：增删缓存字段必须 +1。 */
+    const val VERSION = 3
+
+    /** 从缓存正文头部提取版本号（写在 encode 最前，正则一次命中） */
+    val VERSION_REGEX = Regex("\"_cacheVersion\"\\s*:\\s*(\\d+)")
+
+    fun encode(config: TvBoxConfig): String = buildString {
+        append("{\"_cacheVersion\":").append(VERSION).append(',')
+        config.spider?.let { append("\"spider\":").append(quote(it)).append(',') }
+        config.wallpaper?.let { append("\"wallpaper\":").append(quote(it)).append(',') }
+        append("\"sites\":[")
+        config.sites.forEachIndexed { i, s ->
+            if (i > 0) append(',')
+            append(siteToJson(s))
+        }
+        append("]")
+        if (config.flags.isNotEmpty()) {
+            append(",\"flags\":[")
+            config.flags.forEachIndexed { i, f ->
+                if (i > 0) append(',')
+                append(quote(f))
+            }
+            append(']')
+        }
+        if (config.rules.isNotEmpty()) {
+            append(",\"rules\":[")
+            config.rules.forEachIndexed { i, r ->
+                if (i > 0) append(',')
+                append("{\"name\":").append(quote(r.name))
+                    .append(",\"hosts\":").append(quote(r.hosts))
+                    .append(",\"rule\":[")
+                r.rule.forEachIndexed { j, rule ->
+                    if (j > 0) append(',')
+                    append(quote(rule))
+                }
+                append(']')
+                if (r.ads.isNotEmpty()) {
+                    append(",\"ads\":[")
+                    r.ads.forEachIndexed { j, ad ->
+                        if (j > 0) append(',')
+                        append(quote(ad))
+                    }
+                    append(']')
+                }
+                append('}')
+            }
+            append(']')
+        }
+        if (config.ads.isNotEmpty()) {
+            append(",\"ads\":[")
+            config.ads.forEachIndexed { i, ad ->
+                if (i > 0) append(',')
+                append(quote(ad))
+            }
+            append(']')
+        }
+        if (config.proxy.isNotEmpty()) {
+            append(",\"proxy\":[")
+            config.proxy.forEachIndexed { i, p ->
+                if (i > 0) append(',')
+                append("{\"name\":").append(quote(p.name)).append(",\"hosts\":[")
+                p.hosts.forEachIndexed { j, h ->
+                    if (j > 0) append(',')
+                    append(quote(h))
+                }
+                append("],\"urls\":[")
+                p.urls.forEachIndexed { j, u ->
+                    if (j > 0) append(',')
+                    append(quote(u))
+                }
+                append("]}")
+            }
+            append(']')
+        }
+        if (config.parses.isNotEmpty()) {
+            append(",\"parses\":[")
+            config.parses.forEachIndexed { i, p ->
+                if (i > 0) append(',')
+                append("{\"name\":").append(quote(p.name))
+                    .append(",\"type\":").append(p.type)
+                    .append(",\"url\":").append(quote(p.url))
+                    .append('}')
+            }
+            append(']')
+        }
+        if (config.lives.isNotEmpty()) {
+            append(",\"lives\":[")
+            config.lives.forEachIndexed { i, l ->
+                if (i > 0) append(',')
+                append("{\"name\":").append(quote(l.name))
+                    .append(",\"type\":").append(l.type)
+                    .append(",\"api\":").append(quote(l.api))
+                    .append(",\"url\":").append(quote(l.api))
+                l.jar?.let { append(",\"jar\":").append(quote(it)) }
+                l.ext?.let { append(",\"ext\":").append(quote(it)) }
+                l.userAgent?.let { append(",\"userAgent\":").append(quote(it)) }
+                l.epg?.let { append(",\"epg\":").append(quote(it)) }
+                l.logo?.let { append(",\"logo\":").append(quote(it)) }
+                l.playerType?.let { append(",\"playerType\":").append(it) }
+                l.timeout?.let { append(",\"timeout\":").append(it) }
+                l.group?.let { append(",\"group\":").append(quote(it)) }
+                l.catchup?.let { c ->
+                    append(",\"catchup\":{\"type\":").append(quote(c.type))
+                        .append(",\"source\":").append(quote(c.source))
+                        .append(",\"replace\":").append(quote(c.replace))
+                        .append(",\"regex\":").append(quote(c.regex))
+                        .append('}')
+                }
+                append('}')
+            }
+            append(']')
+        }
+        append('}')
+    }
+
+    private fun siteToJson(s: SiteConfig): String = buildString {
+        append("{\"key\":").append(quote(s.key))
+        append(",\"name\":").append(quote(s.name))
+        append(",\"type\":").append(s.type)
+        append(",\"api\":").append(quote(s.api))
+        append(",\"searchable\":").append(s.searchable)
+        append(",\"quickSearch\":").append(s.quickSearch)
+        append(",\"filterable\":").append(s.filterable)
+        s.ext?.let { append(",\"ext\":").append(quote(it)) }
+        s.jar?.let { append(",\"jar\":").append(quote(it)) }
+        s.userAgent?.let { append(",\"userAgent\":").append(quote(it)) }
+        s.playUrl?.let { append(",\"playUrl\":").append(quote(it)) }
+        s.timeout?.let { append(",\"timeout\":").append(it) }
+        s.header?.let { h ->
+            append(",\"header\":{")
+            h.entries.forEachIndexed { i, (k, v) ->
+                if (i > 0) append(',')
+                append(quote(k)).append(':').append(quote(v.toString().trim('"')))
+            }
+            append('}')
+        }
+        if (s.categories.isNotEmpty()) {
+            append(",\"categories\":[")
+            s.categories.forEachIndexed { i, c ->
+                if (i > 0) append(',')
+                append(quote(c))
+            }
+            append(']')
+        }
+        append('}')
+    }
+
+    private fun quote(s: String): String {
+        val sb = StringBuilder(s.length + 8)
+        sb.append('"')
+        s.forEach { c ->
+            when (c) {
+                '"' -> sb.append("\\\"")
+                '\\' -> sb.append("\\\\")
+                '\n' -> sb.append("\\n")
+                '\r' -> sb.append("\\r")
+                '\t' -> sb.append("\\t")
+                else -> if (c < ' ') sb.append("\\u%04x".format(c.code)) else sb.append(c)
+            }
+        }
+        sb.append('"')
+        return sb.toString()
+    }
+
 }

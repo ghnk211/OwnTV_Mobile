@@ -108,3 +108,50 @@ python OwnTV_Mobile/tools/regression/toggle_kids.py   # 需先手动进入 Setti
 ---
 
 **结论**：TVbox 点播迁移在模拟器上的功能回归、分类锁/儿童模式接入、数据隔离与重锁停播均按方案 v1.2 验收口径通过；发现并修复 3 个缺陷后全链路复测通过。遗留项（arm64 真机加固壳、嗅探端到端、备份恢复演练）见 §6。
+
+---
+
+## 9. 代码改善批次（2026-11-09，第二轮回归验证）
+
+针对 §8 复盘的代码层面改善清单逐项落地；**判定层单测先行**（新增 33 个），全部改动后 290 个 TVbox 单测全绿、`assembleStandardDebug` 与 i18n 门禁通过，并做了一轮设备级回归。
+
+### 9.1 已落地的改善
+
+| # | 改善 | 文件 | 验证 |
+|---|---|---|---|
+| 1 | **判定层单测**：锁判定四步顺序、双轨 key、解锁 epoch 协议、儿童判定矩阵（词表/ext/严格模式）、绝对地址补全 | `app/src/test/.../tvbox/category/{TvboxCategoryLockTest,TvboxCategoryPolicyTest}.kt`、`util/TextUtilAbsoluteUrlTest.kt` | 33 个新单测全绿；**单测当场抓到一个真实缺陷**：重写时 `seals` 的会话判定写反（解锁态被判为锁上），若没有这批测试将直接上线 |
+| 2 | **锁 key 双轨**：`toggleLock` 主键（typeId 形态）与别名（typeName 形态）双写；`seals`/解锁会话对两形态任一命中即生效。搜索来源（只有 typeName）的播放不再绕过分类锁 | `TvboxCategoryLock.kt` | 单测 + 设备：解锁→重上锁后 DataStore 同时出现 `tvbox:local_cms:1` 与 `tvbox:local_cms:电影`（`strings` + od UTF-8 字节双重确认） |
+| 3 | **锁数据读写缝**：`TvboxLockStore` 接口（生产实现包 Core `CustomizationStore`），判定层脱离 Android 依赖可直测 | `TvboxCategoryLock.kt` | 单测内存假件直跑 |
+| 4 | **儿童判定去依赖**：`TvboxCategoryPolicy` 只收 `kidsStrict: () -> Boolean`，档案由调用方传入 | 同上 | 单测矩阵 |
+| 5 | **resolveError 透传显示**：详情页对解析层 Error 原样展示引导文案（换线/换源），不再被固定文案吞掉 | `TvboxPages.kt` | 代码路径验证；设备级文本截图因测试与夹具时序竞态未定格（记录为待补） |
+| 6 | **Banner/lockEvent 停留式消费**：横幅立即消费的"单帧闪烁"改为停留 3-4 秒 | `TvboxPages.kt` | 设备：重复导入时「此配置已存在：10.0.2.2」横幅持续可见（截图 `shot_banner3.png`） |
+| 7 | **聚合搜索流式渲染**：收集 `searchProgress`（先等订阅建立再触发搜索），先到先显示；最终以返回列表为准 | `TvboxViewModels.kt`、`SourceRepository.kt`（补 `searchProgressSubscribers`） | 设备：搜索 10 行结果正常 |
+| 8 | **海报相对地址补全**：网格/列表/搜索三处统一 `absoluteUrl(pic, site.api)` | `TvboxViewModels.kt` | 设备：夹具改为相对路径 `/pic/…?v=2` 后，宿主收到 9 个**已补全的绝对地址**请求，海报正常渲染 |
+| 9 | **saveProgress 去重**：position 未变化跳过写盘（片尾 keep-open 不再每 5s 刷一条同值记录） | `VodTuner.kt` | 单测覆盖路径；设备观察写入停止正常 |
+| 10 | **播放种类标志集中**：`beginPlay(PlayKind.CORE/TVBOX)` 单入口切换 + TVbox 身份字段统一清理，消灭四处散落的标志复位 | `VodTuner.kt` | 重锁停播回归 PASS |
+| 11 | **死代码清理**：删除 `TvboxSourceStats`（恒 false 的空实现及其 5 处调用） | `SourceRepository.kt`、`TvboxModule.kt` | 编译 + 全量单测 |
+| 12 | **缓存序列化字段集防线**：`TvboxConfigCacheCodec` 抽为独立对象 + encode→parse round-trip 单测（字段增删必须 +VERSION） | `TvboxConfigRepository.kt` | round-trip 单测锁住全部字段 |
+| 13 | **网格稳定 key**：`id + typeName` 取代 index 兜底 | `TvboxPages.kt` | 编译 |
+
+### 9.2 过程中发现并修复的两个新缺陷
+
+| # | 缺陷 | 修复 |
+|---|---|---|
+| N1 | **详情页内 PIN 解锁后不加载内容**：`open()` 在 seals 命中时提前返回，`unlockWithPin` 只清标志——解锁后页面停在"无分集" | 解锁 Accepted 后重跑 `open(...)` 重新拉详情（设备已验证：解锁后详情正常加载） |
+| N2 | **`tvboxModule` 的 `single<OkHttpClient>` 覆盖 Core 全局客户端**：Koin 后注册覆盖，Coil 图片加载、同步、备份全被换到 TVbox 网络链（违反方案"派生不改 Core 单例"） | 删除该注册；TVbox 网络链经 `OkHttpProvider`/`NetApi` provider 直达，不再占用 Core 的 Koin key |
+
+### 9.3 设备级回归结论（改善批次）
+
+- 重锁停播：模拟器重启后完整 PASS（play → Home → guard `ctx=true` → 写入终止）
+- 双写锁：PASS（§9.1#2 证据）
+- 横幅停留：PASS（截图）
+- 相对海报：PASS（9 个补全请求 + 渲染）
+- 聚合搜索：PASS（10 行结果）
+- 数据隔离复核：Core 三表仍为 0 行
+- 待补：resolveError 文案的设备级截图（时序竞态未定格，代码路径已由编译与其余同渲染路径分支间接覆盖）
+
+### 9.4 遗留（下一批）
+
+- `SecureKv` 明文简化 → Keystore AES-GCM 还债（jar 侧 cookie/token 加密，~100 行，单独排期）
+- `TvboxPages.kt` 按页面拆分；`SitePickerSheet` 的 dismissed hack 换正式 sheet 形态
+- 备份恢复保留 `tvbox:` 锁 key 的设备级双机演练

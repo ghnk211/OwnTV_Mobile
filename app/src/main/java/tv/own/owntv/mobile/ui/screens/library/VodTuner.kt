@@ -159,14 +159,28 @@ class VodTuner(
      *  resume position into the new profile's list. */
     private var playingProfileId = -1L
 
-    /**
-     * A TVbox stream is playing (plan §5.4). Every Core-table write keys off this: while it is set,
-     * [saveProgress] writes only [tvboxStore] and `began`/`recordHistory` are never called, so a
-     * TVbox item cannot land in the Core progress/history/favourite tables. The Core-side plays set
-     * it back to false (in [began] and [playRecording]) the same way [playTvbox] sets it true.
-     */
+    /** Which side the current stream belongs to. Every Core-table write keys off this: in the
+     *  TVBOX state [saveProgress] writes only [tvboxStore] and `began`/`recordHistory` are never
+     *  called, so a TVbox item cannot land in the Core progress/history/favourite tables; in the
+     *  CORE state the TVbox identity fields are cleared. Switching through [beginPlay] is the one
+     *  place the switch happens — a play path that forgets it cannot leak writes across the two
+     *  stores (plan R4). */
+    private enum class PlayKind { CORE, TVBOX }
+
     @Volatile
-    private var playingExternal = false
+    private var playKind = PlayKind.CORE
+
+    /** The TVbox identity fields, cleared on every CORE play (see [beginPlay]). */
+    private fun beginPlay(kind: PlayKind) {
+        playKind = kind
+        if (kind == PlayKind.CORE) {
+            tvboxSiteKey = null
+            tvboxCategoryKey = null
+            tvboxProgressCtx = null
+            tvboxQueueCtxs = null
+        }
+        lastSavedPositionMs = -1L
+    }
 
     /** The TVbox site and category of the current stream, for the relock guard (plan §5.5.8). */
     private var tvboxSiteKey: String? = null
@@ -177,6 +191,10 @@ class VodTuner(
 
     /** Per-episode progress contexts of the playing TVbox queue, indexed like [player]'s queue. */
     private var tvboxQueueCtxs: List<TvboxProgressCtx>? = null
+
+    /** The position the last [saveProgress] wrote; equal position means nothing new to persist. */
+    @Volatile
+    private var lastSavedPositionMs = -1L
 
     /** Identity of a playing TVbox episode, for [tv.own.owntv.mobile.tvbox.repository.TvboxStore]. */
     data class TvboxProgressCtx(
@@ -191,7 +209,7 @@ class VodTuner(
      *  nothing TVbox-side is playing (or the stream has no category context, which cannot happen
      *  through [playTvbox]). */
     fun tvboxPlayingContext(): Pair<String, tv.own.owntv.mobile.tvbox.play.TvboxCategoryKey>? =
-        if (playingExternal) tvboxSiteKey?.let { site -> tvboxCategoryKey?.let { site to it } } else null
+        if (playKind == PlayKind.TVBOX) tvboxSiteKey?.let { site -> tvboxCategoryKey?.let { site to it } } else null
 
     /** The season queue handed to the player, kept so a player-driven advance can be followed. */
     private data class PlayingQueue(
@@ -214,7 +232,7 @@ class VodTuner(
             player.queueItemChanged.collect { index ->
                 // A TVbox queue advancing by itself re-points the progress context, so the five-second
                 // timer keeps writing under the episode actually playing (same rule as Core episodes).
-                if (playingExternal) {
+                if (playKind == PlayKind.TVBOX) {
                     tvboxProgressCtx = tvboxQueueCtxs?.getOrNull(index) ?: tvboxProgressCtx
                 }
                 val q = playingQueue ?: return@collect
@@ -474,13 +492,8 @@ class VodTuner(
         PlaybackService.start(context)
         playingProfileId = pid
         // Not began(): a recording has no catalogue row. Core-table writes end here regardless —
-        // the flag marks the next Core-side stream, same as every other non-TVbox play.
-        playingExternal = false
-        tvboxSiteKey = null
-        tvboxCategoryKey = null
-        tvboxProgressCtx = null
-        tvboxQueueCtxs = null
-        tvboxQueueCtxs = null
+        // the play kind marks the next Core-side stream, same as every other non-TVbox play.
+        beginPlay(PlayKind.CORE)
         _playing.value = VodPlayback(MediaType.LIVE, RECORDING_ITEM_ID, title, posterUrl = posterUrl, categoryId = categoryId)
         playingQueue = null
         return true
@@ -512,7 +525,7 @@ class VodTuner(
         // starting one ends the cast rather than leaving the television on the previous item.
         cast.release(this)
 
-        playingExternal = true
+        beginPlay(PlayKind.TVBOX)
         tvboxSiteKey = resolved.siteKey
         tvboxCategoryKey = resolved.categoryKey
         tvboxProgressCtx = progressCtx
@@ -668,9 +681,13 @@ class VodTuner(
         val position = remote?.position?.value ?: player.position.value
         val duration = remote?.duration?.value ?: player.duration.value
         if (position <= 0 || duration <= 0) return
+        // keep-open at the end of a stream leaves the position frozen: writing the identical
+        // record every five seconds only churns the file (regression §6.9).
+        if (position == lastSavedPositionMs) return
+        lastSavedPositionMs = position
         // A TVbox stream never writes the Core progress table: same five-second cadence, but the
         // entry lands in the app-private TvboxStore under its own (siteKey, vodId) identity (§5.4).
-        if (playingExternal) {
+        if (playKind == PlayKind.TVBOX) {
             val ctx = tvboxProgressCtx ?: return
             runCatching {
                 withContext(Dispatchers.IO) {
@@ -719,13 +736,8 @@ class VodTuner(
         PlaybackService.start(context)
         playingProfileId = profileId
         // A Core-side play taking over ends any TVbox stream's Core-table isolation: from here the
-        // writes are catalogue-keyed again, exactly what the flag promises not to redirect.
-        playingExternal = false
-        tvboxSiteKey = null
-        tvboxCategoryKey = null
-        tvboxProgressCtx = null
-        tvboxQueueCtxs = null
-        tvboxQueueCtxs = null
+        // writes are catalogue-keyed again, exactly what the play kind promises not to redirect.
+        beginPlay(PlayKind.CORE)
         _playing.value = what
         recordHistory(profileId, what.mediaType, what.itemId)
     }
@@ -742,11 +754,7 @@ class VodTuner(
         _playing.value = null
         playingProfileId = -1L
         playingQueue = null
-        playingExternal = false
-        tvboxSiteKey = null
-        tvboxCategoryKey = null
-        tvboxProgressCtx = null
-        tvboxQueueCtxs = null
+        beginPlay(PlayKind.CORE)
         // The player's ADD SUBTITLES entry exists only for a film or an episode. Left set, it would
         // still be offering to search OpenSubtitles for the film while a channel is playing.
         subtitleController.clear()

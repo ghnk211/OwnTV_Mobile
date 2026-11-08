@@ -991,8 +991,8 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	集
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	高清
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	$siteKey|$tag
-2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	$tag: $msg
-2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	$tag: 源返回空（接口正常但无数据）
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	$tag: $msg
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	$tag: 源返回空（接口正常但无数据）
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	1
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	SourceRepo
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	UNCHECKED_CAST
@@ -1004,7 +1004,6 @@
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	homeVideo
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	全部
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	搜索跳过未 init 的 JS 源（预热中）：%s
-1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	源统计写入失败：%s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s %s 返回空（未计为故障）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s init 失败（不计健康）：%s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s init 超时（%dms，不计健康）：%s
@@ -1016,7 +1015,7 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	站点 %s(type=%d) 无可用引擎（M1 仅支持 CMS 型源）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	详情缓存命中：%s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	超时或无结果
-2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	超时（${effectiveTimeout}ms）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	超时（${effectiveTimeout}ms）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	预热中，本轮暂不参与
 1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	\0
 1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	"_cacheVersion"\\s*:\\s*(\\d+)
@@ -1141,7 +1140,6 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置解密后仍非 JSON（前 80 字符：%s）
 2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置解析失败
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	重新拷贝本地 spider jar：%s（%d 字节）
-1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxSourceStats.kt	${site.key}:${site.api}
 2	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	\0
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	$siteKey|$vodId|$episodeFlag|$episodeId
 2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	addedAt

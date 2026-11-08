@@ -191,7 +191,11 @@ internal fun TvboxConfigPage(
         }
 
         state.banner?.let { banner ->
-            LaunchedEffect(banner) { onConsumeBanner() }
+            // 停留式消费：立即消费会让横幅只活一帧（回归里横幅从未可见）。给足阅读时间。
+            LaunchedEffect(banner) {
+                kotlinx.coroutines.delay(4_000)
+                onConsumeBanner()
+            }
             Text(
                 text = when (banner) {
                     is TvboxBanner.Imported ->
@@ -287,7 +291,7 @@ internal fun TvboxHomePage(
     var pinSheetFor by remember { mutableStateOf<tv.own.owntv.mobile.tvbox.engine.ClassInfo?>(null) }
     val lockedPrefix = stringResource(R.string.tvbox_locked_prefix)
 
-    // Lock/unlock feedback (no-PIN guidance included).
+    // Lock/unlock feedback (no-PIN guidance included); held for a read, then consumed.
     state.lockEvent?.let { event ->
         val message = stringResource(
             when (event) {
@@ -296,7 +300,10 @@ internal fun TvboxHomePage(
                 TvboxLockEvent.NO_PIN -> R.string.tvbox_lock_no_pin
             },
         )
-        LaunchedEffect(event) { onConsumeLockEvent() }
+        LaunchedEffect(event) {
+            kotlinx.coroutines.delay(3_000)
+            onConsumeLockEvent()
+        }
         Text(
             message,
             style = stageText(12f, 600),
@@ -585,7 +592,9 @@ private fun PosterGrid(
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(count = movies.size, key = { i -> movies[i].id + i }) { i ->
+        // vod_id 在同一分类里唯一；拼上 typeName 让跨分类合并也不撞 key（index 兜底会让
+        // 翻页时整格重建，丢失状态）。
+        items(count = movies.size, key = { i -> movies[i].id + movies[i].typeName.orEmpty() }) { i ->
             val movie = movies[i]
             StagePoster(
                 imageUrl = movie.pic,
@@ -722,6 +731,8 @@ internal fun TvboxDetailPage(
         when {
             state.loading -> EmptyHint(stringResource(R.string.tvbox_loading))
             state.blockedByKids -> EmptyHint(stringResource(R.string.tvbox_detail_blocked_kids))
+            // 解析层的可执行引导（换线/换源/服务未就绪）原样透传 —— 它比固定文案有用得多。
+            state.resolveError != null -> EmptyHint(state.resolveError)
             state.error != null -> EmptyHint(stringResource(R.string.tvbox_error_detail))
             state.sealed -> {
                 EmptyHint(stringResource(R.string.tvbox_detail_locked))

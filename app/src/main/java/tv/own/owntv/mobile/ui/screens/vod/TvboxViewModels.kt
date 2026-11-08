@@ -305,16 +305,47 @@ class TvboxHomeViewModel(
             _state.value = _state.value.copy(searchKeyword = keyword, searching = true, searchResults = emptyList())
             val profile = currentProfile()
             val visibleKeys = _state.value.sites.filter { it.canSearch }.map { it.key }.toSet()
+
+            // 先到先显示：每个源的聚合结果一出就发 searchProgress，逐条过滤即时上屏
+            //（VodPlayer 的同名体验）。SharedFlow 无 replay，必须先等订阅建立再触发搜索，
+            // 否则快源的头部结果会丢在订阅前。
+            val collector = launch {
+                sourceRepository.searchProgress.collect { r ->
+                    val site = _state.value.sites.firstOrNull { it.key == r.siteKey } ?: return@collect
+                    if (r.siteKey !in visibleKeys || !r.isSuccess) return@collect
+                    val filtered = filteredForSearch(profile, site, r)
+                    if (filtered.movies.isEmpty()) return@collect
+                    val current = _state.value.searchResults
+                    if (current.none { it.siteKey == filtered.siteKey }) {
+                        _state.value = _state.value.copy(searchResults = current + filtered)
+                    }
+                }
+            }
+            sourceRepository.searchProgressSubscribers.first { it > 0 }
+
             val results = sourceRepository.aggregateSearch(keyword, onlySiteKeys = visibleKeys)
                 .filter { r -> r.isSuccess }
                 .map { r ->
                     val site = _state.value.sites.firstOrNull { it.key == r.siteKey }
-                    r.copy(movies = r.movies.filter { m -> site == null || policy.movieAllowed(profile, site, m) })
+                    if (site == null) r else filteredForSearch(profile, site, r)
                 }
                 .filter { it.movies.isNotEmpty() }
+            collector.cancel()
+            // 最终以返回列表为准（权威排序；也兜住订阅前丢掉的早期 emission）。
             _state.value = _state.value.copy(searching = false, searchResults = results)
         }
     }
+
+    /** 搜索结果行：儿童过滤 + 海报相对地址补全（与列表网格同一口径）。 */
+    private fun filteredForSearch(
+        profile: ProfileEntity?,
+        site: SiteConfig,
+        r: SourceSearchResult,
+    ): SourceSearchResult = r.copy(
+        movies = r.movies
+            .filter { policy.movieAllowed(profile, site, it) }
+            .map { it.copy(pic = TextUtil.absoluteUrl(it.pic, site.api)) },
+    )
 
     fun clearSearch() {
         _state.value = _state.value.copy(searchKeyword = "", searchResults = emptyList(), searching = false)
@@ -364,7 +395,10 @@ class TvboxHomeViewModel(
     }
 
     private suspend fun filterMovies(profile: ProfileEntity?, site: SiteConfig, movies: List<Movie>): List<Movie> =
-        movies.filter { policy.movieAllowed(profile, site, it) }
+        movies
+            .filter { policy.movieAllowed(profile, site, it) }
+            // 生态里 CMS 源常返回相对路径海报；详情页已补全，网格同一口径。
+            .map { it.copy(pic = TextUtil.absoluteUrl(it.pic, site.api)) }
 }
 
 // ---------------------------------------------------------------------------
@@ -505,6 +539,9 @@ class TvboxDetailViewModel(
         val result = lock.unlock(pid, site.key, key?.typeId, key?.typeName ?: s.typeName ?: "", pin)
         if (result is PinAttempt.Accepted) {
             _state.value = _state.value.copy(sealed = false)
+            // open() 在 seals 命中时提前返回、没取详情 —— 解锁后必须重跑，
+            // 否则页面停在"No playable episodes"（回归发现）。
+            open(s.site?.key ?: return result, s.vodId, key?.typeId, key?.typeName ?: s.typeName)
         }
         return result
     }

@@ -23,7 +23,8 @@ function movies(typeId) {
     list.push({
       vod_id: typeId * 100 + i,
       vod_name: `${cat.type_name}测试${String(i).padStart(2, '0')}`,
-      vod_pic: 'http://10.0.2.2:8899/pic/' + typeId + '_' + i,
+      // 改善项 8 回归：故意给相对路径，网格必须补全成绝对地址才能显示
+      vod_pic: '/pic/' + typeId + '_' + i + '?v=2',
       vod_remarks: 'HD',
       vod_year: '2026',
       vod_area: '大陆',
@@ -46,6 +47,7 @@ function json(res, o) {
 }
 
 const server = http.createServer((req, res) => {
+  console.log('[req]', req.url);
   const u = new URL(req.url, 'http://x');
   const ac = u.searchParams.get('ac') || '';
   const ids = u.searchParams.get('ids') || '';
