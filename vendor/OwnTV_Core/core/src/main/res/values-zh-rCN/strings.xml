@@ -115,6 +115,10 @@
     <string name="sync_error_malformed_guide">服务器返回的节目指南数据格式有误。部分数据可能仍已成功加载——请重试，或检查电子节目指南（EPG）URL。</string>
     <string name="sync_error_guide_empty">此节目单目前为空。提供商可能尚未发布 — 请稍后再试。</string>
     <string name="sync_error_guide_no_matching_channels">此节目指南中的频道目前与你的播放列表中的频道都不匹配。请打开电视节目指南，使用“自动匹配电子节目指南（EPG）”按名称配对。</string>
+    <string name="sync_error_playlist_empty">播放列表中没有找到可播放的地址，请检查文件或网址。</string>
+    <string name="sync_error_playlist_non_text">该网址返回的不是文本播放列表（例如图片或网页），请检查网址。</string>
+    <string name="sync_error_playlist_too_large">播放列表过大，无法导入，请检查网址。</string>
+    <string name="sync_error_redirect">该网址存在循环重定向，请检查网址。</string>
     <string name="common_minutes">分钟</string>
     <string name="common_size_mb"><xliff:g id="size">%1$s</xliff:g> MB</string>
     <string name="common_size_gb"><xliff:g id="size">%1$s</xliff:g> GB</string>
@@ -162,6 +166,5 @@
         <item quantity="other"><xliff:g id="count">%1$d</xliff:g> 个正在下载 · <xliff:g id="progress">%2$s</xliff:g></item>
     </plurals>
     <string name="shell_now_playing_audio">音频</string>
-    <string name="common_weather_degrees_city"><xliff:g id="temperature">%1$d</xliff:g>° <xliff:g id="city">%2$s</xliff:g></string>
     <string name="common_dismiss">忽略</string>
 </resources>

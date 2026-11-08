@@ -28,8 +28,11 @@ import tv.own.owntv.core.player.ManifestType
 import tv.own.owntv.core.network.StreamHeaders
 import tv.own.owntv.core.parser.M3uHeader
 import tv.own.owntv.core.parser.M3uParser
+import tv.own.owntv.core.parser.PlaylistFormat
+import tv.own.owntv.core.parser.PlaylistKind
 import tv.own.owntv.core.parser.TvBoxExternalSource
 import tv.own.owntv.core.parser.TvBoxPlaylistParser
+import tv.own.owntv.core.parser.TxtPlaylistParser
 
 /**
  * The M3U import flow (split out of SyncManager). M3U playlists carry
@@ -49,6 +52,7 @@ internal class M3uSyncer(
     private val movieDao: MovieDao,
     private val seriesDao: SeriesDao,
     private val m3u: M3uParser,
+    private val txt: TxtPlaylistParser,
     private val http: HttpClient,
     private val bulkInsertHelper: BulkInsertHelper,
     private val support: SyncSupport,
@@ -459,27 +463,51 @@ internal class M3uSyncer(
                     }
                 }
             }
+            // An explicit .m3u/.m3u8 extension keeps the original parser and the original stream
+            // untouched; .txt (and extension-less links, sniffed from a bounded peek) use the lenient
+            // parser. Both produce the same M3uEntry stream, so everything below — stable keys,
+            // upserts, prune, EPG header — is shared.
             // A `.json` location is a TVBox config: its `lives` array carries the channels, and the
-            // TVBox parser emits the same M3uEntry stream so everything below is unchanged. Any other
-            // location keeps the original M3U parser and the original stream wrapper untouched.
+            // TVBox parser emits the same M3uEntry stream so everything below is unchanged. The
+            // extension wins over the format sniff, which would otherwise treat JSON as loose text.
             val externals = mutableListOf<TvBoxExternalSource>()
-            suspend fun parseStream(input: java.io.InputStream) =
-                if (TvBoxPlaylistParser.isTvBoxLocation(s.url)) tvbox.parse(input, onEntry) { externals += it }
-                else m3u.parse(input, onEntry)
+            suspend fun parsePlaylist(detected: PlaylistFormat.Detected): M3uHeader =
+                if (TvBoxPlaylistParser.isTvBoxLocation(s.url)) tvbox.parse(detected.stream, onEntry) { externals += it }
+                else when (detected.kind) {
+                    PlaylistKind.M3U -> m3u.parse(detected.stream, onEntry)
+                    PlaylistKind.TXT -> txt.parse(detected.stream, onEntry)
+                }
             var header = if (isLocal) {
-                localFile.open(s.url).use { input -> parseStream(input) }
+                localFile.open(s.url).use { raw ->
+                    parsePlaylist(PlaylistFormat.detect(s.url, raw))
+                }
             } else {
-                http.get(s.url, s.userAgent, reportBytes, maxAttempts = M3U_DOWNLOAD_ATTEMPTS) { input -> parseStream(input) }
+                http.get(
+                    s.url, s.userAgent, reportBytes,
+                    maxAttempts = M3U_DOWNLOAD_ATTEMPTS,
+                    requireText = PlaylistFormat.isTxtLocation(s.url),
+                ) { raw ->
+                    parsePlaylist(PlaylistFormat.detect(s.url, raw))
+                }
             }
             // Published TVBox configs usually reference other playlists instead of listing channels
-            // inline. Fetch each reference and run the same M3U parser over it; one dead reference
+            // inline. Fetch each reference and reuse the format sniff + parser; one dead reference
             // must not fail a whole import that has other working sources.
             var externalEpg: String? = null
             for (ext in externals.take(MAX_EXTERNAL_SOURCES)) {
                 if (!ext.url.startsWith("http", ignoreCase = true)) continue
                 runCatching {
-                    http.get(ext.url, ext.userAgent ?: s.userAgent, reportBytes,
-                        maxAttempts = M3U_DOWNLOAD_ATTEMPTS) { input -> m3u.parse(input, onEntry) }
+                    http.get(
+                        ext.url, ext.userAgent ?: s.userAgent, reportBytes,
+                        maxAttempts = M3U_DOWNLOAD_ATTEMPTS,
+                        requireText = PlaylistFormat.isTxtLocation(ext.url),
+                    ) { raw ->
+                        val detected = PlaylistFormat.detect(ext.url, raw)
+                        when (detected.kind) {
+                            PlaylistKind.M3U -> m3u.parse(detected.stream, onEntry)
+                            PlaylistKind.TXT -> txt.parse(detected.stream, onEntry)
+                        }
+                    }
                 }.onSuccess { h -> if (externalEpg == null) externalEpg = h.urlTvg }
                     .onFailure { e -> Log.w(TAG, "TVBox external source failed", e) }
             }

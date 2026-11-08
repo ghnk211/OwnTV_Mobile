@@ -67,8 +67,8 @@ android {
         // local.properties is developer-local and never committed (its Windows SDK path can't be
         // escaped without breaking the local tooling that writes it). CI has no such file at all.
         disable += "PropertyEscape"
-        // en-rGB is an intentional partial regional override of the canonical en-US source; its
-        // omitted keys fall back to values/ and must not make every default string a lint error.
+        // A localized resource set may intentionally omit a key and fall back to values/. Keep the
+        // check off so a partial translation never turns every default string into a lint error.
         disable += "MissingTranslation"
     }
 }
@@ -249,7 +249,7 @@ dependencies {
     // android.util.JsonReader is a stub too; the test-only stand-in under src/test/java/android/util
     // delegates to Gson's streaming reader so the Xtream and Stalker parsers can be tested.
     testImplementation(libs.gson)
-    // Virtual time for the sports repository's refresh loop (same artifact :player-core tests with).
+    // Virtual time for background-work tests (same artifact :player-core tests with).
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     // The runner named in `testInstrumentationRunner` above. Not transitive from androidx.test.ext.

@@ -2522,7 +2522,6 @@
 1	regex	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	(?m)^\\s*//
 2	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	.json
 1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	.m3u
-1	file-path	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	.php
 1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	.txt
 1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	//
 1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	://
@@ -2545,7 +2544,6 @@
 1	technical	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	origin
 1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	pic
 1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	playUrl
-1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	playerType
 1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	referer
 1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	referrer
 1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	stream
@@ -2558,7 +2556,6 @@
 1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	tvgId
 1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	tvg_logo
 1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	tvg_name
-1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	type
 1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	ua
 1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	url
 1	json	core/src/main/java/tv/own/owntv/core/parser/TvBoxPlaylistParser.kt	url-tvg
@@ -4756,7 +4753,6 @@
 3	technical	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	M3U series
 1	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	M3U series flush sourceId=${s.id} final=$final shows=${shows.size} dbInserted=${inserts.size}
 1	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	M3U truncated-name rescue: ${rescued.size} row(s) relinked to their full name
-1	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	TVBox external source failed
 3	technical	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	channels
 1	technical	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	channels_fts
 1	url	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	content://
@@ -4764,7 +4760,6 @@
 1	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	dbUpdated=${upsert.updated} dbSkipped=${upsert.skippedUnchanged} processed=$moviesProcessed
 1	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	dbUpdated=${upsert.updated} dbSkipped=${upsert.skippedUnchanged} processed=$processed
 1	url	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	file://
-1	uri	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	http
 1	technical	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	movies
 2	log	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	ms=${SystemClock.elapsedRealtime() - start}
 1	technical	core/src/main/java/tv/own/owntv/core/sync/M3uSyncer.kt	series

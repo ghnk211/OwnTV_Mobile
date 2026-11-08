@@ -557,13 +557,8 @@ class SettingsRepository(private val context: Context, private val localeStore: 
         val DNS_HOST = stringPreferencesKey("dns_host")
         val DNS_PORT = intPreferencesKey("dns_port")
         val DNS_DOH_URL = stringPreferencesKey("dns_doh_url")
-        // Weather chip: show/hide + manual location override (blank = auto-detect from public IP).
-        val WEATHER_ENABLED = booleanPreferencesKey("weather_enabled")
-        val WEATHER_LOCATION = stringPreferencesKey("weather_location")
-        val WEATHER_FAHRENHEIT = booleanPreferencesKey("weather_fahrenheit")
         val CLOCK_TIME_COLOR = stringPreferencesKey("clock_time_color")
         val CLOCK_DATE_COLOR = stringPreferencesKey("clock_date_color")
-        val CLOCK_WEATHER_COLOR = stringPreferencesKey("clock_weather_color")
         // TMDB metadata enrichment. Master toggle + the two
         // advanced tiers (own key / self-host URL). Blank tier fields = use the default caching Worker.
         val METADATA_ENABLED = booleanPreferencesKey("metadata_enabled") // legacy; migrated to METADATA_MODE
@@ -809,26 +804,6 @@ class SettingsRepository(private val context: Context, private val localeStore: 
         }
     }
 
-    // --- Sports: one blob per profile, like Home's (see [tv.own.owntv.core.sports.SportsConfig]). ---
-    private fun sportsConfigKey(profileId: Long) = stringPreferencesKey("$SPORTS_CONFIG_PREFIX$profileId")
-
-    fun sportsConfig(profileId: Long): Flow<tv.own.owntv.core.sports.SportsConfig> =
-        parsedFlow(sportsConfigKey(profileId)) { tv.own.owntv.core.sports.SportsConfig.fromJson(it) }
-
-    /** The active profile's sports settings, following profile switches. */
-    val activeSportsConfig: Flow<tv.own.owntv.core.sports.SportsConfig> = context.dataStore.data
-        .map { it[sportsConfigKey(it[Keys.ACTIVE_PROFILE] ?: -1L)] }
-        .distinctUntilChanged()
-        .map { tv.own.owntv.core.sports.SportsConfig.fromJson(it) }
-
-    suspend fun updateSportsConfig(profileId: Long, transform: (tv.own.owntv.core.sports.SportsConfig) -> tv.own.owntv.core.sports.SportsConfig) {
-        context.dataStore.edit { prefs ->
-            val key = sportsConfigKey(profileId)
-            val next = transform(tv.own.owntv.core.sports.SportsConfig.fromJson(prefs[key]))
-            if (next == tv.own.owntv.core.sports.SportsConfig()) prefs.remove(key) else prefs[key] = next.toJson().toString()
-        }
-    }
-
     // --- Startup: auto-open the last-watched live channel (default OFF) — legacy, now migrated to startupMode ---
     val resumeLastChannel: Flow<Boolean> = prefsFlow { it[Keys.RESUME_LAST_CHANNEL] ?: false }
     suspend fun setResumeLastChannel(enabled: Boolean) {
@@ -938,46 +913,18 @@ class SettingsRepository(private val context: Context, private val localeStore: 
         context.dataStore.edit { it[Keys.AMBIENT_GLOW_PULSE] = enabled }
     }
 
-    // --- Weather chip (top bar): show/hide + manual location override for VPN users ---
-
-    /** Show the weather chip in the top bar (default ON). */
-    val weatherEnabled: Flow<Boolean> = prefsFlow { it[Keys.WEATHER_ENABLED] ?: true }
-
-    suspend fun setWeatherEnabled(enabled: Boolean) {
-        context.dataStore.edit { it[Keys.WEATHER_ENABLED] = enabled }
-    }
-
     /**
-     * Manual weather location. Blank (default) = auto-detect from public IP. Otherwise a city name
-     * (geocoded via Open-Meteo) or a raw "lat,lon" pair. Lets users fix the wrong-city behaviour
-     * they see behind a VPN, where IP geolocation resolves to the VPN server's city.
-     */
-    val weatherLocation: Flow<String> = prefsFlow { it[Keys.WEATHER_LOCATION] ?: "" }
-
-    suspend fun setWeatherLocation(location: String) {
-        context.dataStore.edit { it[Keys.WEATHER_LOCATION] = location.trim() }
-    }
-
-    /** Show the weather temperature in Fahrenheit instead of Celsius (default °C). */
-    val weatherFahrenheit: Flow<Boolean> = prefsFlow { it[Keys.WEATHER_FAHRENHEIT] ?: false }
-
-    suspend fun setWeatherFahrenheit(fahrenheit: Boolean) {
-        context.dataStore.edit { it[Keys.WEATHER_FAHRENHEIT] = fahrenheit }
-    }
-
-    /**
-     * Colours of the top-right clock's three parts (TV Settings › Appearance › Date, time & weather).
+     * Colours of the top-right clock's two parts (TV Settings › Appearance › Date & time).
      * Each is blank (the shipped look), [ClockColors.ACCENT] (follows the accent) or a "#RRGGBB" hex.
      */
     val clockColors: Flow<ClockColors> = prefsFlow {
-        ClockColors(it[Keys.CLOCK_TIME_COLOR] ?: "", it[Keys.CLOCK_DATE_COLOR] ?: "", it[Keys.CLOCK_WEATHER_COLOR] ?: "")
+        ClockColors(it[Keys.CLOCK_TIME_COLOR] ?: "", it[Keys.CLOCK_DATE_COLOR] ?: "")
     }
 
     suspend fun setClockColor(part: ClockPart, value: String) {
         val key = when (part) {
             ClockPart.TIME -> Keys.CLOCK_TIME_COLOR
             ClockPart.DATE -> Keys.CLOCK_DATE_COLOR
-            ClockPart.WEATHER -> Keys.CLOCK_WEATHER_COLOR
         }
         context.dataStore.edit { it[key] = value.trim() }
     }
@@ -3138,7 +3085,7 @@ class SettingsRepository(private val context: Context, private val localeStore: 
     }
 
     // --- Global proxy (Approach 1 — one app-wide HTTP proxy) ---
-    // Covers all OkHttp traffic (playlist/API/EPG/images/downloads/updates/weather + ExoPlayer) and mpv
+    // Covers all OkHttp traffic (playlist/API/EPG/images/downloads/updates + ExoPlayer) and mpv
     // playback via its http-proxy option. Per-source overrides and SOCKS are future work; the proxy
     // password is intentionally NOT part of settings backup/export — see extras/PROXY_SUPPORT_PLAN.md.
 
@@ -3180,8 +3127,8 @@ class SettingsRepository(private val context: Context, private val localeStore: 
             Keys.PREF_AUDIO_LANG, Keys.PREF_SUB_LANG, Keys.SUB_SEARCH_LANGS, Keys.SORT_LIVE, Keys.SORT_GUIDE, Keys.SORT_MOVIES,
             Keys.SORT_SERIES, Keys.RESUME_MODE, Keys.TIMESHIFT_RESUME_MODE, Keys.DOWNLOAD_WATCH_CHOICE, Keys.CATCHUP_TZ, Keys.CATCHUP_PLAYER, Keys.ANIMATION_LEVEL, Keys.VOD_VIEW_MODE, Keys.GUIDE_VIEW,
             Keys.EPISODE_VIEW_MODE, Keys.VOD_LAYOUT, Keys.LIVE_LAYOUT, Keys.LIVE_VIEW, Keys.REMINDER_MODE, Keys.PLAYER_HOLD_OK, Keys.PLAYER_SHORT_OK,
-            Keys.WEATHER_LOCATION, Keys.RECENT_SEARCHES,
-            Keys.CLOCK_TIME_COLOR, Keys.CLOCK_DATE_COLOR, Keys.CLOCK_WEATHER_COLOR,
+            Keys.RECENT_SEARCHES,
+            Keys.CLOCK_TIME_COLOR, Keys.CLOCK_DATE_COLOR,
             // Global proxy — non-secret fields only. The proxy password (Keys.PROXY_PASS) is NEVER part of
             // this whitelist; it is handled separately by BackupManager (encrypted or omitted).
             Keys.PROXY_HOST, Keys.PROXY_USER,
@@ -3256,7 +3203,7 @@ class SettingsRepository(private val context: Context, private val localeStore: 
             Keys.LIVE_PREVIEW, Keys.LIVE_PREVIEW_AUDIO, Keys.GUIDE_PREVIEW_ON_OK, Keys.LIVE_PREVIEW_ON_OK, Keys.HERO_PREVIEW, Keys.PREFER_SDR, Keys.AUTO_FRAME_RATE, Keys.AUTO_FRAME_RATE_LIVE, Keys.AFR_MATCH_RESOLUTION, Keys.AUTO_FRAME_RATE_PROMPTED, Keys.ANDROID_TV_HOME, Keys.HW_DECODING, Keys.SOFTWARE_DECODE_ABOVE_1080P,
             Keys.VOD_PREFER_EXO, Keys.MEASURED_STREAM_STATS, Keys.DETAILED_DIAGNOSTICS, Keys.DIRECT_TUNE, Keys.LIVE_LEFT_RIGHT_REWINDS, Keys.EXTERNAL_PLAYER,
             Keys.EXTERNAL_PLAYER_LIVE, Keys.EXTERNAL_PLAYER_MOVIES, Keys.EXTERNAL_PLAYER_SERIES, Keys.UPDATE_CHECK_ON_START, Keys.SURROUND_SOUND, Keys.AUTO_PLAY_NEXT, Keys.PROXY_ENABLED,
-            Keys.WEATHER_ENABLED, Keys.WEATHER_FAHRENHEIT, Keys.RESUME_LAST_CHANNEL, Keys.METADATA_ENABLED, Keys.CH_NAV_ENABLED, Keys.PLAYER_SWAP_CHANNEL_KEYS, Keys.PLAYER_NUMBER_KEYS_TUNE,
+            Keys.RESUME_LAST_CHANNEL, Keys.METADATA_ENABLED, Keys.CH_NAV_ENABLED, Keys.PLAYER_SWAP_CHANNEL_KEYS, Keys.PLAYER_NUMBER_KEYS_TUNE,
             Keys.DNS_ENABLED,
             Keys.REMEMBER_LAST_LIVE, Keys.REMEMBER_LAST_MOVIES, Keys.REMEMBER_LAST_SERIES,
             Keys.REMEMBER_CAT_LIVE, Keys.REMEMBER_CAT_MOVIES, Keys.REMEMBER_CAT_SERIES, Keys.GUIDE_FOLLOWS_LIVE_CATEGORY,
@@ -3595,35 +3542,6 @@ class SettingsRepository(private val context: Context, private val localeStore: 
         }
     }
 
-    // --- Backup: per-profile sports settings (dynamic "sports_config_<id>" keys) ---
-
-    /** Exports all per-profile sports blobs as { "<profileId>": { ... } }. */
-    suspend fun exportSportsConfigs(): org.json.JSONObject {
-        val out = org.json.JSONObject()
-        context.dataStore.data.first().asMap().forEach { (k, v) ->
-            if (k.name.startsWith(SPORTS_CONFIG_PREFIX) && v is String) {
-                val blob = runCatching { org.json.JSONObject(v) }.getOrNull() ?: return@forEach
-                out.put(k.name.removePrefix(SPORTS_CONFIG_PREFIX), blob)
-            }
-        }
-        return out
-    }
-
-    /**
-     * Restores sports blobs only for profile ids in [existingProfileIds] (others are dropped safely).
-     * Each blob is read through [tv.own.owntv.core.sports.SportsConfig.fromJson] and written back, so
-     * the import rules apply and a value this build does not know is left out.
-     */
-    suspend fun importSportsConfigs(o: org.json.JSONObject, existingProfileIds: Set<Long>) {
-        context.dataStore.edit { prefs ->
-            o.keys().forEach { key ->
-                val pid = key.toLongOrNull()?.takeIf { it in existingProfileIds } ?: return@forEach
-                val blob = o.optJSONObject(key) ?: return@forEach
-                prefs[sportsConfigKey(pid)] = tv.own.owntv.core.sports.SportsConfig.fromJson(blob.toString()).toJson().toString()
-            }
-        }
-    }
-
     // --- Backup: per-profile preferred languages (dynamic "pref_audio_lang_<id>" / "pref_sub_lang_<id>") ---
 
     /** Exports { "<profileId>": { "a": "<audio>", "s": "<subtitle>" } }; a side the profile never chose is absent. */
@@ -3804,8 +3722,7 @@ class SettingsRepository(private val context: Context, private val localeStore: 
     }
 }
 
-/** Per-profile sports settings blob; the profile id follows. */
-internal const val SPORTS_CONFIG_PREFIX = "sports_config_"
+/** Per-profile downloads switch; the profile id follows. */
 internal const val DOWNLOADS_ALLOWED_PREFIX = "downloads_allowed_"
 
 /** Per-profile preferred-language keys; the profile id follows. */

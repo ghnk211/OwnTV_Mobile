@@ -16,6 +16,7 @@ import tv.own.owntv.core.database.entity.SourceEntity
 import tv.own.owntv.core.model.SourceType
 import tv.own.owntv.core.network.HttpClient
 import tv.own.owntv.core.parser.M3uParser
+import tv.own.owntv.core.parser.TxtPlaylistParser
 import tv.own.owntv.core.parser.XtreamClient
 import tv.own.owntv.core.settings.SettingsRepository
 
@@ -69,10 +70,13 @@ class SyncManager(
     private val catalogSyncScheduler: tv.own.owntv.core.sync.work.CatalogSyncScheduler,
     /** Which category the user is looking at, so the drain serves it first. */
     private val catalogPriority: CatalogPriority,
+    /** Lenient `.txt` playlist parser. Defaulted so callers that build a SyncManager by hand keep
+     *  their existing argument list; the app's Koin graph supplies the shared instance. */
+    txt: TxtPlaylistParser = TxtPlaylistParser(),
 ) {
     private val support = SyncSupport(categoryDao, channelDao, movieDao, seriesDao, sourceDao, customize, settings)
     private val xtreamSyncer = XtreamSyncer(xtream, bulkInsertHelper, support)
-    private val m3uSyncer = M3uSyncer(context, sourceDao, categoryDao, channelDao, movieDao, seriesDao, m3u, http, bulkInsertHelper, support)
+    private val m3uSyncer = M3uSyncer(context, sourceDao, categoryDao, channelDao, movieDao, seriesDao, m3u, txt, http, bulkInsertHelper, support)
     private val stalkerSyncer = StalkerSyncer(stalkerClient, stalkerAuth, bulkInsertHelper, support, sourceDao, catalogBackfillDao, catalogPriority, PortalCeilingStore(context))
 
     private val lastSyncStats = java.util.concurrent.ConcurrentHashMap<Long, SyncRunStats>()

@@ -219,26 +219,7 @@
     <string name="settings_remote_action_jump_last">Jump to last item</string>
     <!-- Translators: Warning about large skip values on low-end TVs. -->
     <string name="settings_large_skips_warning">Large skips overshoot short lists and may feel jumpy on low-end TVs.</string>
-    <!-- Translators: Section header for weather settings. -->
-    <string name="settings_weather">Weather</string>
-    <!-- Translators: Toggle label to show/hide the weather chip in the top bar. -->
-    <string name="settings_show_weather">Show weather</string>
-    <!-- Translators: Description of the show-weather toggle. -->
-    <string name="settings_show_weather_description">Display the current weather in the top bar.</string>
-    <!-- Translators: Setting label for the custom weather location override. -->
-    <string name="settings_custom_location">Custom location</string>
-    <!-- Translators: Description of the custom location setting. Explains auto-detect vs manual city/coordinates. -->
-    <string name="settings_custom_location_description">Override the city used for weather. Leave blank to auto-detect, or enter a city (e.g. London) or \"lat,lon\" (e.g. 51.5,-0.12). Useful on a VPN, where auto-detect resolves to the server\'s city.</string>
-    <!-- Translators: Setting label for the temperature unit (Celsius/Fahrenheit). -->
-    <string name="settings_temperature_unit">Temperature unit</string>
-    <!-- Translators: Description of the temperature unit setting. -->
-    <string name="settings_temperature_description">Show the temperature in Celsius or Fahrenheit.</string>
-    <!-- Translators: Option label for automatic weather location detection via public IP. -->
     <string name="settings_auto">Auto</string>
-    <!-- Translators: Text-field label for entering a city name or coordinates. -->
-    <string name="settings_city_latlon">City or lat,lon</string>
-    <!-- Translators: Placeholder hint text in the custom location field. -->
-    <string name="settings_location_hint">Leave blank to auto-detect from your public IP. Enter a city (e.g. London) or \"lat,lon\" (e.g. 51.5,-0.12).</string>
     <!-- Translators: Section header for metadata settings. 'TMDB' is a brand name (The Movie Database). -->
     <string name="settings_metadata">Metadata (TMDB)</string>
     <!-- Translators: Setting label for the metadata source choice. -->
@@ -405,7 +386,7 @@
     <!-- Translators: Settings navigation label for Playlists management. -->
     <string name="settings_playlists">Playlists</string>
     <!-- Translators: Description of the Playlists settings. 'M3U' and 'Xtream' are protocol names. -->
-    <string name="settings_playlists_description">Add, re-sync or remove M3U / Xtream playlists</string>
+    <string name="settings_playlists_description">Add, re-sync or remove M3U / TXT / Xtream playlists</string>
     <!-- Translators: Settings navigation label for EPG Sources. -->
     <string name="settings_epg_sources">EPG Sources</string>
     <!-- Translators: Description of the EPG Sources settings. 'XMLTV' is a technical format name. -->
@@ -421,7 +402,7 @@
     <!-- Translators: Settings navigation label for the long-press content menus. -->
     <string name="settings_content_menus_title">Long-press menus</string>
     <!-- Translators: Description of the long-press content menus settings. -->
-    <string name="settings_content_menus_description">Rearrange or hide the actions in the channel and episode menus</string>
+    <string name="settings_content_menus_description">Rearrange or hide the actions in the channel, movie, series &amp; episode menus</string>
     <!-- Translators: Hint shown above the list when arranging a long-press menu with the remote: OK shows or hides an action, a held OK picks it up to move it. -->
     <string name="settings_content_menus_hint">Press OK on an action to show or hide it. Hold OK to pick it up, then Up and Down to move it; press OK again to drop it.</string>
     <!-- Translators: Note on the long-press menus settings: some actions in the list are only offered in some places (Catch-up only on catch-up channels, Remove from history only in History). -->
@@ -504,8 +485,6 @@
     <string name="settings_animations">Animations</string>
     <!-- Translators: Description of the Animations setting. -->
     <string name="settings_animations_description">Turn interface motion on or off — Off feels snappier on lower-end TV boxes</string>
-    <!-- Translators: Description of the Weather row in Settings › Appearance. -->
-    <string name="settings_weather_description_root">Top-bar weather chip: show or hide, custom location, and Celsius / Fahrenheit.</string>
     <!-- Translators: Name of the phone's media playback notification channel, as listed in Android's notification settings for the app. -->
     <string name="settings_playback_group">Playback</string>
     <!-- Translators: Description of the Live preview setting. -->
@@ -819,8 +798,6 @@
     <string name="settings_search_keywords_zoom">scale interface size</string>
     <!-- Translators: Hidden keyword bag for the Animations settings. Translate as individual search terms. -->
     <string name="settings_search_keywords_animation">motion snappier performance</string>
-    <!-- Translators: Hidden keyword bag for the Weather settings. Translate as individual search terms. -->
-    <string name="settings_search_keywords_weather">top bar chip location celsius fahrenheit</string>
     <!-- Translators: Hidden keyword bag for the Live preview settings. Translate as individual search terms. -->
     <string name="settings_search_keywords_live_preview">auto play focus channel</string>
     <!-- Translators: Hidden keyword bag for the Preview sound settings. Translate as individual search terms. -->
@@ -1433,7 +1410,7 @@
     <!-- Translators: Screen title for the Sources management screen. -->
     <string name="settings_sources_title">Sources</string>
     <!-- Translators: Empty-state message when no sources are configured. 'M3U' and 'Xtream' are protocol names. -->
-    <string name="settings_sources_empty">No sources yet. Add an M3U or Xtream source.</string>
+    <string name="settings_sources_empty">No sources yet. Add an M3U, TXT or Xtream source.</string>
     <!-- Translators: Button to add a new source. -->
     <string name="settings_sources_add">Add Source</string>
     <!-- Translators: Error text when a source import fails. -->
@@ -2661,8 +2638,6 @@
     <!-- Translators: One-line description under a setting's name on a Settings page; keep it short, it is cut to one line. -->
     <string name="settings_line_animations">Off feels snappier on lower-end TV boxes</string>
     <!-- Translators: One-line description under a setting's name on a Settings page; keep it short, it is cut to one line. -->
-    <string name="settings_line_weather">Top-right weather: location and °C / °F</string>
-    <!-- Translators: One-line description under a setting's name on a Settings page; keep it short, it is cut to one line. -->
     <string name="settings_line_live_opens_in">The channel list, or the guide grid</string>
     <!-- Translators: One-line description under a setting's name on a Settings page; keep it short, it is cut to one line. -->
     <string name="settings_line_vod_layout">Separate panels, or one cinematic view</string>
@@ -2819,7 +2794,7 @@
     <!-- Translators: Explanation of the Profile settings group, shown in the panel beside the profiles. -->
     <string name="settings_help_profiles">Each viewer keeps their own favorites, watch history, resume points and Home rows. Kids mode shows only the categories you allow; a PIN stops anyone else from opening the profile.</string>
     <!-- Translators: Explanation shown in the panel beside the Settings rows while this setting has focus. -->
-    <string name="settings_help_playlists">Add a playlist from a link, an Xtream login, a Stalker portal or a file, re-sync one, or remove it.</string>
+    <string name="settings_help_playlists">Add a playlist from a link, an Xtream login, a Stalker portal or a .m3u / .m3u8 / .txt file, re-sync one, or remove it.</string>
     <!-- Translators: Explanation shown in the panel beside the Settings rows while this setting has focus. -->
     <string name="settings_help_epg_sources">Add an XMLTV guide feed by its link, refresh it, or remove it. Feeds fill the TV Guide and the program lines in Live TV.</string>
     <!-- Translators: Explanation shown in the panel beside the Settings rows while this setting has focus. -->
@@ -2840,8 +2815,6 @@
     <string name="settings_help_zoom">Scales everything on screen. Larger is easier to read from a distance; smaller fits more on screen. Below 85%% low-memory TV boxes can run out of memory.</string>
     <!-- Translators: Explanation shown in the panel beside the Settings rows while this setting has focus. -->
     <string name="settings_help_animations">Sheets, menus and focus move smoothly while this is on. Off makes every change instant.</string>
-    <!-- Translators: Explanation shown in the panel beside the Settings rows while this setting has focus. -->
-    <string name="settings_help_weather">Shows the temperature and your town next to the clock. Set a location by hand when the automatic one is wrong — behind a VPN, for example — and choose Celsius or Fahrenheit.</string>
     <!-- Translators: Explanation shown in the panel beside the Settings rows while this setting has focus. -->
     <string name="settings_help_navigation">Floating: the menu rests as a small capsule over the content and slides open when you move left. Docked: it always takes its own room. Size sets how much it shows, from icons only to counts and details.</string>
     <!-- Translators: Explanation shown in the panel beside the Settings rows while this setting has focus. -->
@@ -2939,14 +2912,6 @@
         <item quantity="one"><xliff:g id="count">%1$d</xliff:g> feed</item>
         <item quantity="other"><xliff:g id="count">%1$d</xliff:g> feeds</item>
     </plurals>
-    <!-- Translators: Title of the Settings page for the top-right clock block: date, time and weather. -->
-    <string name="settings_title_date_time_weather">Date, time &amp; weather</string>
-    <!-- Translators: Short line under the Show weather row. -->
-    <string name="settings_line_show_weather">Current weather in the top bar</string>
-    <!-- Translators: Short line under the Custom location row: leaving it blank detects the city automatically. -->
-    <string name="settings_line_custom_location">Blank = auto-detect</string>
-    <!-- Translators: Short line under the Temperature unit row. -->
-    <string name="settings_line_temperature_unit">Celsius or Fahrenheit</string>
     <!-- Translators: Heading above the three clock colour rows. -->
     <string name="settings_clock_colors">Colors</string>
     <!-- Translators: Row: colour of the clock's time. -->
@@ -2957,10 +2922,6 @@
     <string name="settings_clock_date_color">Date color</string>
     <!-- Translators: Short line under the Date color row. -->
     <string name="settings_line_clock_date">The date under the clock</string>
-    <!-- Translators: Row: colour of the weather (temperature and city) next to the date. -->
-    <string name="settings_clock_weather_color">Weather color</string>
-    <!-- Translators: Short line under the Weather color row. -->
-    <string name="settings_line_clock_weather">Temperature and city</string>
     <!-- Translators: Colour value: white. -->
     <string name="settings_clock_color_white">White</string>
     <!-- Translators: Colour value: grey. -->
@@ -3061,7 +3022,7 @@
     <!-- Translators: Panel text for a text field. ▼ is the remote's down key. -->
     <string name="settings_form_field_help">OK opens the keyboard; ▼ moves to the next field.</string>
     <!-- Translators: Panel text for the playlist address field (followed by the field help). -->
-    <string name="settings_help_playlist_url">The address of your .m3u or .m3u8 list.</string>
+    <string name="settings_help_playlist_url">The address of your .m3u, .m3u8 or .txt list.</string>
     <!-- Translators: Line under Fill from playlist on the Add EPG form. -->
     <string name="settings_line_fill_from_playlist">Use the guide address your playlist gives</string>
     <!-- Translators: Line under Auto refresh on the Add EPG form. -->

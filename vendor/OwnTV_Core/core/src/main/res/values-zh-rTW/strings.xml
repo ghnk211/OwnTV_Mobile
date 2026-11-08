@@ -115,6 +115,10 @@
     <string name="sync_error_malformed_guide">伺服器傳來的節目表資料格式不正確。部分資料可能仍已載入——請再試一次，或檢查電子節目表網址。</string>
     <string name="sync_error_guide_empty">此節目表目前是空的。供應商可能尚未發佈 — 請稍後再試。</string>
     <string name="sync_error_guide_no_matching_channels">此節目表中的頻道目前與你的播放清單頻道都不相符。請開啟電視節目表，使用「自動配對電子節目表」依名稱配對。</string>
+    <string name="sync_error_playlist_empty">播放清單中找不到可播放的位址，請檢查檔案或網址。</string>
+    <string name="sync_error_playlist_non_text">該網址回傳的不是文字播放清單（例如圖片或網頁），請檢查網址。</string>
+    <string name="sync_error_playlist_too_large">播放清單過大而無法匯入，請檢查網址。</string>
+    <string name="sync_error_redirect">該網址發生循環重新導向，請檢查網址。</string>
     <string name="common_minutes">分鐘</string>
     <string name="common_size_mb"><xliff:g id="size">%1$s</xliff:g> MB</string>
     <string name="common_size_gb"><xliff:g id="size">%1$s</xliff:g> GB</string>
@@ -162,6 +166,5 @@
         <item quantity="other"><xliff:g id="count">%1$d</xliff:g> 個下載中 · <xliff:g id="progress">%2$s</xliff:g></item>
     </plurals>
     <string name="shell_now_playing_audio">音訊</string>
-    <string name="common_weather_degrees_city"><xliff:g id="temperature">%1$d</xliff:g>° <xliff:g id="city">%2$s</xliff:g></string>
     <string name="common_dismiss">忽略</string>
 </resources>

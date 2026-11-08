@@ -86,14 +86,6 @@ class KoinWorkerFactory : WorkerFactory() {
                 koin.get(),
                 koin.get(),
             )
-            tv.own.owntv.core.sports.MatchAlertWorker::class.java.name -> tv.own.owntv.core.sports.MatchAlertWorker(
-                appContext,
-                workerParameters,
-                koin.get(),
-                koin.get(),
-                koin.get(),
-                koin.get(),
-            )
             else -> null
         }
     }

@@ -13,9 +13,7 @@ full stated invariant, not just pseudolocale presence:
           allowed release set.
 
 The allowed locale set for both variants is derived from ``tools/i18n/locales.json`` — the same
-single source of truth that ``app/build.gradle.kts`` reads to populate ``localeFilters``. This script
-automatically includes every community locale listed in the catalogue, so the APK may contain any
-recognised locale even when it is not yet packaged for the in-app picker. Removing a locale from
+single source of truth the app's build reads to populate ``localeFilters``. Removing a locale from
 ``locales.json`` removes it from the allowed set without a separate CI edit.
 
 Usage:
@@ -62,20 +60,19 @@ def _catalogue_locale_qualifiers() -> set[str]:
 def _allowed_debug() -> set[str]:
     """Allowed locale configurations in the debug APK.
 
-    Includes the source locale (``en``), the regional override (``en-rGB``),
-    both pseudolocales, the unavoidable ``ar`` parent of ``ar-rXB``, and every
-    community locale declared in ``locales.json``.
+    Includes the source locale (``en``), both pseudolocales, the unavoidable ``ar``
+    parent of ``ar-rXB``, and every locale declared in ``locales.json``.
     """
-    return {"en", "en-rGB", "en-rXA", "ar-rXB", "ar"} | _catalogue_locale_qualifiers()
+    return {"en", "en-rXA", "ar-rXB", "ar"} | _catalogue_locale_qualifiers()
 
 
 def _allowed_release() -> set[str]:
     """Allowed locale configurations in the release APK.
 
-    Includes ``en``, ``en-rGB``, and every community locale declared in
-    ``locales.json``.  Pseudolocales must never reach release.
+    Includes ``en`` and every locale declared in ``locales.json``. Pseudolocales must
+    never reach release.
     """
-    return {"en", "en-rGB"} | _catalogue_locale_qualifiers()
+    return {"en"} | _catalogue_locale_qualifiers()
 
 
 # Module-level snapshots for test compatibility (read once at import time;

@@ -1,9 +1,6 @@
 package tv.own.owntv.core.settings
 
 import tv.own.owntv.core.player.MiniPlayerPosition
-import tv.own.owntv.core.sports.SportsCatalog
-import tv.own.owntv.core.sports.SportsConfig
-import tv.own.owntv.core.sports.SportsRefreshPolicy
 
 /**
  * What a restored setting may be. The Settings screens can only ever write values in range, but a
@@ -41,35 +38,4 @@ internal object SettingsImportRules {
     /** The subtitle scales: a zero, negative or non-finite multiplier draws nothing (or everything). */
     fun float(v: Double): Float? =
         v.takeIf { it.isFinite() && it > 0 }?.coerceIn(SUB_SCALE_MIN, SUB_SCALE_MAX)?.toFloat()
-
-    // --- Settings → Sports (per-profile `sports_config_<id>`, read through these on every load) ---
-
-    /** Live refresh: 30, 60, 90 or 120 s; anything else is the default. */
-    fun sportsLiveRefresh(v: Int): Int = SportsRefreshPolicy.liveSeconds(v)
-
-    fun sportsReminderLead(v: Int): Int =
-        v.takeIf { it in SportsConfig.REMINDER_LEAD_CHOICES } ?: SportsConfig.DEFAULT_REMINDER_LEAD_MINUTES
-
-    /** Calendar refresh: one of the stepper's days; anything else is the default. */
-    fun sportsCalendarRefresh(v: Int): Int =
-        v.takeIf { it in SportsConfig.CALENDAR_REFRESH_CHOICES } ?: SportsConfig.DEFAULT_CALENDAR_REFRESH_DAYS
-
-    /** Only leagues this build can fetch; one from a newer build's catalogue is dropped. */
-    fun sportsLeagues(keys: List<String>): List<String> = keys.filter { SportsCatalog.league(it) != null }.distinct()
-
-    /**
-     * Play counts: positive, named, and only the [SportsConfig.MAX_PLAYED] most played — a backup
-     * cannot grow the blob without bound.
-     */
-    fun sportsPlayed(map: Map<String, tv.own.owntv.core.sports.Played>): Map<String, tv.own.owntv.core.sports.Played> =
-        map.filter { (k, p) -> k.isNotBlank() && p.count > 0 && p.name.isNotBlank() }
-            .entries.sortedByDescending { it.value.count }.take(SportsConfig.MAX_PLAYED)
-            .associate { it.key to it.value }
-
-    /** Playlist ids: positive only. */
-    fun sportsSources(ids: List<Long>): Set<Long> = ids.filter { it > 0 }.toSet()
-
-    /** Language and country codes: letters only, of the given [length], upper-cased. */
-    fun sportsCodes(codes: List<String>, length: Int): Set<String> =
-        codes.map { it.trim().uppercase() }.filter { c -> c.length == length && c.all { it in 'A'..'Z' } }.toSet()
 }

@@ -62,7 +62,7 @@
     <!-- Translators: Heading on the first-run disclaimer screen shown before the user can proceed. -->
     <string name="setup_before_you_start">Before you start</string>
     <!-- Translators: Body text on the first-run disclaimer screen. "OwnTV", "Xtream", "M3U" are brand/protocol names that must not be translated. -->
-    <string name="setup_disclaimer">OwnTV is a media player only. It includes no channels, playlists, or content. You are responsible for adding your own legally accessible Xtream, M3U, or Stalker sources.</string>
+    <string name="setup_disclaimer">OwnTV is a media player only. It includes no channels, playlists, or content. You are responsible for adding your own legally accessible Xtream, M3U / M3U8 / TXT, or Stalker sources.</string>
     <!-- Translators: Button on the first-run disclaimer screen to acknowledge and proceed. -->
     <string name="setup_i_understand">I Understand</string>
     <!-- Translators: Heading on the setup-choice screen (first run only) where the user chooses between a new profile or restoring a backup. -->
@@ -144,6 +144,8 @@
     <string name="setup_run_in_background">Run in background</string>
     <!-- Translators: Status text shown above the spinner while the catalog is being imported. -->
     <string name="setup_importing_catalog">Importing catalog\u2026</string>
+    <!-- Translators: Status text shown while a TXT/M3U playlist is being downloaded and parsed. -->
+    <string name="setup_import_loading_playlist">Reading the playlist\u2026</string>
     <!-- Translators: Fallback progress text shown during import when no detailed progress data is available. -->
     <string name="setup_preparing_catalog">Preparing catalog</string>
     <!-- Translators: Hint text on the import-progress screen telling the user they can start watching immediately. -->
@@ -154,6 +156,11 @@
     <plurals name="setup_restored_items">
         <item quantity="one"><xliff:g id="items">%1$d</xliff:g> item restored. Re-sync your sources to load content.</item>
         <item quantity="other"><xliff:g id="items">%1$d</xliff:g> items restored. Re-sync your sources to load content.</item>
+    </plurals>
+    <!-- Translators: Plural text on the import-success screen showing how many channels were parsed. "count" is the channel count. -->
+    <plurals name="setup_import_success_channels">
+        <item quantity="one"><xliff:g id="count">%1$d</xliff:g> channel imported.</item>
+        <item quantity="other"><xliff:g id="count">%1$d</xliff:g> channels imported.</item>
     </plurals>
     <!-- Translators: Info text shown on import success when passwords were not restored (user skipped or backup was partially encrypted). -->
     <string name="setup_passwords_omitted">Re-enter any saved passwords afterwards.</string>
@@ -185,11 +192,11 @@
     <!-- Translators: Description on the AddSourceScreen when editing an existing source. -->
     <string name="setup_edit_source_description">Update this source\'s details, or change its auto-refresh setting.</string>
     <!-- Translators: Description on the AddSourceScreen when adding a new source. "OwnTV", "Xtream", "M3U", "Stalker" are brand/protocol names that must not be translated. -->
-    <string name="setup_byo_source_description">OwnTV is a player \u2014 bring your own Xtream, M3U, or Stalker source.</string>
+    <string name="setup_byo_source_description">OwnTV is a player \u2014 bring your own Xtream, M3U / M3U8 / TXT, or Stalker source.</string>
     <!-- Translators: KindChip label for the Xtream source type selector. "Xtream" is a brand name that must not be translated. Shown on the TV form and the companion web page. -->
     <string name="setup_xtream">Xtream</string>
     <!-- Translators: KindChip label for the M3U/M3U8 source type selector. "M3U" and "M3U8" are file format names that must not be translated. Shown on the TV form and the companion web page. -->
-    <string name="setup_m3u">M3U / M3U8</string>
+    <string name="setup_m3u">M3U / M3U8 / TXT</string>
     <!-- Translators: KindChip label for the Stalker portal source type selector. "Stalker" is a brand name that must not be translated. Only shown when Stalker support is enabled. Shown on the TV form and the companion web page. -->
     <string name="setup_stalker_mac">Stalker (MAC)</string>
     <!-- Translators: KindChip label for the TVBox JSON source type selector. "TVbox" is a format name that must not be translated. -->
@@ -227,13 +234,13 @@
     <!-- Translators: Text-field label for the M3U playlist URL or local file path. Shown on the TV form and companion web page. -->
     <string name="setup_playlist_url_local_file">Playlist URL or local file</string>
     <!-- Translators: Placeholder example in the M3U playlist URL field. The ellipsis indicates a truncated URL. -->
-    <string name="setup_playlist_example">http://\u2026/playlist.m3u</string>
+    <string name="setup_playlist_example">http://\u2026/list.m3u8 or /list.txt</string>
     <!-- Translators: Error text when a local M3U playlist file cannot be opened. -->
     <string name="setup_playlist_file_unavailable">Couldn\'t open the playlist file. Pick it again; it may have moved.</string>
     <!-- Translators: Error text when a local playlist path uses an unsupported URI scheme. -->
     <string name="setup_playlist_path_unsupported">This local playlist path is not supported.</string>
     <!-- Translators: Button label in the M3U source form to open the storage browser for a local playlist file. -->
-    <string name="setup_local_file_choose">Choose a local .m3u / .m3u8 file\u2026</string>
+    <string name="setup_local_file_choose">Choose a local .m3u / .m3u8 / .txt file\u2026</string>
     <!-- Translators: Label shown next to the chosen local file path in the M3U source form. "name" is the selected filename. -->
     <string name="setup_local_file_prefix">Local file: <xliff:g id="name">%1$s</xliff:g></string>
     <!-- Translators: Text-field label for the Stalker portal URL. -->
@@ -296,7 +303,7 @@
     <!-- Translators: Button on the edit-source form to save changes. -->
     <string name="setup_update_source_save">Save</string>
     <!-- Translators: Title of the storage browser dialog when picking a local M3U playlist file. -->
-    <string name="setup_pick_playlist_file">Pick a playlist file (.m3u / .m3u8)</string>
+    <string name="setup_pick_playlist_file">Pick a playlist file (.m3u / .m3u8 / .txt)</string>
     <!-- Translators: Dialog title for the device-model preset picker. -->
     <string name="setup_device_model_preset_title">Device model preset</string>
     <!-- Translators: Dialog title for the auto-refresh setting on the source form. -->
@@ -400,9 +407,9 @@
     <!-- Translators: Error text on the companion backup restore page when no file has been selected. -->
     <string name="companion_choose_backup">Please choose a backup file first.</string>
     <!-- Translators: Label for the optional playlist-file input on the companion Add a source page (M3U tab). Lets the user upload a playlist from the computer instead of typing a URL. -->
-    <string name="companion_playlist_file">Or upload a playlist file</string>
+    <string name="companion_playlist_file">Or upload a playlist file (.m3u / .m3u8 / .txt)</string>
     <!-- Translators: Error text on the companion Add a source page (M3U tab) when neither a playlist URL was typed nor a file chosen. -->
-    <string name="companion_playlist_url_or_file">Enter a playlist URL or choose a file.</string>
+    <string name="companion_playlist_url_or_file">Enter a playlist URL (.m3u / .m3u8 / .txt) or choose a file.</string>
     <!-- Translators: Loading status shown on the companion page while a file is being uploaded to the TV. -->
     <string name="companion_sending">Sending\u2026</string>
     <!-- Translators: Error shown in the companion browser page when an upload to the TV fails. "status" is a numeric HTTP response such as 403. -->

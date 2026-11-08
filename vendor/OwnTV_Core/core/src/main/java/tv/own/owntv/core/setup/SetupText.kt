@@ -8,6 +8,7 @@ import tv.own.owntv.core.parser.HlsNotServedReason
 import tv.own.owntv.core.parser.HlsProbe
 import tv.own.owntv.core.parser.HlsTest
 import tv.own.owntv.core.repository.SourceTestResult
+import tv.own.owntv.core.sync.SyncCounts
 import tv.own.owntv.core.util.FriendlySyncFailure
 import java.text.DateFormat
 import java.util.Date
@@ -40,7 +41,21 @@ fun FriendlySyncFailure.displayText(res: Resources): String = when (this) {
     FriendlySyncFailure.GuideMatchesNoChannel -> res.getString(R.string.sync_error_guide_no_matching_channels)
     FriendlySyncFailure.PlaylistFileUnavailable -> res.getString(R.string.setup_playlist_file_unavailable)
     FriendlySyncFailure.PlaylistPathUnsupported -> res.getString(R.string.setup_playlist_path_unsupported)
+    FriendlySyncFailure.PlaylistEmpty -> res.getString(R.string.sync_error_playlist_empty)
+    FriendlySyncFailure.PlaylistNonText -> res.getString(R.string.sync_error_playlist_non_text)
+    FriendlySyncFailure.PlaylistTooLarge -> res.getString(R.string.sync_error_playlist_too_large)
+    FriendlySyncFailure.RedirectFailed -> res.getString(R.string.sync_error_redirect)
     is FriendlySyncFailure.Unknown -> rawMessage
+}
+
+/**
+ * The parsed-item count on the import-success screen. Both apps already receive [SyncCounts] on
+ * [SourceImporter.ImportState.Success], so this keeps the plural and the number in one place; TXT
+ * imports report their parsed channel count through the very same field as M3U/M3U8.
+ */
+fun SyncCounts.importedCountText(res: Resources): String {
+    val total = channels + movies + series
+    return res.getQuantityString(R.plurals.setup_import_success_channels, total, total)
 }
 
 /** Words a semantic onboarding failure. */

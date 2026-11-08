@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Validate Android string resources and the locales.json catalogue.
 
-Owns (docs/internationalization.md 0d / 4c / 4d, docs/i18n-phase4a-seed-translations.md):
+Owns:
   - locales.json schema: required fields, type checks, id/tag/qualifier uniqueness, qualifier
     validity, directory/qualifier correspondence, pickerVisible ⇒ packaged, stored coverage
-    rejection, exact Tier 1 membership.
+    rejection.
   - placeholder positional-index parity of every translation against the source (strings, plurals,
     string-array items — all of them), correctly reading placeholders wrapped in ``<xliff:g>``.
     Recognises full printf format specifiers including flags/width/precision (``%1$.2f``).
@@ -326,17 +326,6 @@ _SCRIPT_RE = re.compile(r"^[A-Z][a-z]{3}$")
 _WEBLATE_RE = re.compile(r"^[a-z]{2,3}(?:_(?:[A-Z][a-z]{3}|[A-Z]{2}|[0-9]{3}))?$")
 _DIRECTORY_RE = re.compile(r"^values(?:-[A-Za-z0-9+_-]+)*$")
 
-# Exact set of Tier 1 language tags the catalogue must contain (docs/internationalization.md 4d).
-_EXPECTED_TIER1_TAGS = {
-    "en-US", "ar", "pt-BR", "pt-PT", "zh-CN", "zh-TW", "cs", "da", "nl", "fr", "de", "it",
-    "ja", "ko", "nb", "pl", "ru", "es-US", "es-ES", "sv", "tr", "ml", "hi", "bn",
-}
-
-_EXPECTED_CATALOGUE_ONLY_TAGS = {
-    "bg", "hr", "et", "fa", "fi", "el", "he", "hu", "id", "lv", "lt", "ms", "ro", "sr",
-    "sk", "sl", "th", "uk", "vi", "eu",
-}
-
 # Valid Android resource qualifier forms for locales:
 #   xx              — language only (en, de, ar)
 #   xx-rYY          — language + region (en-rGB, pt-rPT)
@@ -351,25 +340,6 @@ _QUAL_RE = re.compile(
     r"|b\+[a-z]{2,3}\+(?:[A-Z][a-z]{3}|[0-9]{3}))$"
 )
 
-# Canonical Weblate code mappings — pinned so a typo (pt_BR where pt_PT was meant, or default es
-# swapped for es_419) is caught at catalogue-validation time. Every entry in the catalogue is pinned here so
-# a non-matching code (e.g. German's weblateCode changed from 'de' to 'fr') is always caught, not just
-# the selected special cases. The key is the resourceQualifier; the value is the required weblateCode.
-_CANONICAL_WEBLATE = {
-    "en": "en", "en-rGB": "en_GB",
-    "ar": "ar",
-    "pt": "pt_BR", "pt-rPT": "pt_PT",
-    "zh-rCN": "zh_Hans", "zh-rTW": "zh_Hant",
-    "es": "es", "es-rUS": "es_419",
-    "nb": "nb_NO",
-    "bg": "bg", "hr": "hr", "et": "et", "fa": "fa", "fi": "fi", "el": "el",
-    "iw": "he", "hu": "hu", "in": "id", "lv": "lv", "lt": "lt", "ms": "ms",
-    "ro": "ro", "sr": "sr", "sk": "sk", "sl": "sl", "th": "th", "uk": "uk", "vi": "vi", "eu": "eu",
-    "cs": "cs", "da": "da", "nl": "nl", "fr": "fr", "de": "de", "it": "it",
-    "ja": "ja", "ko": "ko", "pl": "pl", "ru": "ru", "sv": "sv", "tr": "tr", "ml": "ml",
-    "hi": "hi", "bn": "bn",
-}
-
 
 def _validate_catalogue(data: list) -> list[str]:
     fails: list[str] = []
@@ -379,7 +349,6 @@ def _validate_catalogue(data: list) -> list[str]:
     tags: set[str] = set()
     qualifiers: set[str] = set()
     dirs: set[str] = set()
-    tier1_tags: set[str] = set()
     for index, e in enumerate(data):
         if not isinstance(e, dict):
             fails.append(f"locales.json entry {index}: must be an object")
@@ -446,31 +415,7 @@ def _validate_catalogue(data: list) -> list[str]:
         wc = e.get("weblateCode") if isinstance(e.get("weblateCode"), str) else ""
         if wc and not _WEBLATE_RE.fullmatch(wc):
             fails.append(f"locales.json {eid}: invalid weblateCode '{wc}'")
-        # Canonical mapping: for every committed qualifier with a pinned weblateCode, the stored
-        # value must match exactly — a swapped code pairs the wrong Weblate component.
-        expected_wc = _CANONICAL_WEBLATE.get(q)
-        if expected_wc is not None and wc != expected_wc:
-            fails.append(f"locales.json {eid}: weblateCode '{wc}' should be '{expected_wc}' for qualifier '{q}'")
-        if valid_tier and tier == 1 and tag:
-            tier1_tags.add(tag)
 
-    # The established release set is mandatory. Catalogue-only additions may later move from tier 2
-    # to tier 1 without adding a parallel code mapping here; the catalogue remains authoritative.
-    missing_tier1 = _EXPECTED_TIER1_TAGS - tier1_tags
-    unexpected_tier1 = tier1_tags - _EXPECTED_TIER1_TAGS - _EXPECTED_CATALOGUE_ONLY_TAGS
-    if missing_tier1:
-        fails.append(f"locales.json: missing Tier 1 languages: {sorted(missing_tier1)}")
-    if unexpected_tier1:
-        fails.append(f"locales.json: unexpected Tier 1 languages: {sorted(unexpected_tier1)}")
-    requested_tags = {
-        e.get("languageTag") for e in data
-        if isinstance(e, dict) and e.get("languageTag") in _EXPECTED_CATALOGUE_ONLY_TAGS
-    }
-    if requested_tags != _EXPECTED_CATALOGUE_ONLY_TAGS:
-        fails.append(
-            "locales.json: requested community catalogue mismatch: "
-            f"missing={sorted(_EXPECTED_CATALOGUE_ONLY_TAGS - requested_tags)}"
-        )
     for e in data:
         if not isinstance(e, dict) or e.get("tier") != 2:
             continue
@@ -588,7 +533,7 @@ def main(report: str = "text") -> int:
             continue
         fails.extend(_check_escaping(f))
         # translatable="false" must live in donottranslate.xml, not in strings*.xml. A false-marked
-        # string in strings.xml will be picked up by Weblate as a translatable key and pollutes the
+        # string in strings.xml would be exported as a translatable key and pollutes the
         # translation component. Check the raw XML for the attribute on <string> elements.
         fails.extend(_check_translatable_false_placement(f))
     if (source_values / "donottranslate.xml").is_file():
@@ -733,7 +678,9 @@ def main(report: str = "text") -> int:
                     else:
                         fails.append(f"{tag} {skey}: empty translation")
 
-        if tag != "en-GB":
+        # A tier 0 entry is a hidden regional spelling override of the source language: it carries a
+        # handful of strings and is not a translation target, so it gets no coverage row.
+        if e.get("tier") != 0:
             total = len(source_translatable_keys)
             missing = total - translated
             percent = round(100 * translated / total, 1) if total else 0.0

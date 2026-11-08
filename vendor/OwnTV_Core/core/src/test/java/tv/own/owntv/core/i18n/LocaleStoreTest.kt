@@ -42,9 +42,9 @@ class LocaleStoreTest {
     fun `set persists and publishes the canonical tag`() {
         val prefs = newPrefs()
         val store = LocaleStore(prefs, null)
-        runBlocking { store.set(" DE ") }
-        assertEquals("de", store.currentTag.value)
-        assertEquals("de", store.readBlocking())
+        runBlocking { store.set(" ZH-cn ") }
+        assertEquals("zh-CN", store.currentTag.value)
+        assertEquals("zh-CN", store.readBlocking())
     }
 
     @Test
@@ -53,8 +53,8 @@ class LocaleStoreTest {
         listOf("und", "de-DE", "fr-FR", "xx", "not a locale", "en_US").forEach { raw ->
             assertThrows(IllegalArgumentException::class.java) { runBlocking { store.set(raw) } }
         }
-        runBlocking { store.set(" en-gb ") }
-        assertEquals("en-GB", store.currentTag.value)
+        runBlocking { store.set(" ZH-tw ") }
+        assertEquals("zh-TW", store.currentTag.value)
     }
 
     @Test
@@ -74,18 +74,18 @@ class LocaleStoreTest {
     @Test
     fun `the value is readable after a simulated process restart`() {
         val prefs = newPrefs()
-        runBlocking { LocaleStore(prefs, null).set("fr") }
+        runBlocking { LocaleStore(prefs, null).set("zh-TW") }
         // A new process reopens the same SharedPreferences file; the StateFlow is per-instance.
         val afterRestart = LocaleStore(prefs, null)
-        assertEquals("fr", afterRestart.readBlocking())
-        assertEquals("fr", afterRestart.currentTag.value)
+        assertEquals("zh-TW", afterRestart.readBlocking())
+        assertEquals("zh-TW", afterRestart.currentTag.value)
     }
 
     @Test
     fun `reset to system default writes the empty tag through the same API`() {
         val prefs = newPrefs()
         val store = LocaleStore(prefs, null)
-        runBlocking { store.set("de") }
+        runBlocking { store.set("zh-CN") }
         runBlocking { store.set("") } // same write path the picker / backup import use
         assertEquals("", store.readBlocking())
     }
@@ -95,7 +95,7 @@ class LocaleStoreTest {
         val prefs = newPrefs().apply { commitResult = false }
         val store = LocaleStore(prefs, null)
         assertThrows(IllegalStateException::class.java) {
-            runBlocking { store.set("de") }
+            runBlocking { store.set("zh-CN") }
         }
         // The in-memory StateFlow is only updated after a successful commit, so it stays empty.
         assertEquals("", store.currentTag.value)
@@ -105,18 +105,18 @@ class LocaleStoreTest {
     fun `backup import writes through the same API`() {
         // Backup import calls LocaleStore.set(tag); there is no second write path.
         val prefs = newPrefs()
-        runBlocking { LocaleStore(prefs, null).set("tr") }
-        assertTrue("tr" in prefs.stored.values)
-        assertEquals("tr", LocaleStore(prefs, null).readBlocking())
+        runBlocking { LocaleStore(prefs, null).set("zh-TW") }
+        assertTrue("zh-TW" in prefs.stored.values)
+        assertEquals("zh-TW", LocaleStore(prefs, null).readBlocking())
     }
 
     @Test
     fun `concurrent sets complete in call order so the last selection wins`() = runBlocking {
         // Force the first selection to finish after every later selection if writes overlap. Without
-        // writeMutex, "de" therefore wins incorrectly; with serialization, "en-US" remains last.
-        val prefs = newPrefs().apply { commitDelaysMs = mapOf("de" to 120L) }
+        // writeMutex, "zh-CN" therefore wins incorrectly; with serialization, "en-US" remains last.
+        val prefs = newPrefs().apply { commitDelaysMs = mapOf("zh-CN" to 120L) }
         val store = LocaleStore(prefs, null)
-        val tags = listOf("de", "fr", "tr", "en-US")
+        val tags = listOf("zh-CN", "zh-TW", "en-US")
         tags.map { tag -> async { store.set(tag) } }.awaitAll()
         assertEquals("en-US", store.currentTag.value)
         assertEquals("en-US", store.readBlocking())
@@ -134,9 +134,9 @@ class LocaleStoreTest {
         // so applyGlobally WOULD NPE if it were called).
         val prefs = newPrefs()
         val store = LocaleStore(prefs, null)
-        runBlocking { store.set("de") }
-        assertEquals("de", store.currentTag.value)
-        assertEquals("de", store.readBlocking())
+        runBlocking { store.set("zh-CN") }
+        assertEquals("zh-CN", store.currentTag.value)
+        assertEquals("zh-CN", store.readBlocking())
         // No crash — applyGlobally was skipped because applicationContext was null.
     }
 
@@ -145,8 +145,8 @@ class LocaleStoreTest {
         // The attachBaseContext bootstrap path constructs a store per call; verify repeated writes
         // through different null-appContext instances all persist to the same SharedPreferences file.
         val prefs = newPrefs()
-        runBlocking { LocaleStore(prefs, null).set("de") }
-        runBlocking { LocaleStore(prefs, null).set("fr") }
+        runBlocking { LocaleStore(prefs, null).set("zh-CN") }
+        runBlocking { LocaleStore(prefs, null).set("zh-TW") }
         runBlocking { LocaleStore(prefs, null).set("") }
         assertEquals("", LocaleStore(prefs, null).readBlocking())
     }

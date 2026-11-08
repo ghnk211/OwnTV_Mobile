@@ -29,7 +29,7 @@
     <string name="setup_get_started">開始使用</string>
     <string name="setup_display_size_title">調整到看著舒服的大小</string>
     <string name="setup_before_you_start">開始之前</string>
-    <string name="setup_disclaimer">OwnTV 僅為媒體播放器，不包含任何頻道、播放清單或內容。您有責任自行新增可合法存取的 Xtream、M3U 或 Stalker 來源。</string>
+    <string name="setup_disclaimer">OwnTV 僅為媒體播放器，不包含任何頻道、播放清單或內容。您有責任自行新增可合法存取的 Xtream、M3U / M3U8 / TXT 或 Stalker 來源。</string>
     <string name="setup_i_understand">我瞭解了</string>
     <string name="setup_set_up_owntv">設定 OwnTV</string>
     <string name="setup_setup_choice_description">從頭開始，或從備份檔案或另一部裝置還原您的使用者檔案、播放清單和我的最愛。</string>
@@ -71,11 +71,15 @@
     <string name="setup_pick_backup_local">選擇此裝置上的備份檔案</string>
     <string name="setup_run_in_background">在背景執行</string>
     <string name="setup_importing_catalog">正在匯入目錄…</string>
+    <string name="setup_import_loading_playlist">正在讀取播放清單…</string>
     <string name="setup_preparing_catalog">正在準備目錄</string>
     <string name="setup_watching_during_import">您可以在目錄其餘內容載入時立即開始觀看。</string>
     <string name="setup_all_set">一切就緒！</string>
     <plurals name="setup_restored_items">
         <item quantity="other">已還原 <xliff:g id="items">%1$d</xliff:g> 個項目。請重新同步您的來源以載入內容。</item>
+    </plurals>
+    <plurals name="setup_import_success_channels">
+        <item quantity="other">已匯入 <xliff:g id="count">%1$d</xliff:g> 個頻道。</item>
     </plurals>
     <string name="setup_passwords_omitted">請在之後重新輸入所有已儲存的密碼。</string>
     <string name="setup_need_password">未儲存密碼，因此尚未載入：<xliff:g id="names">%1$s</xliff:g>。請在設定中開啟該播放清單並輸入其密碼。</string>
@@ -91,9 +95,9 @@
     <string name="setup_edit_source">編輯來源</string>
     <string name="setup_edit_from_phone">從其他裝置編輯</string>
     <string name="setup_edit_source_description">更新此來源的詳細資料，或變更其自動重新整理設定。</string>
-    <string name="setup_byo_source_description">OwnTV 是一款播放器，請自行提供 Xtream、M3U 或 Stalker 來源。</string>
+    <string name="setup_byo_source_description">OwnTV 是一款播放器，請自行提供 Xtream、M3U / M3U8 / TXT 或 Stalker 來源。</string>
     <string name="setup_xtream">Xtream</string>
-    <string name="setup_m3u">M3U / M3U8</string>
+    <string name="setup_m3u">M3U / M3U8 / TXT</string>
     <string name="setup_stalker_mac">Stalker (MAC)</string>
     <string name="setup_tvbox">TVbox</string>
     <string name="setup_tvbox_url">設定網址（JSON）</string>
@@ -112,10 +116,10 @@
     <string name="setup_password">密碼</string>
     <string name="setup_password_keep">密碼（留空以保留目前密碼）</string>
     <string name="setup_playlist_url_local_file">播放清單網址或本機檔案</string>
-    <string name="setup_playlist_example">http://…/playlist.m3u</string>
+    <string name="setup_playlist_example">http://…/list.m3u8 或 /list.txt</string>
     <string name="setup_playlist_file_unavailable">無法開啟播放清單檔案。請重新選擇；檔案可能已移動。</string>
     <string name="setup_playlist_path_unsupported">不支援此本機播放清單路徑。</string>
-    <string name="setup_local_file_choose">選擇本機 .m3u / .m3u8 檔案…</string>
+    <string name="setup_local_file_choose">選擇本機 .m3u / .m3u8 / .txt 檔案…</string>
     <string name="setup_local_file_prefix">本機檔案：<xliff:g id="name">%1$s</xliff:g></string>
     <string name="setup_portal_url">入口網站網址</string>
     <string name="setup_portal_example">http://host:port/c/</string>
@@ -144,7 +148,7 @@
     <string name="setup_tv_series_catalog">電視影集目錄</string>
     <string name="setup_start_import">開始匯入</string>
     <string name="setup_update_source_save">儲存</string>
-    <string name="setup_pick_playlist_file">選擇播放清單檔案（.m3u / .m3u8）</string>
+    <string name="setup_pick_playlist_file">選擇播放清單檔案（.m3u / .m3u8 / .txt）</string>
     <string name="setup_device_model_preset_title">裝置型號預設值</string>
     <string name="setup_auto_refresh_title">自動重新整理</string>
     <string name="setup_on">開啟</string>
@@ -197,8 +201,8 @@
     <string name="companion_backup_description">選擇 OwnTV 備份檔案（.own 或較舊的 .json）並按下「傳送」。檔案會傳輸至電視，請拿起遙控器並在電視上選擇要還原的內容。</string>
     <string name="companion_backup_file">備份檔案</string>
     <string name="companion_choose_backup">請先選擇備份檔案。</string>
-    <string name="companion_playlist_file">或上傳播放清單檔案</string>
-    <string name="companion_playlist_url_or_file">請輸入播放清單網址或選擇檔案。</string>
+    <string name="companion_playlist_file">或上傳播放清單檔案（.m3u / .m3u8 / .txt）</string>
+    <string name="companion_playlist_url_or_file">請輸入播放清單網址（.m3u / .m3u8 / .txt）或選擇檔案。</string>
     <string name="companion_sending">正在傳送…</string>
     <string name="companion_upload_failed">上傳失敗 (HTTP <xliff:g id="status">%1$d</xliff:g>)。請檢查 PIN 並再試一次。</string>
     <string name="companion_could_not_reach">無法連線至電視。請保持連線至相同 Wi-Fi 網路並再試一次。</string>

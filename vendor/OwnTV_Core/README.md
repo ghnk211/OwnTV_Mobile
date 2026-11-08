@@ -17,9 +17,6 @@
   <img alt="Player" src="https://img.shields.io/badge/engines-libmpv%20%2B%20ExoPlayer-FB8C00">
   <img alt="License" src="https://img.shields.io/badge/license-GPLv3-blue">
   <img alt="Built with the help of AI" src="https://img.shields.io/badge/built%20with-the%20help%20of%20AI-8A2BE2">
-  <a href="https://hosted.weblate.org/engage/owntv/">
-    <img alt="Translation status" src="https://hosted.weblate.org/widget/owntv/svg-badge.svg">
-  </a>
 </p>
 
 <p align="center">
@@ -104,8 +101,9 @@ have numbers that can disagree.
 - Profiles, downloads, settings storage, TMDB metadata and trending, weather, update checks
 
 ### 🌍 Strings & translations (`:core`)
-- Six Android resource components, **26 packaged locales**, and the toolkit that guards them:
-  hardcoded-literal inventory, plural/CLDR validation, number-locale checks, overflow checks
+- Six Android resource components, **3 locale sets (English, 简体中文, 繁體中文)**, and the toolkit
+  that guards them: hardcoded-literal inventory, plural/CLDR validation, number-locale checks,
+  overflow checks
 
 ## 🧱 Tech stack
 
@@ -219,14 +217,12 @@ core's strings as a bare `R.string.*`.
 
 ## 🌍 Translations
 
-<!-- i18n-contribution:start -->
-## Help translate OwnTV
+Core ships English (`values/`), Simplified Chinese (`values-zh-rCN/`) and Traditional Chinese
+(`values-zh-rTW/`) — and nothing else. `tools/i18n/locales.json` is the authoritative catalogue, and
+`SupportedLocales.kt` is generated from it plus the actual resource tree.
 
-If your language is already available, contribute interface translations across OwnTV's six Android resource components on [Hosted Weblate](https://hosted.weblate.org/projects/owntv/). If it is not listed, [open a language request ticket](https://github.com/ahXN00/OwnTV/issues/new?template=feature_request.yml&title=%5BLanguage%5D%20Add%20) first. A maintainer will review the request, register the locale, and prepare its base translation files on Hosted Weblate. Once the language appears on Hosted Weblate, you can start translating it there. See the [language contributor guide](tools/i18n/README.md) for identifiers, validation, and promotion policy.
-<!-- i18n-contribution:end -->
-
-New user-visible text is never English-only: a string is not finished until it exists in every
-packaged locale. All four validators must pass before any string change lands:
+New user-visible text is never English-only: a string is not finished until it exists in all three
+resource sets. All four validators must pass before any string change lands:
 
 ```bash
 python tools/i18n/validate_strings.py
@@ -258,12 +254,6 @@ Contributions, bug reports and ideas are welcome. Two things to know before open
   Anything else makes core unusable from the mobile app.
 
 ## 🙏 Credits
-
-<img src="extras/partner-logos/Weblate_logo.svg" alt="Weblate" width="200">
-
-Core holds every string in the suite, and it speaks 26 languages because people translate it on
-[**Weblate**](https://weblate.org/), which hosts the project free of charge for libre software.
-Thank you to Weblate and to every translator who has given OwnTV their language.
 
 <img src="extras/partner-logos/tmdb_logo.svg" alt="TMDB" width="200">
 

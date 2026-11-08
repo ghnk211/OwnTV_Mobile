@@ -109,16 +109,7 @@
     <string name="settings_remote_action_jump_first">跳到第一項</string>
     <string name="settings_remote_action_jump_last">跳到最後一項</string>
     <string name="settings_large_skips_warning">較大的跳轉數會越過短清單中的項目，在低階電視上也可能顯得不夠流暢。</string>
-    <string name="settings_weather">天氣</string>
-    <string name="settings_show_weather">顯示天氣</string>
-    <string name="settings_show_weather_description">在頂端列顯示目前天氣。</string>
-    <string name="settings_custom_location">自訂位置</string>
-    <string name="settings_custom_location_description">覆寫天氣所使用的城市。留空可自動偵測，或輸入城市（例如 London）或「lat,lon」（例如 51.5,-0.12）。使用 VPN 時特別實用，因為自動偵測可能會判定為伺服器所在的城市。</string>
-    <string name="settings_temperature_unit">溫度單位</string>
-    <string name="settings_temperature_description">以攝氏或華氏顯示溫度。</string>
     <string name="settings_auto">自動</string>
-    <string name="settings_city_latlon">城市或 lat,lon</string>
-    <string name="settings_location_hint">留空可依您的公用 IP 自動偵測。輸入城市（例如 London）或「lat,lon」（例如 51.5,-0.12）。</string>
     <string name="settings_metadata">中繼資料 (TMDB)</string>
     <string name="settings_metadata_source">中繼資料來源</string>
     <string name="settings_metadata_source_description">選擇電影和影集詳細資料的來源。</string>
@@ -186,7 +177,7 @@
     <string name="settings_language_coverage"><xliff:g id="percent">%1$d</xliff:g>%%</string>
     <string name="settings_profile_group">使用者檔案</string>
     <string name="settings_playlists">播放清單</string>
-    <string name="settings_playlists_description">新增、重新同步或移除 M3U／Xtream 播放清單</string>
+    <string name="settings_playlists_description">新增、重新同步或移除 M3U／TXT／Xtream 播放清單</string>
     <string name="settings_epg_sources">電子節目表來源</string>
     <string name="settings_epg_sources_nav_description">新增 XMLTV 節目表來源供電視節目表使用</string>
     <string name="settings_customize">自訂分類與項目</string>
@@ -194,7 +185,7 @@
     <string name="settings_ch_paging">遙控器捷徑</string>
     <string name="settings_ch_paging_description">將遙控器的空閒按鍵指派給導覽、播放和瀏覽操作。必要的導覽按鍵會保持受保護。</string>
     <string name="settings_content_menus_title">長按選單</string>
-    <string name="settings_content_menus_description">重新排列或隱藏頻道和分集選單中的動作</string>
+    <string name="settings_content_menus_description">重新排列或隱藏頻道、電影、影集與分集選單中的動作</string>
     <string name="settings_content_menus_hint">在某個動作上按「確定」可顯示或隱藏它。長按「確定」拿起它，用上下鍵移動，再次按「確定」放下。</string>
     <string name="settings_content_menus_note">部分動作只會在適用的地方出現。</string>
     <string name="settings_browsing_lists">瀏覽與清單</string>
@@ -223,7 +214,6 @@
     <string name="settings_ui_zoom_description">縮放整個介面</string>
     <string name="settings_animations">動畫</string>
     <string name="settings_animations_description">開啟或關閉介面動畫 — 關閉後在低階電視盒上會更流暢俐落</string>
-    <string name="settings_weather_description_root">頂端列天氣資訊方塊：顯示或隱藏、自訂位置，以及攝氏／華氏。</string>
     <string name="settings_playback_group">播放</string>
     <string name="settings_live_preview_description">焦點移至頻道時自動播放</string>
     <string name="settings_preview_audio">預覽音訊</string>
@@ -374,7 +364,6 @@
     <string name="settings_search_keywords_focus">焦點 外框 邊框 選取 游標 輪廓</string>
     <string name="settings_search_keywords_zoom">縮放 介面 大小</string>
     <string name="settings_search_keywords_animation">動畫 流暢 效能</string>
-    <string name="settings_search_keywords_weather">頂端列 資訊方塊 位置 攝氏 華氏</string>
     <string name="settings_search_keywords_live_preview">自動播放 焦點 頻道</string>
     <string name="settings_search_keywords_sound">聲音 直播 預覽</string>
     <string name="settings_search_keywords_audio">音量 大聲 小聲 對嘴同步 延遲 音軌 語言</string>
@@ -694,7 +683,7 @@
     <string name="settings_span_ch_help">CH+ / CH− 翻一頁。長按 CH+ / CH− 跳到最後一項或第一項。</string>
     <string name="settings_customize_metadata_separator">"  ·  "</string>
     <string name="settings_sources_title">來源</string>
-    <string name="settings_sources_empty">目前沒有來源。請新增 M3U 或 Xtream 來源。</string>
+    <string name="settings_sources_empty">目前沒有來源。請新增 M3U、TXT 或 Xtream 來源。</string>
     <string name="settings_sources_add">新增來源</string>
     <string name="settings_sources_import_failed">匯入失敗</string>
     <string name="settings_sources_importing">正在匯入目錄…</string>
@@ -1382,7 +1371,6 @@
     <string name="settings_line_fonts">主介面和彈出視窗使用同一字型</string>
     <string name="settings_line_popup_size">縮放對話框和選單，文字大小不變</string>
     <string name="settings_line_animations">關閉後在低階電視盒上更流暢</string>
-    <string name="settings_line_weather">右上角天氣：位置和 °C / °F</string>
     <string name="settings_line_live_opens_in">頻道清單或節目表格狀檢視</string>
     <string name="settings_line_vod_layout">分欄面板，或一個劇院式檢視</string>
     <string name="settings_line_panel_width">分類、清單和預覽的寬度</string>
@@ -1461,7 +1449,7 @@
     <string name="settings_line_measured_stats">即時影格率、位元率和掉格</string>
     <string name="settings_line_logging">供錯誤回報用的完整記錄</string>
     <string name="settings_help_profiles">每位觀眾都有自己的收藏、觀看記錄、續播位置和首頁列。兒童模式只顯示你允許的分類；設定 PIN 後其他人無法開啟該設定檔。</string>
-    <string name="settings_help_playlists">透過連結、Xtream 登入、Stalker 入口網站或檔案新增播放清單，也可重新同步或移除。</string>
+    <string name="settings_help_playlists">透過連結、Xtream 登入、Stalker 入口網站或 .m3u / .m3u8 / .txt 檔案新增播放清單，也可重新同步或移除。</string>
     <string name="settings_help_epg_sources">透過連結新增 XMLTV 節目指南來源，或重新整理、移除它。這些來源會填入節目指南和直播電視中的節目資訊。</string>
     <string name="settings_help_guide_days">節目指南預先儲存多少天的節目。天數越少，指南重新整理越快，資料庫也越小。</string>
     <string name="settings_help_catchup_timezone">回看會播放供應商存檔中的節目。自動模式會使用供應商回報的時區，若未回報則依電視本身的時鐘運作；如果回看開始時間仍然不對，請選擇固定的 UTC 偏移。回看使用哪個播放器也在這裡選擇。</string>
@@ -1472,7 +1460,6 @@
     <string name="settings_help_popup_size">整體放大或縮小彈出視窗、選單和對話框。彈出視窗顯得擁擠或遮住太多畫面時可以調整。</string>
     <string name="settings_help_zoom">縮放畫面上的所有內容。放大後遠處更易閱讀；縮小後能顯示更多。低於 85%% 時，記憶體較小的電視盒可能記憶體不足。</string>
     <string name="settings_help_animations">開啟時，面板、選單和焦點會平滑移動。關閉後所有變化都會立即完成。</string>
-    <string name="settings_help_weather">在時鐘旁顯示氣溫和你所在的城市。自動定位不準時（例如使用 VPN），可手動設定位置，並選擇攝氏或華氏。</string>
     <string name="settings_help_navigation">浮動：選單以小膠囊形式浮在內容上方，向左移動時滑出。固定：一律占用自己的空間。大小決定顯示多少內容，從僅圖示到數量和詳細資訊。</string>
     <string name="settings_help_live_layout">Stage 把分類放在按 ◀ 滑出的面板中，讓頻道清單和預覽獲得空間。分欄則把分類一律顯示在清單旁邊。</string>
     <string name="settings_help_vod_layout">劇院式在海報格狀檢視後方顯示焦點作品的圖片。分欄則把分類、作品和詳細資訊並排顯示。</string>
@@ -1523,17 +1510,11 @@
     <plurals name="settings_epg_feed_count">
         <item quantity="other"><xliff:g id="count">%1$d</xliff:g> 個來源</item>
     </plurals>
-    <string name="settings_title_date_time_weather">日期、時間與天氣</string>
-    <string name="settings_line_show_weather">在頂端列顯示目前天氣</string>
-    <string name="settings_line_custom_location">留空 = 自動偵測</string>
-    <string name="settings_line_temperature_unit">攝氏或華氏</string>
     <string name="settings_clock_colors">顏色</string>
     <string name="settings_clock_time_color">時間顏色</string>
     <string name="settings_line_clock_time">時鐘</string>
     <string name="settings_clock_date_color">日期顏色</string>
     <string name="settings_line_clock_date">時鐘下方的日期</string>
-    <string name="settings_clock_weather_color">天氣顏色</string>
-    <string name="settings_line_clock_weather">溫度與城市</string>
     <string name="settings_clock_color_white">白色</string>
     <string name="settings_clock_color_grey">灰色</string>
     <string name="settings_clock_color_accent">強調色</string>
@@ -1585,7 +1566,7 @@
     <string name="settings_line_local_file">這台電視上的 .m3u 或 .m3u8</string>
     <string name="settings_form_optional">選填</string>
     <string name="settings_form_field_help">按 OK 開啟鍵盤；▼ 移到下一個欄位。</string>
-    <string name="settings_help_playlist_url">你的 .m3u 或 .m3u8 清單位址。</string>
+    <string name="settings_help_playlist_url">你的 .m3u、.m3u8 或 .txt 清單位址。</string>
     <string name="settings_line_fill_from_playlist">使用播放清單提供的節目表位址</string>
     <string name="settings_line_epg_auto_refresh">讓節目表保持最新</string>
     <string name="settings_line_epg_logos">取代播放清單的台標</string>

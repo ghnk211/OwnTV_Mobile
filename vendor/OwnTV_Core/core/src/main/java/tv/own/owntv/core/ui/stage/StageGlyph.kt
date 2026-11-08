@@ -72,8 +72,6 @@ enum class StageGlyph(val path: String) {
     FORWARD("M13 19l8-7-8-7zM3 19l8-7-8-7z"),
     CHEVRON("M9 18l6-6-6-6"),
     CHEVRON_UP("M6 15l6-6 6 6"),
-    // Sports Hub (rail, tab bar, Settings → Sports): the review's simplified trophy, cup + two handles + stem + base.
-    SPORTS("M8 4h8v4.5a4 4 0 0 1-8 0zM16 6h3v1.5a3.5 3.5 0 0 1-3.3 3.5M8 6H5v1.5A3.5 3.5 0 0 0 8.3 11M12 13v4M9 20h6v-2a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1z"), // trophy
     // The phone's two marks the TV draws its own way (its ADD and BEDTIME).
     PLUS("M12 5v14M5 12h14"), // plus
     MOON("M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"), // moon

@@ -31,6 +31,18 @@ sealed interface FriendlySyncFailure {
     data object GuideMatchesNoChannel : FriendlySyncFailure
     data object PlaylistFileUnavailable : FriendlySyncFailure
     data object PlaylistPathUnsupported : FriendlySyncFailure
+
+    /** The playlist was reached and read in full but held no usable stream URL (TXT lists). */
+    data object PlaylistEmpty : FriendlySyncFailure
+
+    /** The URL answered with an image, archive, HTML error page or another non-text payload. */
+    data object PlaylistNonText : FriendlySyncFailure
+
+    /** Bigger than the TXT parser's safety cap — almost always a wrong URL rather than a real list. */
+    data object PlaylistTooLarge : FriendlySyncFailure
+
+    /** OkHttp followed redirects until it gave up (loop, or a chain that never ends). */
+    data object RedirectFailed : FriendlySyncFailure
     data class Unknown(val rawMessage: String) : FriendlySyncFailure
 }
 
@@ -61,6 +73,8 @@ fun classifySyncFailure(raw: String?, online: Boolean): FriendlySyncFailure = wh
     // every call made with a username or password they do not accept.
     raw.containsAny("HTTP 401", "HTTP 403", "HTTP 513") -> FriendlySyncFailure.AuthenticationRejected
     raw.contains("HTTP 404", ignoreCase = true) -> FriendlySyncFailure.NotFound
+    raw.containsAny("Too many follow-up requests", "Circular redirect", "redirect loop") ->
+        FriendlySyncFailure.RedirectFailed
     raw.containsAny("HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504") -> FriendlySyncFailure.ServerError
     raw.containsAny("CertPath", "SSLHandshake", "trust anchor", "CertificateException") -> FriendlySyncFailure.SecureConnectionFailed
     raw.containsAny("END_TAG", "START_TAG", "XmlPull", "PullParser", "ParserException") -> FriendlySyncFailure.MalformedGuide
@@ -68,6 +82,9 @@ fun classifySyncFailure(raw: String?, online: Boolean): FriendlySyncFailure = wh
     raw.containsAny("Portal returned no guide", "no programmes in the guide window") -> FriendlySyncFailure.GuideEmpty
     raw.contains("playlist_file_unavailable", ignoreCase = true) -> FriendlySyncFailure.PlaylistFileUnavailable
     raw.contains("playlist_path_unsupported", ignoreCase = true) -> FriendlySyncFailure.PlaylistPathUnsupported
+    raw.contains("playlist_empty", ignoreCase = true) -> FriendlySyncFailure.PlaylistEmpty
+    raw.contains("playlist_non_text_content", ignoreCase = true) -> FriendlySyncFailure.PlaylistNonText
+    raw.contains("playlist_too_large", ignoreCase = true) -> FriendlySyncFailure.PlaylistTooLarge
     else -> FriendlySyncFailure.Unknown(raw)
 }
 

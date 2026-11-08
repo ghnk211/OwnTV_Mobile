@@ -255,7 +255,10 @@ class CompanionController(context: Context, localeStore: LocaleStore) {
             .filter { it.isLetterOrDigit() || it == '.' || it == '-' || it == '_' }
             .trimStart('.')
             .takeLast(64)
-        return if (base.length > 4 && base.contains('.')) base else "playlist-${System.currentTimeMillis()}.m3u"
+        // A neutral extension when the browser gave no usable filename. Guessing `.m3u` here would
+        // route an uploaded TXT list straight to the M3U parser; `.list` is unrecognised by
+        // PlaylistFormat, so the sync layer sniffs the content and picks the right parser instead.
+        return if (base.length > 4 && base.contains('.')) base else "playlist-${System.currentTimeMillis()}.list"
     }
 
     /** Persists an uploaded background image to a cache file and emits it for the settings UI to ingest. */
