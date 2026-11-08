@@ -1,15 +1,14 @@
-// Root build file for the OwnTV mobile app. Everything the app is built on — the database, sync,
-// EPG, backup, settings storage, the playback engine and every user-visible string — comes from the
-// core library repository (ahXN00/OwnTV_Core); this repo holds the phone/tablet shell only.
+// Root build file for the OwnTV core library. Both modules are published together under one
+// version — two artifacts that must be used as a pair should not have independent numbers, or the
+// apps end up on combinations nobody ever built.
 plugins {
-    alias(libs.plugins.android.application) apply false
-    // Kotlin comes from AGP 9's built-in Kotlin support. The Compose compiler plugin is pinned to
-    // that Kotlin version, exactly as in the TV app and in core.
+    // com.android.library ships inside AGP and is already on the build classpath by the time a
+    // module asks for it by version, so it is declared here and applied without a version there.
+    alias(libs.plugins.android.library) apply false
+    // Kotlin comes from AGP 9's built-in Kotlin support. Compose compiler is pinned to that Kotlin
+    // version; KSP supports built-in Kotlin, so no kotlin-android plugin is needed.
     alias(libs.plugins.compose.compiler) apply false
-    // Baseline profiles — applied by :app and by :baselineprofile. `com.android.test` is declared
-    // here rather than in the module because it ships inside AGP and is already on the build
-    // classpath by the time a module asks for it by version; Gradle then refuses to version-check it
-    // and fails with "already on the classpath with an unknown version".
-    alias(libs.plugins.android.test) apply false
-    alias(libs.plugins.baselineprofile) apply false
+    alias(libs.plugins.ksp) apply false
 }
+
+extra["coreVersion"] = "1.0.70"
