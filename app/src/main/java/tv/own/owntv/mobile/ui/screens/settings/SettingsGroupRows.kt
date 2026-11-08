@@ -318,7 +318,7 @@ private fun layoutSections(vm: SettingsViewModel): List<SettingSection> {
     // Exactly the rows the Home screen page lists: Trending is not one of the toggleable rows, and the
     // sports row this app dropped still sits in an older config's order. Hidden rows still count —
     // they are on that page, switched off — so the badge and the page can never disagree.
-    val shownRows = home.settingsRows.count { it != HomeRow.LIVE_SPORTS }
+    val shownRows = home.settingsRows.size
     val remember = listOf(
         s.rememberCategoryLive.pref(true), s.rememberCategoryMovies.pref(true), s.rememberCategorySeries.pref(true),
         s.rememberLastLive.pref(false), s.rememberLastMovies.pref(false), s.rememberLastSeries.pref(false),

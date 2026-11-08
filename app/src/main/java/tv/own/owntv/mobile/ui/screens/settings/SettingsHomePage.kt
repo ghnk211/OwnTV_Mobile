@@ -89,7 +89,7 @@ fun SettingsHomePage(
             // The sports row was removed from this app but survives in core's enum and in configs
             // written before the removal, so it is dropped from the list — and with it from the order
             // written back, which core's mergeOrder harmlessly re-adds on the next read.
-            val order = home.settingsRows.filter { it != HomeRow.LIVE_SPORTS }
+            val order = home.settingsRows
             order.forEachIndexed { index, row ->
                 ReorderableSwitchRow(
                     title = stringResource(row.titleRes()),

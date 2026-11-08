@@ -181,11 +181,9 @@ fun HomeScreen(
         HomeSkeleton(modifier)
         return
     }
-    // Computed once per feed: hasContent walks each row's loaded items. The sports row was removed from
-    // this app, but core still ships it and an older config still lists it; it is dropped here, before
-    // hasContent or the draw below can see it — which is what their catch-all branches are for.
+    // Computed once per feed: hasContent walks each row's loaded items.
     val rows = remember(state) {
-        state.config.visibleOrder.filter { it != HomeRow.LIVE_SPORTS && state.hasContent(it) }
+        state.config.visibleOrder.filter { state.hasContent(it) }
     }
 
     // The television's three states, in its order. None offers "add a playlist": a user with none is in

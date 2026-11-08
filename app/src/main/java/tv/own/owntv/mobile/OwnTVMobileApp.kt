@@ -2,7 +2,6 @@ package tv.own.owntv.mobile
 
 import android.app.Application
 import android.content.Context
-import android.content.Intent
 import android.content.res.Configuration
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -173,18 +172,6 @@ class OwnTVMobileApp : Application(), androidx.work.Configuration.Provider {
             localeStore.currentTag.collect { raw ->
                 val tag = AppLocales.normalize(raw)
                 if (tag != raw) runCatching { localeStore.set(tag) }
-            }
-        }
-        // The Sports module is gone from this app, but a device upgraded from the build that had it may
-        // still carry its match alarms. `MatchAlertHost.backgroundAllowed` is now never set, so it stays
-        // at core's false default and rearmAll() takes the cancel-all branch — every stored alarm and
-        // reminder is withdrawn. The receivers and the score-card service are removed from the merged
-        // manifest anyway; stopService only clears a card still sitting in the shade. runCatching: on a
-        // fresh install there is nothing to cancel, and a failing cleanup must never take the app down.
-        appScope.launch {
-            runCatching {
-                GlobalContext.get().get<tv.own.owntv.core.sports.MatchAlertScheduler>().rearmAll()
-                stopService(Intent(this@OwnTVMobileApp, tv.own.owntv.core.sports.LiveMatchCardService::class.java))
             }
         }
         // A chosen icon colour ("Later", the first-run pick, a restore) reaches the launcher when the app
