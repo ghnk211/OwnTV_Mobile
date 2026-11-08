@@ -34,7 +34,8 @@ fun VodScreen(
     detailVm.onPlayStarted = onPlay
 
     var page by remember { mutableStateOf(VodPage.HOME) }
-    var pendingDetail by remember { mutableStateOf<Pair<String, String>?>(null) }
+    // (siteKey, vodId, typeId, typeName): the list layer owns the lock-key identity (plan §5.5.3).
+    var pendingDetail by remember { mutableStateOf<List<String>?>(null) }
 
     when (page) {
         VodPage.CONFIG -> TvboxConfigPage(
@@ -53,15 +54,19 @@ fun VodScreen(
             onOpenConfig = { page = VodPage.CONFIG },
             onOpenSite = homeVm::openSite,
             onSelectCategory = homeVm::selectCategory,
+            onToggleLock = homeVm::toggleLock,
+            onConsumeLockEvent = homeVm::consumeLockEvent,
+            onUnlockCategory = homeVm::unlockCategory,
             onSetFilter = homeVm::setFilter,
             onLoadMore = homeVm::loadMore,
             onSearch = homeVm::search,
             onClearSearch = homeVm::clearSearch,
-            onOpenDetail = { siteKey, vodId ->
-                pendingDetail = siteKey to vodId
-                detailVm.open(siteKey, vodId)
+            onOpenDetail = { siteKey, vodId, typeId, typeName ->
+                pendingDetail = listOf(siteKey, vodId, typeId, typeName)
+                detailVm.open(siteKey, vodId, typeId, typeName)
                 page = VodPage.DETAIL
             },
+            categoryContext = homeVm.currentCategoryContext,
         )
 
         VodPage.DETAIL -> {

@@ -37,3 +37,11 @@ Mobile 仓库通过 `vendor/OwnTV_Core`（git subtree）参与 composite build�
 | 日期 | 方式（merge/cherry-pick） | 上游提交 | 备注 |
 |---|---|---|---|
 | 2026-11-07 | merge | 2f7d4e3b | 首次同步；本地 1.0.70 改动与上游无冲突合并 |
+
+## TVbox 点播迁移（2026-11-08）
+
+`docs/TVbox点播迁移方案.md` 的实施**未修改 `vendor/OwnTV_Core` 任何文件**：本仓库的
+`vendor/OwnTV_Core` 快照保持 `Core mobile @0619549b`，Core Room schema 仍为 v53。
+分类锁/儿童模式按方案 §5.5 只复用 Core 的 `lockedCats`（MOVIE section，`tvbox:` 前缀 key）、
+Customize PIN、`CategoryUnlockSession`、`PinAttemptLimiter` 与 `AdultCategoryClassifier`，
+全部经既有 Koin 单例（`DataModule`）注入，无 Core 源码/资源改动，无 subtree 同步需求。

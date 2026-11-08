@@ -68,4 +68,9 @@
     <string name="tvbox_detail_locked">该分类已上锁，请输入 PIN 解锁。</string>
     <string name="tvbox_detail_no_episodes">该线路没有可播放的分集。</string>
     <string name="tvbox_pin_unlock_desc">输入 Customize PIN 以打开该分类。</string>
+    <string name="tvbox_lock_action_lock">上锁该分类</string>
+    <string name="tvbox_lock_action_unlock">解锁该分类</string>
+    <string name="tvbox_lock_locked">分类已上锁。</string>
+    <string name="tvbox_lock_unlocked">分类已解锁（本次会话内有效）。</string>
+    <string name="tvbox_lock_no_pin">请先在 设置 → Customize 设置 PIN，再回到这里上锁。</string>
 </resources>

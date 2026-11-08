@@ -32,13 +32,6 @@ class TvboxSealedPlaybackGuard(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-    /** 注册档案切换监听（宿主构造后调用一次）。 */
-    fun start() {
-        scope.launch {
-            settings.activeProfileId.collect { profileChanged() }
-        }
-    }
-
     /** App 进入后台（ON_STOP）。 */
     fun leftApp() = stopIfSealed("leftApp")
 
@@ -46,7 +39,9 @@ class TvboxSealedPlaybackGuard(
     fun profileChanged() = stopIfSealed("profileChanged")
 
     private fun stopIfSealed(reason: String) {
-        val ctx = vodTuner.tvboxPlayingContext() ?: return
+        val ctx = vodTuner.tvboxPlayingContext()
+        TbLog.tag(TAG).i("stopIfSealed（%s）：ctx=%s", reason, ctx != null)
+        if (ctx == null) return
         val (siteKey, category) = ctx
         scope.launch {
             val pid = runCatching { settings.activeProfileId.first() }.getOrDefault(-1L)

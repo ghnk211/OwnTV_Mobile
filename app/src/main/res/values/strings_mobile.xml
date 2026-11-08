@@ -78,4 +78,9 @@
     <string name="tvbox_detail_locked">This category is locked. Enter the PIN to open it.</string>
     <string name="tvbox_detail_no_episodes">No playable episodes on this line.</string>
     <string name="tvbox_pin_unlock_desc">Enter your Customize PIN to open this category.</string>
+    <string name="tvbox_lock_action_lock">Lock this category</string>
+    <string name="tvbox_lock_action_unlock">Unlock this category</string>
+    <string name="tvbox_lock_locked">Category locked.</string>
+    <string name="tvbox_lock_unlocked">Category unlocked for this session.</string>
+    <string name="tvbox_lock_no_pin">Set a Customize PIN in Settings first, then come back to lock here.</string>
 </resources>

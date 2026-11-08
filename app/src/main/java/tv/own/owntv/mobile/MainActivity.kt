@@ -61,6 +61,7 @@ open class MainActivity : FragmentActivity() {
     private val autoRefresh: tv.own.owntv.core.sync.AutoRefresh by inject()
     private val vodTuner: tv.own.owntv.mobile.ui.screens.library.VodTuner by inject()
     private val relock: tv.own.owntv.core.categorylock.CategoryRelock by inject()
+    private val tvboxGuard: tv.own.owntv.mobile.tvbox.category.TvboxSealedPlaybackGuard by inject()
     private val sealedHost: tv.own.owntv.mobile.ui.categorylock.SealedPlaybackHost by inject()
 
     /**
@@ -148,7 +149,12 @@ open class MainActivity : FragmentActivity() {
         // Category locks: leaving the app or changing profile closes what the PIN opened, and stops
         // what plays from a category that is now sealed. The tuners outlive this activity, so does this.
         relock.guard = tv.own.owntv.mobile.ui.categorylock.sealedPlaybackGuard(tuner, vodTuner, sealedHost)
-        lifecycleScope.launch { settings.activeProfileId.collect(relock::profileChanged) }
+        lifecycleScope.launch {
+            settings.activeProfileId.collect {
+                relock.profileChanged(it)
+                tvboxGuard.profileChanged()
+            }
+        }
         // "Refresh on startup" and the interval modes of the Auto refresh settings, once a profile is
         // active (straight away, or as soon as first-run setup has made one).
         lifecycleScope.launch {
@@ -203,6 +209,9 @@ open class MainActivity : FragmentActivity() {
             // The floating window goes over other apps: the app has left, so the categories the PIN
             // opened close, and a channel or film from one stops.
             relock.leftApp()
+            // The TVbox guard runs after the relock for the same reason as in onStop: Home lands in
+            // PiP (not onStop), and a locked category's stream must not keep playing in the window.
+            tvboxGuard.leftApp()
             ContextCompat.registerReceiver(
                 this,
                 pipActions,
@@ -279,6 +288,10 @@ open class MainActivity : FragmentActivity() {
         if (isChangingConfigurations) return
         // The relock first: it reads what is playing before anything below pauses or drops it.
         relock.leftApp()
+        // The TVbox guard must see the session as the relock left it — after relockAll — or an
+        // unlock the user opened this session would keep a locked category playing in the
+        // background (plan §5.5.8).
+        tvboxGuard.leftApp()
         // Stopped after the floating window was up, without ever resuming in between: the window was
         // closed. That is its own answer, and not the background-playback question below.
         if (wasInPipWindow) {

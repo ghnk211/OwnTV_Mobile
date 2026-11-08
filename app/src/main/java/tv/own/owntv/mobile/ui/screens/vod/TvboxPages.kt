@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -269,16 +270,46 @@ internal fun TvboxHomePage(
     onOpenConfig: () -> Unit,
     onOpenSite: (SiteConfig) -> Unit,
     onSelectCategory: (String, String) -> Unit,
+    onToggleLock: (String, String) -> Unit,
+    onConsumeLockEvent: () -> Unit,
+    onUnlockCategory: suspend (String, String, String) -> PinAttempt,
     onSetFilter: (String, String) -> Unit,
     onLoadMore: () -> Unit,
     onSearch: (String) -> Unit,
     onClearSearch: () -> Unit,
-    onOpenDetail: (String, String) -> Unit,
+    onOpenDetail: (String, String, String, String) -> Unit,
+    categoryContext: Pair<String, String>,
 ) {
     val palette = LocalStagePalette.current
     var siteMenu by remember { mutableStateOf(false) }
     var searchOpen by remember { mutableStateOf(false) }
+    var lockMenuFor by remember { mutableStateOf<tv.own.owntv.mobile.tvbox.engine.ClassInfo?>(null) }
+    var pinSheetFor by remember { mutableStateOf<tv.own.owntv.mobile.tvbox.engine.ClassInfo?>(null) }
     val lockedPrefix = stringResource(R.string.tvbox_locked_prefix)
+
+    // Lock/unlock feedback (no-PIN guidance included).
+    state.lockEvent?.let { event ->
+        val message = stringResource(
+            when (event) {
+                TvboxLockEvent.LOCKED -> R.string.tvbox_lock_locked
+                TvboxLockEvent.UNLOCKED -> R.string.tvbox_lock_unlocked
+                TvboxLockEvent.NO_PIN -> R.string.tvbox_lock_no_pin
+            },
+        )
+        LaunchedEffect(event) { onConsumeLockEvent() }
+        Text(
+            message,
+            style = stageText(12f, 600),
+            color = palette.text,
+            modifier = Modifier
+                .padding(horizontal = PageSidePadding, vertical = 4.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(palette.cardSolid)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 
     Column(Modifier.fillMaxSize()) {
         // Top bar: site selector, search, config.
@@ -308,12 +339,23 @@ internal fun TvboxHomePage(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     itemsIndexed(state.categories, key = { _, c -> c.typeId + c.typeName }) { _, cat ->
-                        val sealed = cat.typeId in state.sealedKeys
+                        val sealed = state.currentSite?.let {
+                            tv.own.owntv.mobile.tvbox.category.TvboxCategoryLock.keyOfStatic(
+                                it.key, cat.typeId, cat.typeName,
+                            )
+                        } in state.sealedKeys
                         Box(
                             Modifier
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(palette.cardSolid)
-                                .clickable { onSelectCategory(cat.typeId, cat.typeName) }
+                                .combinedClickable(
+                                    // plan §5.5.6: a locked row shows its lock and pops the PIN sheet.
+                                    onClick = {
+                                        if (sealed) pinSheetFor = cat else onSelectCategory(cat.typeId, cat.typeName)
+                                    },
+                                    // plan §5.5.7: the category row's "..." entry — long press locks.
+                                    onLongClick = { lockMenuFor = cat },
+                                )
                                 .padding(horizontal = 14.dp, vertical = 8.dp),
                         ) {
                             Text(
@@ -368,7 +410,12 @@ internal fun TvboxHomePage(
             } else {
                 PosterGrid(
                     movies = state.movies,
-                    onOpenDetail = onOpenDetail,
+                    onOpenDetail = { site, vod ->
+                        // A home-row movie may be borrowed from another site (donorSiteKey);
+                        // rows from the current site's own list belong to that site.
+                        val owner = site.ifBlank { state.currentSite?.key.orEmpty() }
+                        onOpenDetail(owner, vod, categoryContext.first, categoryContext.second)
+                    },
                     onLoadMore = onLoadMore,
                     modifiers = state.movies.associate { it.id to it.remark },
                 )
@@ -376,14 +423,78 @@ internal fun TvboxHomePage(
         }
     }
 
-    // Search overlay
+    // Search overlay: results carry no list-layer category identity, so the detail opens with an
+    // empty context and the play-time check falls back to the movie's own typeName (plan R14).
     if (searchOpen) {
         TvboxSearchPage(
             state = state,
             onSearch = onSearch,
             onClearSearch = onClearSearch,
-            onOpenDetail = onOpenDetail,
+            onOpenDetail = { siteKey, vodId -> onOpenDetail(siteKey, vodId, "", "") },
             onClose = { searchOpen = false },
+        )
+    }
+
+    // plan §5.5.7: long-press menu → lock/unlock (StageMenuItem).
+    lockMenuFor?.let { cat ->
+        val sealed = state.currentSite?.let {
+            tv.own.owntv.mobile.tvbox.category.TvboxCategoryLock.keyOfStatic(
+                it.key, cat.typeId, cat.typeName,
+            )
+        } in state.sealedKeys
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = PageSidePadding, vertical = 8.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(palette.cardSolid)
+                .padding(vertical = 6.dp),
+        ) {
+            Text(
+                cat.typeName,
+                style = stageText(13f, 700),
+                color = palette.muted,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            StageMenuItem(
+                label = stringResource(if (sealed) R.string.tvbox_lock_action_unlock else R.string.tvbox_lock_action_lock),
+                icon = MobileIcons.Check,
+                onClick = {
+                    onToggleLock(cat.typeId, cat.typeName)
+                    lockMenuFor = null
+                },
+            )
+            StageMenuItem(
+                label = stringResource(R.string.common_cancel),
+                icon = MobileIcons.Close,
+                onClick = { lockMenuFor = null },
+            )
+        }
+    }
+
+    // Locked-category PIN sheet (list-layer gate, plan §5.5.6).
+    pinSheetFor?.let { cat ->
+        var waitSeconds by remember { mutableStateOf(0) }
+        var wrong by remember { mutableStateOf(false) }
+        val scope = rememberCoroutineScope()
+        PinEntrySheet(
+            title = pinEntryTitle(wrong = wrong, waitSeconds = waitSeconds),
+            description = stringResource(R.string.tvbox_pin_unlock_desc),
+            onSubmit = { entered ->
+                scope.launch {
+                    when (onUnlockCategory(cat.typeId, cat.typeName, entered)) {
+                        PinAttempt.Accepted -> pinSheetFor = null
+                        PinAttempt.Wrong -> wrong = true
+                        is PinAttempt.Wait -> {
+                            wrong = false
+                            waitSeconds = 30
+                        }
+                    }
+                }
+            },
+            onDismiss = { pinSheetFor = null },
         )
     }
 
@@ -480,6 +591,8 @@ private fun PosterGrid(
                 imageUrl = movie.pic,
                 title = movie.name,
                 subtitle = modifiers[movie.id],
+                // A home-row movie may have been borrowed from another site (donorSiteKey);
+                // rows from the current site's own list belong to that site.
                 onClick = { onOpenDetail(movie.donorSiteKey ?: "", movie.id) },
             )
         }

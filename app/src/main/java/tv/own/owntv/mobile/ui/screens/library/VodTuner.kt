@@ -175,6 +175,9 @@ class VodTuner(
     /** Where the current TVbox stream's progress is written (which episode of which vod). */
     private var tvboxProgressCtx: TvboxProgressCtx? = null
 
+    /** Per-episode progress contexts of the playing TVbox queue, indexed like [player]'s queue. */
+    private var tvboxQueueCtxs: List<TvboxProgressCtx>? = null
+
     /** Identity of a playing TVbox episode, for [tv.own.owntv.mobile.tvbox.repository.TvboxStore]. */
     data class TvboxProgressCtx(
         val siteKey: String,
@@ -209,6 +212,11 @@ class VodTuner(
         // search context — has to be re-pointed by whoever owns it. Nobody tells this class otherwise.
         scope.launch {
             player.queueItemChanged.collect { index ->
+                // A TVbox queue advancing by itself re-points the progress context, so the five-second
+                // timer keeps writing under the episode actually playing (same rule as Core episodes).
+                if (playingExternal) {
+                    tvboxProgressCtx = tvboxQueueCtxs?.getOrNull(index) ?: tvboxProgressCtx
+                }
                 val q = playingQueue ?: return@collect
                 val episode = q.episodes.getOrNull(index) ?: return@collect
                 // Deliberately no saveProgress() here: by the time this arrives the player is already
@@ -471,6 +479,8 @@ class VodTuner(
         tvboxSiteKey = null
         tvboxCategoryKey = null
         tvboxProgressCtx = null
+        tvboxQueueCtxs = null
+        tvboxQueueCtxs = null
         _playing.value = VodPlayback(MediaType.LIVE, RECORDING_ITEM_ID, title, posterUrl = posterUrl, categoryId = categoryId)
         playingQueue = null
         return true
@@ -506,6 +516,9 @@ class VodTuner(
         tvboxSiteKey = resolved.siteKey
         tvboxCategoryKey = resolved.categoryKey
         tvboxProgressCtx = progressCtx
+        tvboxQueueCtxs = queue?.mapIndexed { i, _ ->
+            progressCtx.copy(episodeIndex = i)
+        }
 
         val httpHeaders = tv.own.owntv.core.network.StreamHeaders.encode(resolved.headers)
         if (queue != null && queue.size > 1) {
@@ -711,6 +724,8 @@ class VodTuner(
         tvboxSiteKey = null
         tvboxCategoryKey = null
         tvboxProgressCtx = null
+        tvboxQueueCtxs = null
+        tvboxQueueCtxs = null
         _playing.value = what
         recordHistory(profileId, what.mediaType, what.itemId)
     }
@@ -731,6 +746,7 @@ class VodTuner(
         tvboxSiteKey = null
         tvboxCategoryKey = null
         tvboxProgressCtx = null
+        tvboxQueueCtxs = null
         // The player's ADD SUBTITLES entry exists only for a film or an episode. Left set, it would
         // still be offering to search OpenSubtitles for the film while a channel is playing.
         subtitleController.clear()

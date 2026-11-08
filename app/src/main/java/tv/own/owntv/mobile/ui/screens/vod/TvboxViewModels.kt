@@ -154,7 +154,12 @@ data class TvboxHomeUiState(
     val searchKeyword: String = "",
     val searchResults: List<SourceSearchResult> = emptyList(),
     val searching: Boolean = false,
+    /** One-shot lock/unlock feedback; the screen renders localized copy. */
+    val lockEvent: TvboxLockEvent? = null,
 )
+
+/** 分类锁操作结果（方案 §5.5.7：无 PIN 引导 / 上锁成功 / 解锁成功）。 */
+enum class TvboxLockEvent { LOCKED, UNLOCKED, NO_PIN }
 
 class TvboxHomeViewModel(
     private val configRepository: TvboxConfigRepository,
@@ -168,8 +173,13 @@ class TvboxHomeViewModel(
     private val _state = MutableStateFlow(TvboxHomeUiState())
     val state: StateFlow<TvboxHomeUiState> = _state.asStateFlow()
 
-    /** 当前分类（[tid, name]），详情/播放要带去当锁与儿童判定的身份。 */
+    /** 当前分类（tid/name），详情/播放要带去当锁与儿童判定的身份（方案 §5.5.3 key 口径）。 */
     private var currentCategoryName: String = ""
+    private var currentCategoryTid: String = ""
+
+    /** 供 UI 把海报的来源分类身份带给详情（typeId 优先的锁 key 必须在列表层确定）。 */
+    val currentCategoryContext: Pair<String, String>
+        get() = currentCategoryTid to currentCategoryName
 
     init {
         // 配置/站点变化 → 重算站点列表与首页绑定源
@@ -214,7 +224,12 @@ class TvboxHomeViewModel(
             val classes = policy.visibleCategories(profile, site, result?.classes.orEmpty())
             // 分类为空时兜底：homeVideoContent（纯推荐源）
             val movies = filterMovies(profile, site, result?.list.orEmpty())
-            val sealed = lock.sealedKeys(settings.activeProfileId.first(), site.key, classes)
+            val lockPid = settings.activeProfileId.first()
+            val sealed = lock.sealedKeys(lockPid, site.key, classes)
+            tv.own.owntv.mobile.tvbox.util.TbLog.tag("TvboxLock").i(
+                "openSite sealedKeys：pid=%d site=%s classes=%d sealed=%s",
+                lockPid, site.key, classes.size, sealed,
+            )
             if (classes.isEmpty()) {
                 _state.value = _state.value.copy(loading = false, categories = emptyList(), sealedKeys = emptySet(), filters = emptyList(), movies = movies, pageCount = result?.pagecount ?: 1)
                 return@launch
@@ -256,6 +271,7 @@ class TvboxHomeViewModel(
         val site = _state.value.currentSite ?: return
         if (replace) {
             currentCategoryName = typeName
+            currentCategoryTid = tid
             _state.value = _state.value.copy(loading = true, error = null, movies = emptyList(), page = 1)
         } else {
             _state.value = _state.value.copy(loadingMore = true)
@@ -302,6 +318,49 @@ class TvboxHomeViewModel(
 
     fun clearSearch() {
         _state.value = _state.value.copy(searchKeyword = "", searchResults = emptyList(), searching = false)
+    }
+
+    /** 分类行 ⋯ 菜单：上锁/解锁（方案 §5.5.7）。无 Customize PIN 时给引导，不在 TVbox 内设 PIN。 */
+    fun toggleLock(tid: String, typeName: String) {
+        val site = _state.value.currentSite ?: return
+        tv.own.owntv.mobile.tvbox.util.TbLog.tag("TvboxLock").i("toggleLock 调用：%s / %s", site.key, typeName)
+        viewModelScope.launch {
+            val pid = settings.activeProfileId.first()
+            val hasPin = !lock.isNoPinProfile(pid)
+            if (!hasPin) {
+                _state.value = _state.value.copy(lockEvent = TvboxLockEvent.NO_PIN)
+                return@launch
+            }
+            val key = lock.keyOf(site.key, tid, typeName)
+            val locked = key in _state.value.sealedKeys
+            tv.own.owntv.mobile.tvbox.util.TbLog.tag("TvboxLock").i("toggleLock 执行：pid=%d locked->%s", pid, !locked)
+            lock.toggleLock(pid, site.key, tid, typeName, !locked)
+            tv.own.owntv.mobile.tvbox.util.TbLog.tag("TvboxLock").i("toggleLock 完成")
+            // 重算锁定集合（无 PIN 时 sealedKeys 为空集，锁行照常显示）
+            val sealed = lock.sealedKeys(pid, site.key, _state.value.categories)
+            _state.value = _state.value.copy(
+                sealedKeys = sealed,
+                lockEvent = if (locked) TvboxLockEvent.UNLOCKED else TvboxLockEvent.LOCKED,
+            )
+        }
+    }
+
+    fun consumeLockEvent() {
+        _state.value = _state.value.copy(lockEvent = null)
+    }
+
+    /**
+     * 点击已锁定分类：PIN 通过后放行进入（方案 §5.5.6 列表层强校验）。
+     * epoch 防绕过协议在 [TvboxCategoryLock.unlock] 内；失败由 UI 出 WRONG/WAIT。
+     */
+    suspend fun unlockCategory(tid: String, typeName: String, pin: String): PinAttempt {
+        val site = _state.value.currentSite ?: return PinAttempt.Wrong
+        val pid = settings.activeProfileId.first()
+        val result = lock.unlock(pid, site.key, tid, typeName, pin)
+        if (result is PinAttempt.Accepted) {
+            selectCategory(tid, typeName)
+        }
+        return result
     }
 
     private suspend fun filterMovies(profile: ProfileEntity?, site: SiteConfig, movies: List<Movie>): List<Movie> =
@@ -355,20 +414,21 @@ class TvboxDetailViewModel(
     /** 起播成功后由 UI 触发导航（PLAY_ROUTE）。 */
     var onPlayStarted: () -> Unit = {}
 
-    /** 打开详情：儿童模式命中直接拒绝；锁命中标记 sealed（UI 弹 PIN）。 */
-    fun open(siteKey: String, vodId: String) {
+    /** 打开详情：儿童模式命中直接拒绝；锁命中标记 sealed（UI 弹 PIN）。
+     *  [typeId]/[typeName] 来自列表层 —— 锁 key 的 typeId 在列表页就确定了（§5.5.3）。 */
+    fun open(siteKey: String, vodId: String, typeId: String?, typeName: String?) {
         val site = configRepository.siteMap[siteKey] ?: return
         viewModelScope.launch {
             _state.value = TvboxDetailUiState(site = site, vodId = vodId, loading = true)
             val pid = settings.activeProfileId.first()
             val profile = profileDao.getById(pid)
-            val baseKey = TvboxCategoryKey(site.key, site.name, null, "")
+            val baseKey = TvboxCategoryKey(site.key, site.name, typeId, typeName.orEmpty())
             // 分类名此时还不知道（详情才知道 typeName）——先用站点级判定拦截 ext 标记的站
             if (policy.blockedByKids(profile, site, null)) {
                 _state.value = _state.value.copy(loading = false, blockedByKids = true)
                 return@launch
             }
-            if (lock.seals(pid, site.key, null, "")) {
+            if (lock.seals(pid, site.key, baseKey.typeId, baseKey.typeName)) {
                 _state.value = _state.value.copy(loading = false, sealed = true)
                 return@launch
             }
@@ -378,8 +438,8 @@ class TvboxDetailViewModel(
                 _state.value = _state.value.copy(loading = false, error = TvboxLoadError.DETAIL_FAILED)
                 return@launch
             }
-            // 详情层二次校验：typeName 现在有了（方案 §5.5.6 第二层）
-            val key = (categoryKey ?: TvboxCategoryKey(site.key, site.name, null, "")).copy(typeName = movie.typeName ?: "")
+            // 详情层二次校验：key 沿用列表层身份（typeId 不因详情返回而漂移，方案 R14 口径）
+            val key = (categoryKey ?: baseKey)
             if (policy.blockedByKids(profile, site, key.typeName)) {
                 _state.value = _state.value.copy(loading = false, blockedByKids = true)
                 return@launch

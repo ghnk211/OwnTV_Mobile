@@ -32,8 +32,13 @@ class TvboxCategoryLock(
 ) {
 
     /** 统一 key 规范：typeId 优先、typeName 兜底。 */
-    fun keyOf(siteKey: String, typeId: String?, typeName: String): String =
-        "tvbox:$siteKey:${typeId?.takeIf { it.isNotBlank() } ?: typeName}"
+    fun keyOf(siteKey: String, typeId: String?, typeName: String): String = keyOfStatic(siteKey, typeId, typeName)
+
+    companion object {
+        /** UI 与锁判定共用的 key 构造（无状态）。 */
+        fun keyOfStatic(siteKey: String, typeId: String?, typeName: String): String =
+            "tvbox:$siteKey:${typeId?.takeIf { it.isNotBlank() } ?: typeName}"
+    }
 
     /**
      * 该站点+分类是否被锁（详情/播放的强制校验）。
@@ -64,6 +69,10 @@ class TvboxCategoryLock(
             if (k in locked) k else null
         }.toSet()
     }
+
+    /** 该档案是否没有 Customize PIN（上锁菜单据此给"先去设置 PIN"引导）。 */
+    suspend fun isNoPinProfile(profileId: Long): Boolean =
+        customizePinSettings.customizePin(profileId).first() == null
 
     /** 上锁/解锁（VOD 页 ⋯ 菜单）。前提是已有 Customize PIN，调用方负责提示。 */
     suspend fun toggleLock(profileId: Long, siteKey: String, typeId: String?, typeName: String, locked: Boolean) {
