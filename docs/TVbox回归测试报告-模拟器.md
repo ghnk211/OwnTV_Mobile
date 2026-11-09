@@ -155,3 +155,33 @@ python OwnTV_Mobile/tools/regression/toggle_kids.py   # 需先手动进入 Setti
 - `SecureKv` 明文简化 → Keystore AES-GCM 还债（jar 侧 cookie/token 加密，~100 行，单独排期）
 - `TvboxPages.kt` 按页面拆分；`SitePickerSheet` 的 dismissed hack 换正式 sheet 形态
 - 备份恢复保留 `tvbox:` 锁 key 的设备级双机演练
+
+---
+
+## 10. 真实生态源抽查（2026-11-09，tvbox源.txt 随机抽取）
+
+从采集清单（`tvbox源.txt`，114 条可解析地址）以固定种子随机抽 6 条，在模拟器上实测迁移链。全程使用真机同款交互路径（配置页 → Import → URL 对话框）。
+
+### 10.1 结果
+
+| 抽取 | 地址 | 结果 | 证据 |
+|---|---|---|---|
+| 软件 | `http://47.96.82.41:5188/api.json` | **导入成功**：解析 90 站点（M1 可用 88）、parses 8、rules 6、doh 5；spider jar（2.1MB）下载缓存（md5 命名）；**jar 本地代理 127.0.0.1:9978 启动**；首页源（csp_Douban）经 JarEngine 加载出 9 个分类 | logcat `配置解析完成…spider=gitee…jar`、`spider jar 已缓存`、`jar引导已执行`、`openSite sealedKeys：site=豆瓣 classes=9` |
+| 新接口 | `https://www.iyouhun.com/tv/wex` | **导入成功**：解析 63 站点（M1 可用 63）、parses 4、rules 9、doh 5；**img+ 伪装 jar**（`…jpg;md5;…`）经 FindResult.decodeImgJar 解码成功并缓存（959KB） | logcat + 截图 `shot_real_6.png` |
+| 直播电视IPV4（负样本） | `https://live.zbds.top/tv/iptv4.txt` | **正确拒绝**：IPTV txt 非点播配置，导入失败并给出文案 | `IMPORT_FAIL` |
+| 欧歌免费 / 装歌 | `tv.nxog.top/m/111.php...` | 未完成：URL 前缀被输入法吞掉（见 10.3） | 截图 |
+| GG影视 | `raw.giteeusercontent.com/...aiwex.json` | 未完成：同上 | 截图 |
+
+### 10.2 改善项在真实源上的验证
+
+- **jar 全链路**（改善批次之外的既有能力）：真实 jar 下载（md5 校验命名）→ DexClassLoader → 本地回环代理 → csp_Douban 五接口调用 —— 首次在真实生态 jar 上验证。
+- **img+ 伪装 jar 解码**（改善项 8 同批 FindResult 链路）：新接口的 spider 声明为 `.jpg` 地址，解码后成功交给 DexClassLoader。
+- **横幅停留**（改善项 6）：重复导入夹具配置时「此配置已存在」横幅持续可见（截图 `shot_banner3.png`）。
+- **相对海报补全**（改善项 8）：夹具改为相对路径后宿主收到 9 个已补全请求。
+- **数据隔离**：真实源播放/加载期间 Core 三表仍 0 行。
+
+### 10.3 真实源发现（记录，不阻塞）
+
+1. **jar Init 验证 WebView 全屏劫持**：`csp_Douban` 这类 spider 的 Init 反滥用机制会在应用窗口挂全屏"接口验证"WebView，**吞掉返回键**，用户只能强杀应用逃离。这是源侧行为（TVBoxOS 同样存在），但我们可以改善：给 jar 挂载的 WebView 加返回键豁免/关闭按钮。已列入改善清单。
+2. **`adb shell input text` 长字符串截断**：Gboard 焦点时序导致 URL 前缀丢失（外层状态框收到了前缀）——纯测试工具限制，应用对截断后的无 scheme 地址正确拒绝。替代方案：剪贴板注入或中文输入法关闭自动纠错后重试。
+3. 生态源的 UA 门控（配置地址按 UA 分发 HTML 落地页）在本地夹具上无法复现，留待真实源网络环境再验。
