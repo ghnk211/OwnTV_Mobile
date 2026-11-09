@@ -1,10 +1,23 @@
 # OwnTV_Core 源码集成与本地改造方案
 
-> 集成对象：`E:\develop\ideaPoject\git\OwnTV_Core`（来自第三方仓库；本地 clone 关联自己的 GitHub fork，下称 **Core**）
-> 集成目标：`E:\develop\ideaPoject\git\OwnTV_Mobile`（下称 **Mobile**）
+> 集成对象：`D:\AndroidStudioProjects\git\Qwn\OwnTV_Core`（来自第三方仓库；本地 clone 关联自己的 GitHub fork，下称 **Core**）
+> 集成目标：`D:\AndroidStudioProjects\git\Qwn\OwnTV_Mobile`（下称 **Mobile**）
 > 采用方式：**Core 源码入仓（`vendor/OwnTV_Core`）+ 无条件 `includeBuild`；Core 的改造分支推送到自己的 fork，按需吸收上游功能**
-> 状态：**已落地（2026-11-07）**。Core fork：https://github.com/ghnk211/OwnTV_Core，`mobile` 分支 `c4d9d0cb`；Mobile vendor 导入 commit `1d5ad8e4`。
-> 日期：2026-11-07
+> 状态：**已落地并保持同步（2026-11-08）**。Core fork：https://github.com/ghnk211/OwnTV_Core，`mobile` 分支 `0619549b`；Mobile `mobile-mini` 分支 `62c5058`；`vendor/OwnTV_Core` 快照 = Core `mobile` @`0619549b`（Mobile 最近一次 vendor 同步提交 `de64a34`，squash `4ffc0f3`）。
+> 日期：2026-11-07（初版）；2026-11-08 按本地实际状态修订
+
+---
+
+## 0. 本地仓库现状（2026-11-08）
+
+| 仓库 | remote | 日常改动分支 | 镜像分支 |
+|---|---|---|---|
+| Mobile | `origin` = ahXN00/OwnTV_Mobile（上游，只读参考）<br>`fork` = ghnk211/OwnTV_Mobile（可写） | `mobile-mini` @`62c5058`（跟踪 `fork/mobile-mini`） | `main` @`8572b50`（跟踪 `origin/main`） |
+| Core | `origin` = ghnk211/OwnTV_Core（可写）<br>`upstream` = ahXN00/OwnTV_Core（push 已设为 `DISABLED`） | `mobile` @`0619549b`（跟踪 `origin/mobile`） | `main` @`9de56d71`（跟踪 `upstream/main`） |
+
+- `vendor/OwnTV_Core` 与 Core `mobile` @`0619549b` 逐文件一致（1014 个文件，排除 `.git` 与构建产物）。
+- Core `mobile` 当前领先上游 `main` 4 个本地提交、落后 12 个上游提交；上游新功能按第 5 节流程按需吸收，不自动合并。
+- 本机签名材料在仓库外 `D:\AndroidStudioProjects\git\Qwn\keyStroe`（测试/正式 keystore + `owntv-signing.properties`）；`assembleStandardDebug` 与 `assembleStandardRelease` 均产出已签名 APK。
 
 ---
 
@@ -38,40 +51,40 @@ OwnTV_Mobile/vendor/OwnTV_Core（构建快照，includeBuild 的唯一输入）
 
 ## 2. 为什么现在要集成源码
 
-### 2.1 当前构建方式
+### 2.1 当前构建方式（集成后）
 
-Mobile 目前消费的是发布制品，源码替换只是可选项：
+Mobile 现在直接编译仓库内的 Core 源码，Maven 仓库只剩 libmpv 制品：
 
 | 项 | 现状 | 位置 |
 |---|---|---|
-| 依赖坐标 | `tv.own.owntv:core:1.0.69`、`tv.own.owntv:player-core:1.0.69` | [libs.versions.toml:66](file:///E:/develop/ideaPoject/git/OwnTV_Mobile/gradle/libs.versions.toml#L66)、[76–77](file:///E:/develop/ideaPoject/git/OwnTV_Mobile/gradle/libs.versions.toml#L76) |
-| 声明 | `implementation(libs.owntv.core)`、`implementation(libs.owntv.player.core)` | [app/build.gradle.kts:293](file:///E:/develop/ideaPoject/git/OwnTV_Mobile/app/build.gradle.kts#L293)、[296](file:///E:/develop/ideaPoject/git/OwnTV_Mobile/app/build.gradle.kts#L296) |
-| 制品仓库 | `https://ahxn00.github.io/OwnTV_Core/maven` | [settings.gradle.kts:35–39](file:///E:/develop/ideaPoject/git/OwnTV_Mobile/settings.gradle.kts#L35) |
-| 源码替换 | 仅当 `-Powntv.corePath=<core 目录>` 时 `includeBuild` | [settings.gradle.kts:43–49](file:///E:/develop/ideaPoject/git/OwnTV_Mobile/settings.gradle.kts#L43) |
-| CI | 故意不带 `owntv.corePath`，只验证 pin 的制品 | [.github/workflows/android.yml:20–23](file:///E:/develop/ideaPoject/git/OwnTV_Mobile/.github/workflows/android.yml#L20) |
+| 依赖坐标 | `tv.own.owntv:core:1.0.70`、`tv.own.owntv:player-core:1.0.70`（仅坐标占位，实际由 `includeBuild` 替换） | [libs.versions.toml:65](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile/gradle/libs.versions.toml#L65)、[75–76](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile/gradle/libs.versions.toml#L75) |
+| 声明 | `implementation(libs.owntv.core)`、`implementation(libs.owntv.player.core)` | [app/build.gradle.kts:293](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile/app/build.gradle.kts#L293)、[296](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile/app/build.gradle.kts#L296) |
+| 制品仓库 | `https://ahxn00.github.io/OwnTV_Core/maven` 只放行 `tv.own.owntv:libmpv` | [settings.gradle.kts:36–40](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile/settings.gradle.kts#L36) |
+| 源码替换 | 无条件 `includeBuild("vendor/OwnTV_Core")` | [settings.gradle.kts:49](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile/settings.gradle.kts#L49) |
+| CI | `check` + `core-check` 直接测试 vendor 源码，`build` 再打包 | [.github/workflows/android.yml:30](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile/.github/workflows/android.yml#L30)、[81](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile/.github/workflows/android.yml#L81) |
 
-### 2.2 当前分支已经被“未发布 API”卡住
+### 2.2 集成前的背景：分支曾被“未发布 API”卡住
 
-Mobile 分支直接调用了只在本地 Core（1.0.70）里存在的 API：
+集成前，Mobile 分支直接调用了当时只在本地 Core（1.0.70）里存在的 API：
 
 ```kotlin
-// app/src/main/java/tv/own/owntv/mobile/ui/screens/live/LiveViewModel.kt:62,498,506
+// app/src/main/java/tv/own/owntv/mobile/ui/screens/live/LiveViewModel.kt:65,522,530
 import tv.own.owntv.core.live.liveRestoreKey
 combine(settings.guideFollowsLiveCategory, settings.lastLiveCategory) { ... }
 ```
 
 Core 的定义：
 
-- [LiveCategoryMemory.kt:14](file:///E:/develop/ideaPoject/git/OwnTV_Core/core/src/main/java/tv/own/owntv/core/live/LiveCategoryMemory.kt#L14)
-- [SettingsRepository.kt:849](file:///E:/develop/ideaPoject/git/OwnTV_Core/core/src/main/java/tv/own/owntv/core/settings/SettingsRepository.kt#L849)
-- `core/src/main/res/values/strings_settings.xml:1276`（`settings_guide_follows_live`）
+- [LiveCategoryMemory.kt:14](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Core/core/src/main/java/tv/own/owntv/core/live/LiveCategoryMemory.kt#L14)
+- [SettingsRepository.kt:824](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Core/core/src/main/java/tv/own/owntv/core/settings/SettingsRepository.kt#L824)
+- `core/src/main/res/values/strings_settings.xml:1253`（`settings_guide_follows_live`）
 
-结果：
+集成前的结果：
 
-- 本地不带 `-Powntv.corePath` → 解析到 1.0.69 → 编译失败；
+- 本地不带 `-Powntv.corePath` → 解析到已发布的 1.0.69 → 编译失败；
 - CI 不带该属性 → 必红。
 
-源码入仓后，这个“本地能编、CI 不能编”的割裂消失，构建输入也正好是你要改造的那份代码。
+源码入仓后，这个“本地能编、CI 不能编”的割裂已消失，构建输入就是 `vendor/OwnTV_Core` 里的那份代码。
 
 ### 2.3 源码体量
 
@@ -90,11 +103,11 @@ Core 的定义：
 | 耦合面 | 现状 | 改造时的注意点 |
 |---|---|---|
 | Kotlin 包名 | app 引 `tv.own.owntv.core` 934 处、`tv.own.owntv.player` 75 处 | 保持 namespace 不变，避免全量改 import |
-| 资源/R 类 | app 的 `R.string.*` 直接命中 core 资源；依赖 `android.nonTransitiveRClass=false`（[gradle.properties:20](file:///E:/develop/ideaPoject/git/OwnTV_Mobile/gradle.properties#L20)） | 删除 core 字符串前先确认 app 无引用 |
+| 资源/R 类 | app 的 `R.string.*` 直接命中 core 资源；依赖 `android.nonTransitiveRClass=false`（[gradle.properties:20](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile/gradle.properties#L20)） | 删除 core 字符串前先确认 app 无引用 |
 | Manifest | core 提供网络/前台服务/闹钟/Receiver 等 | 删除功能时同步删除组件、权限与 `queries` |
-| 构建期常量 | app 在 `Application.onCreate` 注入 `CoreBuildInfo`（[OwnTVMobileApp.kt:88–104](file:///E:/develop/ideaPoject/git/OwnTV_Mobile/app/src/main/java/tv/own/owntv/mobile/OwnTVMobileApp.kt#L88)） | 不要把这些改成 core 自己的 `BuildConfig` |
+| 构建期常量 | app 在 `Application.onCreate` 注入 `CoreBuildInfo`（[OwnTVMobileApp.kt:88–104](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile/app/src/main/java/tv/own/owntv/mobile/OwnTVMobileApp.kt#L88)） | 不要把这些改成 core 自己的 `BuildConfig` |
 | 数据库 | core 持有 Room DB、50 个 schema、迁移测试 | 改动 entity 必须处理迁移与旧数据兼容 |
-| i18n | core 持有全部文案与 `tools/i18n`；app 另有一份 checker，只扫 `app/`（[check_hardcoded_strings.py:34–36](file:///E:/develop/ideaPoject/git/OwnTV_Mobile/tools/i18n/check_hardcoded_strings.py#L34)） | 删减 Kotlin 文件后要重建 core 的 baseline |
+| i18n | core 持有全部文案与 `tools/i18n`；app 另有一份 checker，只扫 `app/`（[check_hardcoded_strings.py:34–36](file:///D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile/tools/i18n/check_hardcoded_strings.py#L34)） | 删减 Kotlin 文件后要重建 core 的 baseline |
 | libmpv | 不在 Core 源码里，仍是 `tv.own.owntv:libmpv:2026.11.0` 制品 | 源码集成不覆盖原生引擎 |
 | 工具链 | AGP 9.4.0 / Kotlin 2.4.20 两边一致 | 不要改 Core 的构建脚本，避免上游冲突 |
 | Compose BOM | Mobile `2026.09.00`，Core `2026.08.00` | 各自解析，打包时取最高版本 |
@@ -118,7 +131,7 @@ OwnTV_Mobile/
 └── gradle/
 ```
 
-Core 的编辑仍在 `E:\develop\ideaPoject\git\OwnTV_Core` 里进行；`vendor/OwnTV_Core` 只作为构建快照，不做日常编辑。
+Core 的编辑仍在 `D:\AndroidStudioProjects\git\Qwn\OwnTV_Core` 里进行；`vendor/OwnTV_Core` 只作为构建快照，不做日常编辑。
 
 `vendor/OwnTV_Core` 保留 Core 的完整快照（含 `.github/`、`tools/`），不要为了体积手工裁剪：手工删除的文件会在下次 `subtree pull` 变成删除冲突。构建产物（`build/`、`.gradle/`、`.kotlin/`）已被 Mobile 的 `.gitignore` 覆盖，不会进仓库。
 
@@ -144,7 +157,7 @@ Core 的编辑仍在 `E:\develop\ideaPoject\git\OwnTV_Core` 里进行；`vendor/
 # 1) 在 GitHub 网页上 fork ahXN00/OwnTV_Core 到自己的账号
 
 # 2) 已有的本地 clone：把原 origin 改名为 upstream，再把 origin 指向自己的 fork
-cd E:/develop/ideaPoject/git/OwnTV_Core
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Core
 git remote rename origin upstream
 git remote add origin https://github.com/ghnk211/OwnTV_Core.git
 git fetch upstream
@@ -187,7 +200,7 @@ git tag -f core-upstream-base upstream/main
 从 fork 的 `mobile` 分支导入，保证快照就是已备份的那份代码：
 
 ```bash
-cd E:/develop/ideaPoject/git/OwnTV_Mobile
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile
 git switch -c feat/vendor-core
 git status --short          # 应为空；subtree add 不接受未提交改动
 
@@ -202,13 +215,15 @@ git subtree pull --prefix=vendor/OwnTV_Core \
   https://github.com/ghnk211/OwnTV_Core.git mobile --squash
 ```
 
+当前状态（2026-11-08）：`vendor/OwnTV_Core` = Core `mobile` @`0619549b`；Mobile 最近一次 vendor 同步提交为 `de64a34`（squash `4ffc0f3`，范围 `75ea4424..0619549b`）。
+
 补充：
 
 - fork 设为 private 时，首次 pull 需要本机 Git 凭据；CI 不需要访问 fork，因为 vendor 快照已提交在 Mobile 仓库里。
-- 离线或想省一次网络请求时，可以把 URL 换成本地路径 `"E:/develop/ideaPoject/git/OwnTV_Core"`，但执行前先确认本地 `mobile` 与 `origin/mobile` 一致：
+- 离线或想省一次网络请求时，可以把 URL 换成本地路径 `"D:/AndroidStudioProjects/git/Qwn/OwnTV_Core"`，但执行前先确认本地 `mobile` 与 `origin/mobile` 一致：
 
   ```bash
-  cd E:/develop/ideaPoject/git/OwnTV_Core
+  cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Core
   git fetch origin
   git log --oneline origin/mobile..mobile   # 应为空
   ```
@@ -218,14 +233,14 @@ git subtree pull --prefix=vendor/OwnTV_Core \
 **settings.gradle.kts**：把条件式 `includeBuild` 改为无条件；OwnTV Maven 仓库只留给 libmpv。
 
 ```kotlin
-// 之前：settings.gradle.kts:35-39
+// 集成前（已替换）
 maven {
     name = "OwnTV"
     url = uri("https://ahxn00.github.io/OwnTV_Core/maven")
     content { includeGroup("tv.own.owntv") }
 }
 
-// 之后
+// 现在（settings.gradle.kts:36–40）
 maven {
     name = "OwnTV"
     url = uri("https://ahxn00.github.io/OwnTV_Core/maven")
@@ -234,10 +249,10 @@ maven {
 ```
 
 ```kotlin
-// 之前：settings.gradle.kts:43-49
+// 集成前（已替换）
 providers.gradleProperty("owntv.corePath").orNull?.takeIf { it.isNotBlank() }?.let { includeBuild(it) }
 
-// 之后
+// 现在（settings.gradle.kts:49）
 // Core 源码在本仓库 vendor/OwnTV_Core；Gradle 按 group:name 自动把
 // tv.own.owntv:core / :player-core 替换成该 build 的模块。
 includeBuild("vendor/OwnTV_Core")
@@ -272,7 +287,7 @@ owntvCore = "1.0.70"
   --configuration standardDebugRuntimeClasspath
 ```
 
-输出应显示来自 `vendor/OwnTV_Core` 的项目替换，而不是 `1.0.69` 的远程制品。
+输出应显示来自 `vendor/OwnTV_Core` 的项目替换，而不是已发布的远程制品（`1.0.69`/`1.0.70`）。
 
 ### 3.6 libmpv 边界
 
@@ -326,15 +341,15 @@ Core CI 只在 `main` / PR 到 `main` 时自动运行，推 `mobile` 不会自�
 
 ```bash
 # Core 自己的 wrapper 版本若尚未缓存，用 Mobile 的 wrapper 跑同一份构建
-cd E:/develop/ideaPoject/git/OwnTV_Mobile
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile
 ./gradlew -p ../OwnTV_Core test lint
 
 # 或者 Core 的 wrapper 已可用时
-cd E:/develop/ideaPoject/git/OwnTV_Core
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Core
 ./gradlew test lint
 
 # 删减 Kotlin 文件后，baseline 会出现 stale 条目，需要收缩
-cd E:/develop/ideaPoject/git/OwnTV_Core
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Core
 python tools/i18n/check_hardcoded_strings.py prune-safe
 python tools/i18n/check_hardcoded_strings.py generate
 python tools/i18n/check_hardcoded_strings.py verify --bootstrap
@@ -358,10 +373,10 @@ python tools/i18n/check_hardcoded_strings.py verify --bootstrap
 Core 的 `mobile` 分支每次提交并自测通过后，先推送到自己的 fork，再同步快照：
 
 ```bash
-cd E:/develop/ideaPoject/git/OwnTV_Core
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Core
 git push origin mobile
 
-cd E:/develop/ideaPoject/git/OwnTV_Mobile
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile
 git status --short          # 应为空；subtree pull 不接受未提交改动
 git subtree pull --prefix=vendor/OwnTV_Core \
   https://github.com/ghnk211/OwnTV_Core.git mobile --squash
@@ -379,7 +394,7 @@ git subtree pull --prefix=vendor/OwnTV_Core \
 2. 生成补丁并回填到 Core 的 `mobile` 分支：
 
    ```bash
-   cd E:/develop/ideaPoject/git/OwnTV_Mobile
+   cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile
    git diff <base>..HEAD -- vendor/OwnTV_Core \
      | git -C ../OwnTV_Core apply -p2
    ```
@@ -396,7 +411,7 @@ git subtree pull --prefix=vendor/OwnTV_Core \
 ### 5.1 查看上游更新
 
 ```bash
-cd E:/develop/ideaPoject/git/OwnTV_Core
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Core
 git fetch upstream
 
 # 上次完整同步之后，上游新增了哪些提交
@@ -415,7 +430,7 @@ git show --stat <sha>
 如果不想切换分支，可以给上游开一个只读 worktree：
 
 ```bash
-git worktree add E:/develop/ideaPoject/git/OwnTV_Core-upstream upstream/main
+git worktree add D:/AndroidStudioProjects/git/Qwn/OwnTV_Core-upstream upstream/main
 ```
 
 ### 5.2 单功能：`cherry-pick`
@@ -423,7 +438,7 @@ git worktree add E:/develop/ideaPoject/git/OwnTV_Core-upstream upstream/main
 大多数情况下只需要上游的某一个功能，直接摘提交：
 
 ```bash
-cd E:/develop/ideaPoject/git/OwnTV_Core
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Core
 git switch mobile
 git cherry-pick -x <sha1> <sha2> ...
 
@@ -489,10 +504,10 @@ git merge upstream/main
 先推送，再从 fork 同步快照：
 
 ```bash
-cd E:/develop/ideaPoject/git/OwnTV_Core
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Core
 git push origin mobile
 
-cd E:/develop/ideaPoject/git/OwnTV_Mobile
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile
 git subtree pull --prefix=vendor/OwnTV_Core \
   https://github.com/ghnk211/OwnTV_Core.git mobile --squash
 ```
@@ -506,7 +521,7 @@ git subtree pull --prefix=vendor/OwnTV_Core \
 ### 5.6 审计
 
 ```bash
-cd E:/develop/ideaPoject/git/OwnTV_Core
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Core
 
 # 自上次完整同步以来的所有差异（含本地改动与已摘取的上游提交）
 git log --oneline core-upstream-base..mobile
@@ -521,7 +536,7 @@ git log --oneline origin/mobile..mobile
 
 # 确认 local mobile 与 vendor 快照一致（排除 Gradle 构建产物）
 git worktree add --detach /tmp/owntv-core-tip mobile
-cd E:/develop/ideaPoject/git/OwnTV_Mobile
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Mobile
 diff -ru --exclude=.git --exclude=build --exclude=.gradle --exclude=.kotlin \
   /tmp/owntv-core-tip vendor/OwnTV_Core
 git -C ../OwnTV_Core worktree remove /tmp/owntv-core-tip
@@ -530,6 +545,8 @@ git -C ../OwnTV_Core worktree remove /tmp/owntv-core-tip
 ---
 
 ## 6. CI 与检查改造
+
+现状（2026-11-08）：`.github/workflows/` 下只有 `android.yml` 与 `i18n.yml`；`android.yml` 含 `check`、`core-check`、`build` 三个 job，`automerge-core-bump.yml` 已删除。
 
 ### 6.1 `.github/workflows/android.yml`
 
@@ -596,7 +613,7 @@ core-check:
 如果不想增加 CI 时长，至少保留本地检查：
 
 ```bash
-cd E:/develop/ideaPoject/git/OwnTV_Core
+cd D:/AndroidStudioProjects/git/Qwn/OwnTV_Core
 ./gradlew test lint
 python tools/i18n/check_hardcoded_strings.py verify --bootstrap
 ```
@@ -614,7 +631,7 @@ Mobile CI 负责验证 vendor 快照能编译、测试、lint 通过。
 | 3 | `./gradlew :app:lintStandardDebug` | 0 errors，warning 数量与基线持平 |
 | 4 | `./gradlew :app:assembleStandardDebug :app:assembleX86_64Debug` | 两个 ABI 均产出 APK |
 | 5 | `./gradlew :app:assembleStandardRelease` | R8 通过，产物可安装 |
-| 6 | `./gradlew :app:dependencyInsight --dependency tv.own.owntv:core --configuration standardDebugRuntimeClasspath` | 显示 vendor 项目替换，而非 `1.0.69` 远程制品 |
+| 6 | `./gradlew :app:dependencyInsight --dependency tv.own.owntv:core --configuration standardDebugRuntimeClasspath` | 显示 vendor 项目替换，而非远程制品 |
 | 7 | `:app:processStandardDebugMainManifest` 后检查合并清单 | `uses-permission` 数量与改造前一致；core 的 service/receiver 与删减结果一致 |
 | 8 | `python tools/i18n/check_hardcoded_strings.py verify --bootstrap` | app 侧 ratchet 通过 |
 | 9 | `python vendor/OwnTV_Core/tools/i18n/check_hardcoded_strings.py verify --bootstrap` | core/player-core 侧 ratchet 通过 |
@@ -657,6 +674,8 @@ Mobile CI 负责验证 vendor 快照能编译、测试、lint 通过。
 
 ## 10. 落地步骤与工作量
 
+以下为初始落地计划，均已完成（2026-11-08 复核）。
+
 | 步骤 | 内容 | 估算 |
 |---|---|---|
 | 1 | 在 GitHub fork Core；本地 clone 关联 `origin`=fork、`upstream`=第三方；建立 `mobile` 分支并 push | 0.5 h |
@@ -691,11 +710,12 @@ Core 改造本身的工作量取决于删减范围，按功能单独估算。每
 
 | 事实 | 证据 |
 |---|---|
-| 当前 pin 1.0.69 | `gradle/libs.versions.toml:66` |
-| 本地 Core 为 1.0.70 | `OwnTV_Core/build.gradle.kts:14` |
-| composite 开关 | `OwnTV_Mobile/settings.gradle.kts:43–49` |
-| CI 只用 pin | `OwnTV_Mobile/.github/workflows/android.yml:20–23` |
-| 本分支依赖未发布 API | `LiveViewModel.kt:62,498,506`；`LiveCategoryMemory.kt:14`；`SettingsRepository.kt:849` |
+| 坐标占位 1.0.70 | `gradle/libs.versions.toml:65` |
+| Core/vendor 版本 1.0.70 | `OwnTV_Core/build.gradle.kts:14`、`vendor/OwnTV_Core/build.gradle.kts:14` |
+| includeBuild 接线 | `OwnTV_Mobile/settings.gradle.kts:49` |
+| CI 直接构建 vendor 源码 | `OwnTV_Mobile/.github/workflows/android.yml:30,81,116` |
+| 当前快照 | Core `mobile` @`0619549b`；Mobile `mobile-mini` @`62c5058` |
+| 原“未发布 API” | 已随 vendor 快照进入 `vendor/OwnTV_Core`；`LiveViewModel.kt` 引用 `liveRestoreKey` |
 | core 资源被 app 直接引用 | `gradle.properties:20` 的 `android.nonTransitiveRClass=false` |
 | CoreBuildInfo 运行期注入 | `OwnTVMobileApp.kt:88–104`；`CoreBuildInfo.kt:16–78` |
 | Room schema | `OwnTV_Core/core/schemas/`（50 个 JSON） |
