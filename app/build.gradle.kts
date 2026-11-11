@@ -25,8 +25,8 @@ android {
     // the repo. Gradle only reads gradle.properties from GRADLE_USER_HOME or the project dir, so this
     // one is loaded by hand. Declared here because defaultConfig below already needs it.
     val localSigningProps = Properties().apply {
-        // 本机签名与开关统一放在仓库外的 keyStroe 目录（以当前本机路径为准）。
-        val f = File("D:/AndroidStudioProjects/git/Qwn/keyStroe/owntv-signing.properties")
+        // 本机签名与开关统一放在仓库外的 keyStore 目录（以当前本机路径为准）。
+        val f = File("E:/develop/ideaPoject/git/Own/keyStore/owntv-signing.properties")
         if (f.isFile) f.inputStream().use { load(it) }
     }
 
