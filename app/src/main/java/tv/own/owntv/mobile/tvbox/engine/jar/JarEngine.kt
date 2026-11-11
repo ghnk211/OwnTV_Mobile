@@ -64,6 +64,20 @@ class JarEngine(
     /** 建实例的并发闸：避免同一站点被并发建出多个 Spider */
     private val buildMutex = Mutex()
 
+    /**
+     * 加固壳引导的全局串行闸。
+     *
+     * ## 为什么必须串行（真机实证 2026-11-10）
+     * `Init.init(Context)` 不是线程安全的：冷启动时 `warmUp()` 与首个 `obtain()`
+     * 会在两个协程里同时引导同一个 jar，第二次 `Init.init` 会覆盖静态 loader，
+     * 且这次返回的 `DexClassLoader` 的 DexPathList 是**空的**
+     * （`dalvik.system.DexClassLoader[DexPathList[[]...]]`）。随后 `BaseSpiderGuard`
+     * 构造函数里的 `Init.getSpider(name)` 拿到 null，代理类真实实现字段为 null，
+     * `init()` 直接 NPE —— 表现为「所有加固壳站点首页空白，切换配置后又恢复」。
+     * 引导本身不耗时（失败时最多等 loader 10s），串行成本可接受。
+     */
+    private val bootstrapLock = Any()
+
     override fun supports(site: SiteConfig): Boolean =
         site.type == 3 && !site.isJsSite && site.spiderClassName != null
 
@@ -92,9 +106,13 @@ class JarEngine(
             val created = create(site) ?: throw JarLoadException(
                     lastErrors[site.key] ?: "「${site.name}」spider jar 不可用"
                 )
-            spiders.putIfAbsent(site.key, created) ?: created.also {
+            val existing = spiders.putIfAbsent(site.key, created)
+            if (existing != null) {
                 // putIfAbsent 返回非 null 说明已有别人抢先，销毁自己这份
                 created.destroy()
+                existing
+            } else {
+                created
             }
         }
     }
@@ -153,7 +171,8 @@ class JarEngine(
 
         // 加固壳（aowu / wexguard 系）：真实实现在加密的 assets 里，必须先跑一次 jar 内的引导类。
         // 引导结果决定后续报错文案：是不是壳、引没引起来、是不是 ABI 不匹配。
-        val boot = bootstrap(loader, jarFile)
+        // 串行引导：并发 Init.init 会产生空 DexPathList 的 loader，见 [bootstrapLock]。
+        val boot = bootstrapLocked(loader, jarFile)
 
         // P0-3 ABI 预检拦截：jar 里打包了 assets/wexguard_*.so（只有 ARM v7/v8 两份），
         // 而设备无 ARM —— 此时 System.load 必失败（UnsatisfiedLinkError）。
@@ -251,7 +270,7 @@ class JarEngine(
         val jar = pickJar(jarDir, runCatching { spiderMd5Provider() }.getOrDefault(emptySet())) ?: return
         val loader = loaderFor(jar, null) ?: return
         // 加固壳的 Init.init 解包（解密 assets 里的大 dex）也是首屏大头，一并提前
-        bootstrap(loader, jar)
+        bootstrapLocked(loader, jar)
     }
 
     /**
@@ -338,6 +357,10 @@ class JarEngine(
         lastErrors[site.key] = reason.take(160)
         return null
     }
+
+    /** 串行执行加固壳引导；同一 jar 的并发调用只跑一次（见 [bootstrapLock]）。 */
+    private fun bootstrapLocked(loader: ClassLoader, jar: File): BootstrapResult =
+        synchronized(bootstrapLock) { bootstrap(loader, jar) }
 
 
 /**
