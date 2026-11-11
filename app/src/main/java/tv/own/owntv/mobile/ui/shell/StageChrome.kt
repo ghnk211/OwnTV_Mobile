@@ -142,6 +142,19 @@ val LocalHomeChrome = staticCompositionLocalOf<HomeChrome?> { null }
 val LocalTitleChrome = staticCompositionLocalOf<HomeChrome?> { null }
 
 /**
+ * What the VOD page lends the shell: its "switch source" action, the VOD twin of the playlist pill
+ * beside it on Home and Live TV. Here a source is a TVbox configuration, so the action opens the
+ * page's configuration list; the header only needs a way to ask for it, exactly as Home lends its
+ * backdrop and Resume pill through [HomeChrome]. Null while no page is on screen to open one.
+ */
+@Stable
+class VodChrome {
+    var openSourceConfig by mutableStateOf<(() -> Unit)?>(null)
+}
+
+val LocalVodChrome = staticCompositionLocalOf<VodChrome?> { null }
+
+/**
  * A place's own crumb (Live TV's "‹ **Sky Cinema** · 9 channels"): the [accent] part, the muted [rest] after a dot,
  * and what a tap opens (the categories). Set by the place while it is on screen.
  */

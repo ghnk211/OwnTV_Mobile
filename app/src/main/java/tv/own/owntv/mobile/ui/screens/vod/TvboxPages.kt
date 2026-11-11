@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -54,6 +55,7 @@ import tv.own.owntv.mobile.tvbox.engine.Movie
 import tv.own.owntv.mobile.tvbox.engine.episodeDisplayNames
 import tv.own.owntv.mobile.tvbox.repository.SourceRepository
 import tv.own.owntv.mobile.tvbox.repository.TvboxConfigRepository
+import tv.own.owntv.mobile.ui.components.MobileBottomSheet
 import tv.own.owntv.mobile.ui.components.MobileIcons
 import tv.own.owntv.mobile.ui.categorylock.PinEntrySheet
 import tv.own.owntv.mobile.ui.categorylock.pinEntryTitle
@@ -67,6 +69,8 @@ import tv.own.owntv.mobile.ui.stage.StageMenuItem
 import tv.own.owntv.mobile.ui.stage.StagePoster
 import tv.own.owntv.mobile.ui.stage.StageRow
 import tv.own.owntv.mobile.ui.stage.StageSettingRow
+import tv.own.owntv.mobile.ui.stage.StageSheetHeader
+import tv.own.owntv.mobile.ui.stage.stageAccent
 import tv.own.owntv.mobile.ui.stage.stageText
 
 /**
@@ -263,6 +267,45 @@ internal fun TvboxConfigPage(
     }
 }
 
+/**
+ * The header's "switch source" sheet: the imported configurations and nothing else. Importing a
+ * new one and deleting an old one stay on the Sources page; this is the quick switch between the
+ * configurations already there, which is what the button beside the title is for.
+ */
+@Composable
+internal fun TvboxSourcePickerSheet(
+    state: TvboxConfigUiState,
+    onSwitch: (Long) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val palette = LocalStagePalette.current
+    val title = stringResource(R.string.tvbox_config_title)
+    MobileBottomSheet(onDismissRequest = onDismiss, title = title) {
+        StageSheetHeader(title = title)
+        if (state.configs.isEmpty()) {
+            Text(
+                stringResource(R.string.tvbox_config_empty),
+                style = stageText(12f, 500),
+                color = palette.muted,
+                modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 2.dp, bottom = 18.dp),
+            )
+            return@MobileBottomSheet
+        }
+        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
+            items(state.configs, key = { it.id }) { meta ->
+                StageMenuItem(
+                    label = meta.name,
+                    onClick = {
+                        onSwitch(meta.id)
+                        onDismiss()
+                    },
+                    filled = meta.id == state.activeId,
+                )
+            }
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Home page
 // ---------------------------------------------------------------------------
@@ -285,6 +328,9 @@ internal fun TvboxHomePage(
     categoryContext: Pair<String, String>,
 ) {
     val palette = LocalStagePalette.current
+    // The one selected style every chip row on this page uses — categories and the filter
+    // dimensions alike: the bottom bar's accent tile and accent text.
+    val accent = stageAccent.accent
     var siteMenu by remember { mutableStateOf(false) }
     var searchOpen by remember { mutableStateOf(false) }
     var lockMenuFor by remember { mutableStateOf<tv.own.owntv.mobile.tvbox.engine.ClassInfo?>(null) }
@@ -351,10 +397,14 @@ internal fun TvboxHomePage(
                                 it.key, cat.typeId, cat.typeName,
                             )
                         } in state.sealedKeys
+                        // The open category is marked the way the bottom bar marks the tab the user is
+                        // on — the accent's 14 % tile for the fill and the accent for the text, the
+                        // same treatment the filter rows below use.
+                        val on = cat.typeId == categoryContext.first
                         Box(
                             Modifier
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(palette.cardSolid)
+                                .background(if (on) accent.copy(alpha = 0.14f) else palette.cardSolid)
                                 .combinedClickable(
                                     // plan §5.5.6: a locked row shows its lock and pops the PIN sheet.
                                     onClick = {
@@ -368,7 +418,11 @@ internal fun TvboxHomePage(
                             Text(
                                 (if (sealed) lockedPrefix else "") + cat.typeName,
                                 style = stageText(12f, 600),
-                                color = if (sealed) palette.muted else palette.text,
+                                color = when {
+                                    sealed -> palette.muted
+                                    on -> accent
+                                    else -> palette.text
+                                },
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -391,14 +445,14 @@ internal fun TvboxHomePage(
                         Box(
                             Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (on) palette.text.copy(alpha = 0.14f) else palette.cardSolid)
+                                .background(if (on) accent.copy(alpha = 0.14f) else palette.cardSolid)
                                 .clickable { onSetFilter(f.key, v.v) }
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                         ) {
                             Text(
                                 v.n,
                                 style = stageText(11.5f, 600),
-                                color = palette.text,
+                                color = if (on) accent else palette.text,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )

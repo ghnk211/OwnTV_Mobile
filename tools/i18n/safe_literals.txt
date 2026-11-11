@@ -1931,15 +1931,15 @@
 1	mime	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	text/plain
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	·
 8	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	\0
-1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	$k=$v
-1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	&
 4	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	TvboxLock
+1	json	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	all
 1	json	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	http
 1	log	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	openSite sealedKeys：pid=%d site=%s classes=%d sealed=%s
 1	log	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	toggleLock 完成
 1	log	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	toggleLock 执行：pid=%d locked->%s
 1	log	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	toggleLock 调用：%s / %s
 2	preference-key	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	tvbox:${site.key}:${s.vodId}:$i
+1	log	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	全部
 14	empty	app/src/main/java/tv/own/owntv/mobile/ui/setup/AddSourceForm.kt	\0
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/setup/AddSourceForm.kt	.json
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/setup/AddSourceForm.kt	/

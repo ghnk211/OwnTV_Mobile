@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import tv.own.owntv.core.database.dao.ProfileDao
 import tv.own.owntv.core.database.entity.ProfileEntity
 import tv.own.owntv.core.settings.SettingsRepository
@@ -112,7 +114,15 @@ class TvboxConfigViewModel(
     }
 
     fun switchConfig(id: Long) {
-        viewModelScope.launch { configRepository.switchConfig(id) }
+        if (id == _state.value.activeId) return
+        viewModelScope.launch {
+            // 先移动高亮再切：`configs` 列表在切换时不会重新发射，只靠 collect 的话
+            // 当前项会一直停在旧配置上 —— 用户看到的就是「点了没反应 / 切不了配置」
+            // （真机实证 2026-11-10：日志已切到新配置，UI 高亮仍停在上一行）。
+            _state.value = _state.value.copy(activeId = id)
+            configRepository.switchConfig(id)
+            _state.value = _state.value.copy(activeId = configRepository.activeId())
+        }
     }
 
     fun deleteConfig(id: Long) {
@@ -177,6 +187,15 @@ class TvboxHomeViewModel(
     private var currentCategoryName: String = ""
     private var currentCategoryTid: String = ""
 
+    /**
+     * homeContent 返回的「分类 → 筛选树」。
+     *
+     * 筛选树按分类（typeId）分组，切分类时必须同步换行 —— 否则电视剧页面仍显示
+     * 电影的「动作片/喜剧片」，点下去提交的是另一分类的 key（真机实证 2026-11-10：
+     * 切换分类后筛选行不变、点了也不生效）。
+     */
+    private var homeFilters: Map<String, List<FilterDef>> = emptyMap()
+
     /** 供 UI 把海报的来源分类身份带给详情（typeId 优先的锁 key 必须在列表层确定）。 */
     val currentCategoryContext: Pair<String, String>
         get() = currentCategoryTid to currentCategoryName
@@ -230,6 +249,7 @@ class TvboxHomeViewModel(
                 "openSite sealedKeys：pid=%d site=%s classes=%d sealed=%s",
                 lockPid, site.key, classes.size, sealed,
             )
+            homeFilters = result?.filters.orEmpty()
             if (classes.isEmpty()) {
                 _state.value = _state.value.copy(loading = false, categories = emptyList(), sealedKeys = emptySet(), filters = emptyList(), movies = movies, pageCount = result?.pagecount ?: 1)
                 return@launch
@@ -238,13 +258,18 @@ class TvboxHomeViewModel(
                 loading = false,
                 categories = classes,
                 sealedKeys = sealed,
-                filters = result?.filters?.get(classes.first().typeId).orEmpty(),
+                filters = homeFilters[classes.first().typeId].orEmpty(),
             )
             loadCategory(classes.first().typeId, classes.first().typeName, replace = true)
         }
     }
 
     fun selectCategory(tid: String, typeName: String) {
+        // 换分类 = 换一套筛选维度：筛选行同步切换，旧分类的选择不能带过去。
+        _state.value = _state.value.copy(
+            filters = homeFilters[tid].orEmpty(),
+            selectedFilters = emptyMap(),
+        )
         loadCategory(tid, typeName, replace = true)
     }
 
@@ -292,11 +317,27 @@ class TvboxHomeViewModel(
         }
     }
 
+    /**
+     * 把筛选选择序列化成 **JSON 对象**（不是 query 串）。
+     *
+     * ## 为什么必须是 JSON（真机实证 2026-11-10，「糯米┃秒播」筛选无反应）
+     * 两个引擎都按 JSON 解析 extend：
+     * - jar：`JarSpider.extendToMap` → `JsonParser.parseString(extend)`
+     * - CMS：`CmsSpider.parseFilterExtend` → `{"year":"2025"}`
+     * 早前这里拼的是 `class=动作片&year=2025`，两边都解析失败：jar 退化成一个
+     * 无用键，CMS 则把整串当成 `year` 的裸值 —— 表现就是「点筛选，列表纹丝不动」。
+     */
     private fun buildExtend(site: SiteConfig, selected: Map<String, String>, filters: List<FilterDef>): String? {
         if (selected.isEmpty()) return null
-        val pairs = filters.mapNotNull { f -> selected[f.key]?.takeIf { it.isNotBlank() }?.let { f.key to it } }
-        if (pairs.isEmpty()) return null
-        return pairs.joinToString("&") { (k, v) -> "$k=$v" }
+        val obj = buildJsonObject {
+            filters.forEach { f ->
+                val v = selected[f.key]
+                if (!v.isNullOrBlank() && v != "全部" && !v.equals("all", ignoreCase = true)) {
+                    put(f.key, v)
+                }
+            }
+        }
+        return obj.takeIf { it.isNotEmpty() }?.toString()
     }
 
     fun search(keyword: String) {

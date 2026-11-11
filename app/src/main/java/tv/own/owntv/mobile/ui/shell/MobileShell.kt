@@ -290,6 +290,7 @@ fun MobileShell(
     val chrome = remember { ShellChromeState() }
     val homeChrome = remember { HomeChrome() }
     val titleChrome = remember { HomeChrome() }
+    val vodChrome = remember { VodChrome() }
     val pageCrumb = remember { mutableStateOf<PageCrumb?>(null) }
     // The header (and Home's picture) follows the page actually drawn, not the one just tapped: a page
     // slow to compose the first time (Settings) left the previous page on screen under its header.
@@ -411,6 +412,19 @@ fun MobileShell(
         )
         else -> null
     }
+    // VOD's sources are its TVbox configurations, and the VOD page owns that page. While the page
+    // is on screen it lends the header the action, in the same layers pill Home uses for playlists.
+    val vodSources = vodChrome.openSourceConfig
+    val clusterWithSources = if (headerRoute == MobileDestination.VOD.route && vodSources != null) {
+        ClusterPlaylist(
+            label = stringResource(tv.own.owntv.mobile.R.string.tvbox_config_title),
+            mark = null,
+            switchable = false,
+            iconOnly = true,
+        )
+    } else {
+        clusterPlaylist
+    }
     // `activeProfile` is the shell's own, decided above — one profile, and it has passed the lock.
     // The Stage palette decides the theme everywhere else in the shell, so the cast icon follows it too.
     val onSurfaceLight = !LocalStagePalette.current.isLight
@@ -482,13 +496,19 @@ fun MobileShell(
                     val moreLeaf = MoreLeaf.entries.firstOrNull { it.route == headerRoute }
                     if (headerRoute == MobileDestination.MORE.route || moreLeaf == MoreLeaf.ABOUT) return@StagePageHeader
                     ShellCluster(
-                        playlist = clusterPlaylist,
+                        playlist = clusterWithSources,
                         profile = activeProfile,
                         // The TV Guide has Search among its own tools, so the cluster leaves it out; a
                         // title page has none either.
                         showSearch = headerRoute != SEARCH_ROUTE_PATTERN && headerRoute != MobileDestination.GUIDE.route &&
                             !onTitlePage && moreLeaf == null,
-                        onPlaylist = { if (playlists.size > 1) playlistSheet = true },
+                        onPlaylist = {
+                            if (headerRoute == MobileDestination.VOD.route && vodSources != null) {
+                                vodSources()
+                            } else if (playlists.size > 1) {
+                                playlistSheet = true
+                            }
+                        },
                         onSearch = { navController.navigate(SEARCH_ROUTE) { launchSingleTop = true } },
                         onAvatar = { navController.navigate(MobileDestination.MORE.route) { launchSingleTop = true } },
                         extra = {
@@ -554,6 +574,7 @@ fun MobileShell(
                         LocalMiniRequested provides miniRequested,
                         LocalHomeChrome provides homeChrome,
                         LocalTitleChrome provides titleChrome,
+                        LocalVodChrome provides vodChrome,
                         LocalPageCrumb provides pageCrumb,
                         LocalShownEntry provides reportShown,
                     ) {
