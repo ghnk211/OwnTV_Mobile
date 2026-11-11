@@ -7,6 +7,7 @@ import tv.own.owntv.mobile.tvbox.config.model.SiteConfig
 import tv.own.owntv.mobile.tvbox.engine.ClassInfo
 import tv.own.owntv.mobile.tvbox.engine.Movie
 import tv.own.owntv.mobile.tvbox.engine.PlayResult
+import tv.own.owntv.mobile.tvbox.engine.proxy.JarProxyHub
 import tv.own.owntv.mobile.tvbox.engine.Spider
 import tv.own.owntv.mobile.tvbox.engine.SpiderResult
 import kotlinx.coroutines.CancellationException
@@ -204,8 +205,19 @@ class JarSpider(
             normalizeResult(raw, false)
         }
 
-    override suspend fun playerContent(flag: String, id: String, vipFlags: String?): PlayResult? =
-        runGuarded("playerContent") {
+    override suspend fun playerContent(flag: String, id: String, vipFlags: String?): PlayResult? {
+        // 记录"当前播放源"：spider 拼的本地代理地址不带 siteKey
+        // （实证：`127.0.0.1:9978/proxy?do=hxq&url=...`），本地代理分发时只能靠它定位 spider 实例
+        // （对齐 TVBoxOS 的 currentPlaySourceKey）。
+        //
+        // ## 必须在调用 jar 之前登记（真机实证 2026-11-10，「糯米┃秒播」）
+        // 加固壳在 playerContent **内部**就会先回调本地代理（先 `do=ck` 取 cookie，
+        // 再拼 `do=m3u8`）。此前在 `.also {}` 里等 jar 返回后才登记，代理收到
+        // `do=ck` 时既无 siteKey 也无当前播放源，只能回 502；壳随即判定本地代理不可用，
+        // 最终返回 `http://127.0.0.1:-1/proxy?do=m3u8&url=...` 这种死链 ——
+        // 表现正是「列表能解析、点播放一直失败」。
+        JarProxyHub.onPlay(site.key)
+        return runGuarded("playerContent") {
             if (id.isBlank()) return@runGuarded null
             // 第 3 参 vipFlags 有 String / List 两种形态，加固壳用的是 List。
             // 宿主桩两个重载都声明了，这里对应地都试。
@@ -221,13 +233,8 @@ class JarSpider(
                 flag, id, vipFlags,
             )
             normalizePlay(raw, flag, id)
-        }.also {
-            // 记录"当前播放源"：spider 拼的本地代理地址不带 siteKey
-            // （实证：`127.0.0.1:9978/proxy?do=hxq&url=...`），
-            // 本地代理分发时只能靠它定位 spider 实例（对齐 TVBoxOS 的
-            // currentPlaySourceKey）。取到播放在即的时机即可，无需等成功。
-            tv.own.owntv.mobile.tvbox.engine.proxy.JarProxyHub.onPlay(site.key)
         }
+    }
 
     override fun destroy() {
         runCatching {

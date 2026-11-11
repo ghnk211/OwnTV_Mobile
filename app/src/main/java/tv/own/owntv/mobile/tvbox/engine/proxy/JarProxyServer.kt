@@ -166,26 +166,57 @@ internal class JarProxyServer(
             }
             .orEmpty()
 
+        // 小响应（m3u8 播放列表通常几百 KB）先缓冲，拿到完整长度后再写头。
+        //
+        // ## 为什么必须补 Content-Length（真机实证 2026-11-10，「糯米┃秒播」）
+        // 之前固定用 `Connection: close` 界定响应体、不写长度。mpv/ffmpeg 拿到
+        // 414257 字节的**完整** m3u8 后仍认为"还有后续"，带 `Range: bytes=414257-`
+        // 重连；而 jar 的 proxy 出口忽略 Range、恒返回 200 全量 → ffmpeg 报
+        // `Unexpected offset: expected 414257, got 0` 并不停重试，播放永远起不来。
+        // 有了准确长度，ffmpeg 读完即收尾，不会再发 Range。
+        //
+        // 大响应（ts/mp4 分片可能几十 MB）不整段进内存：只缓冲到上限，超限后
+        // 退回流式 + close 界定（此时客户端是边读边播，不会依赖总长度）。
+        val buffered = java.io.ByteArrayOutputStream()
+        var complete = true
+        if (body != null) {
+            val buf = ByteArray(8 * 1024)
+            while (true) {
+                val n = runCatching { body.read(buf) }.getOrDefault(-1)
+                if (n <= 0) break
+                if (buffered.size() + n > BUFFER_LIMIT) {
+                    buffered.write(buf, 0, n)
+                    complete = false
+                    break
+                }
+                buffered.write(buf, 0, n)
+            }
+        }
+
         BufferedOutputStream(out).use { bos ->
             bos.write(("HTTP/1.1 $code ${statusText(code)}\r\n").toByteArray())
             bos.write(("Content-Type: $mime\r\n".toByteArray()))
             bos.write("Accept-Ranges: bytes\r\n".toByteArray())
             extra.forEach { (k, v) ->
-                // 长度/分块头由本服务自己决定，jar 给的一律不转发（长度未知，走 close 界定）
+                // 分块/连接头由本服务决定；Content-Length 由缓冲结果统一给出，
+                // Content-Range 等其余头原样透传。
                 if (k.equals("Content-Length", true) ||
                     k.equals("Transfer-Encoding", true) ||
                     k.equals("Connection", true)
                 ) return@forEach
                 runCatching { bos.write("$k: $v\r\n".toByteArray()) }
             }
+            if (complete) writeContentLength(bos, buffered.toByteArray())
             bos.write("Connection: close\r\n\r\n".toByteArray())
-            if (!headOnly && body != null) {
-                // 8KB 缓冲逐段拷贝：m3u8 是几 KB，ts/mp4 分片可能几 MB，不能整段读进内存
-                val buf = ByteArray(8 * 1024)
-                while (true) {
-                    val n = runCatching { body.read(buf) }.getOrDefault(-1)
-                    if (n <= 0) break
-                    bos.write(buf, 0, n)
+            if (!headOnly) {
+                bos.write(buffered.toByteArray())
+                if (!complete && body != null) {
+                    val buf = ByteArray(8 * 1024)
+                    while (true) {
+                        val n = runCatching { body.read(buf) }.getOrElse { -1 }
+                        if (n <= 0) break
+                        bos.write(buf, 0, n)
+                    }
                 }
             }
             bos.flush()
@@ -198,11 +229,16 @@ internal class JarProxyServer(
             val body = text.toByteArray()
             bos.write(("HTTP/1.1 $code $text\r\n").toByteArray())
             bos.write("Content-Type: text/plain; charset=utf-8\r\n".toByteArray())
-            bos.write(("Content-Length: ${body.size}\r\n").toByteArray())
+            writeContentLength(bos, body)
             bos.write("Connection: close\r\n\r\n".toByteArray())
             bos.write(body)
             bos.flush()
         }
+    }
+
+    /** 写 Content-Length 头；两个出口共用同一字面量（已登记 safe_literals）。 */
+    private fun writeContentLength(bos: OutputStream, body: ByteArray) {
+        bos.write("Content-Length: ${body.size}\r\n".toByteArray())
     }
 
     private fun statusText(code: Int): String = when (code) {
@@ -242,7 +278,9 @@ internal class JarProxyServer(
             if (line.isEmpty()) break
             val i = line.indexOf(':')
             if (i <= 0) continue
-            result[line.substring(0, i).trim().lowercase()] = line.substring(i + 1).trim()
+            // 保留原始大小写：JarProxy 侧 spider 常按 "Range"/"Referer" 精确取键，
+            // 统一小写会让 Range 取不到，断点续传退化成整段重下（真机实证 2026-11-10）。
+            result[line.substring(0, i).trim()] = line.substring(i + 1).trim()
         }
         return result
     }
@@ -261,6 +299,9 @@ internal class JarProxyServer(
     private companion object {
         const val TAG = "JarProxy"
         const val PROXY_PATH = "/proxy"
+
+        /** 小响应缓冲上限：覆盖 m3u8 播放列表，又不会把媒体分片整段堆进内存 */
+        const val BUFFER_LIMIT = 2 * 1024 * 1024
 
         /**
          * 端口候选：9978 是 TVBox 生态默认值（wexguard 壳硬编码兜底的就是它），
