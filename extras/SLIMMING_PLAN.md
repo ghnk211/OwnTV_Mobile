@@ -1427,7 +1427,7 @@ App 是本地优先产品，本方案**不新增远程审计/遥测**：
 
 ### 10.4 测试结果（实际做到 / 未做到）
 
-构建口径：全部命令都带 `-Powntv.corePath=D:/AndroidStudioProjects/git/OwnTV_Core`（includeBuild 读 core 源码，core 仓零改动）。不带该属性时解析到已发布的 `1.0.69`，才会出现 §10.1 已作废的"缺 API"假象。
+构建口径：全部命令都带 `-Powntv.corePath=E:/develop/ideaPoject/git/Own/OwnTV_Core`（includeBuild 读 core 源码，core 仓零改动）。不带该属性时解析到已发布的 `1.0.69`，才会出现 §10.1 已作废的"缺 API"假象。
 
 已跑通（绿色，逐条有产物可查）：
 

@@ -4,7 +4,7 @@
 > 之上的工作树），不沿用 `extras/` 里既有文档的结论。三项改动（语言收成三种、体育移除、多账户改单档案）
 > 的决策与偏差见 `extras/SLIMMING_PLAN.md`。
 > 文中路径相对仓库根，行号为核对时读到的位置，代码演进后可能漂移；引用 core 的地方标为 `core:`，指依赖库
-> [`tv.own.owntv:core` 1.0.69](https://github.com/ahXN00/OwnTV_Core)（本地对照检出为 `D:/AndroidStudioProjects/git/OwnTV_Core`）。
+> [`tv.own.owntv:core` 1.0.69](https://github.com/ahXN00/OwnTV_Core)（本地对照检出为 `E:/develop/ideaPoject/git/Own/OwnTV_Core`）。
 > 面向读者：接手本项目的开发、产品与测试。
 
 ---
