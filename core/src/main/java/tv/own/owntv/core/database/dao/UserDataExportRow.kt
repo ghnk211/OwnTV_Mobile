@@ -16,4 +16,6 @@ data class UserDataExportRow(
     val at: Long,
     val positionMs: Long,
     val durationMs: Long,
+    /** Provider resume identity (TVBOX line/episode JSON); only the progress export selects it. */
+    val extKey: String? = null,
 )

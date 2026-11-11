@@ -243,7 +243,10 @@ class HomeFeedReader(
             val favMoviesAsync = async {
                 if (HomeRow.FAVORITE_MOVIES !in config.visibleOrder || movieIds.isEmpty()) emptyList()
                 else movieDao.snapshotFavoritesManual(profileId, ContentOrderEntity.FAV_CONTEXT, movieIds.toList(), FAVORITE_VOD_ROW_LIMIT)
-                    .filterNot { CustomizeKeys.movie(it) in hidden.movie.hiddenItems || (it.categoryId != null && it.categoryId in hidden.movieCats) }
+                    .filterNot {
+                        CustomizeKeys.movie(it) in hidden.movie.hiddenItems || (it.categoryId != null && it.categoryId in hidden.movieCats) ||
+                            (hidden.isKids && AdultCategoryClassifier.isAdultItem(it.extJson))
+                    }
             }
             val favSeriesAsync = async {
                 if (HomeRow.FAVORITE_SERIES !in config.visibleOrder || seriesIds.isEmpty()) emptyList()
@@ -296,6 +299,7 @@ class HomeFeedReader(
         val liveCats: Set<Long>,
         val movieCats: Set<Long>,
         val seriesCats: Set<Long>,
+        val isKids: Boolean,
     ) {
         val isEmpty: Boolean
             get() = live.hiddenItems.isEmpty() && movie.hiddenItems.isEmpty() && series.hiddenItems.isEmpty() &&
@@ -320,6 +324,7 @@ class HomeFeedReader(
             liveCats = catIds(MediaType.LIVE, live.hiddenCategories),
             movieCats = catIds(MediaType.MOVIE, movie.hiddenCategories),
             seriesCats = catIds(MediaType.SERIES, series.hiddenCategories),
+            isKids = isKidsProfile,
         )
     }
 
@@ -377,7 +382,10 @@ class HomeFeedReader(
             when (snapshot.mediaType) {
                 MediaType.MOVIE -> movieRows[snapshot.providerItemId]
                     ?.takeIf { it.sourceId in movieSourceIds }
-                    ?.takeUnless { CustomizeKeys.movie(it) in hidden.movie.hiddenItems || (it.categoryId != null && it.categoryId in hidden.movieCats) }
+                    ?.takeUnless {
+                        CustomizeKeys.movie(it) in hidden.movie.hiddenItems || (it.categoryId != null && it.categoryId in hidden.movieCats) ||
+                            (hidden.isKids && AdultCategoryClassifier.isAdultItem(it.extJson))
+                    }
                     ?.let { TrendingHomeItem.Movie(snapshot, it) }
                 MediaType.SERIES -> seriesRows[snapshot.providerItemId]
                     ?.takeIf { it.sourceId in seriesSourceIds }
@@ -433,10 +441,12 @@ class HomeFeedReader(
     }
 
     private suspend fun isContinuationHidden(item: LauncherContinuationItem, h: HiddenState): Boolean {
-        if (h.isEmpty) return false
+        // A kids profile with no customizations still has the item-level adult check to run.
+        if (h.isEmpty && !h.isKids) return false
         return when (item.kind) {
             LauncherContinuationKind.MOVIE -> movieDao.getById(item.sourceItemId)?.let {
-                CustomizeKeys.movie(it) in h.movie.hiddenItems || (it.categoryId != null && it.categoryId in h.movieCats)
+                CustomizeKeys.movie(it) in h.movie.hiddenItems || (it.categoryId != null && it.categoryId in h.movieCats) ||
+                    (h.isKids && AdultCategoryClassifier.isAdultItem(it.extJson))
             } ?: false
             LauncherContinuationKind.EPISODE -> seriesDao.getEpisodeById(item.targetItemId)?.let { ep ->
                 seriesDao.getSeriesById(ep.seriesId)?.let { s ->

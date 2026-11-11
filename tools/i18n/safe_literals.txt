@@ -216,6 +216,7 @@
 3	json	core/src/main/java/tv/own/owntv/core/backup/UserDataResolver.kt	edesc
 1	json	core/src/main/java/tv/own/owntv/core/backup/UserDataResolver.kt	entries
 6	json	core/src/main/java/tv/own/owntv/core/backup/UserDataResolver.kt	ep
+3	json	core/src/main/java/tv/own/owntv/core/backup/UserDataResolver.kt	ext
 12	json	core/src/main/java/tv/own/owntv/core/backup/UserDataResolver.kt	fav
 12	json	core/src/main/java/tv/own/owntv/core/backup/UserDataResolver.kt	his
 16	json	core/src/main/java/tv/own/owntv/core/backup/UserDataResolver.kt	kind
@@ -518,7 +519,7 @@
 1	technical	core/src/main/java/tv/own/owntv/core/companion/CompanionPayload.kt	OFF
 4	empty	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	\0
 1	regex	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	(?:^|\\s)(?:18\\+|\\+18|21\\+|\\+21)(?:$|\\s)
-1	regex	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	(?:yetiskin|для\\s+взрослых|взрослые|للكبار|بالغين|成人|成年人|성인)
+1	regex	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	(?:yetiskin|для\\s+взрослых|взрослые|للكبار|بالغين|成人|成年人|성인|伦理片|福利|午夜|写真|禁片|里番|无码|情色|三级|激情|偷拍|探花|18禁|限制级)
 1	regex	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	[^\\p{L}\\p{N}+]
 1	regex	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	\\b(?:adulte|adultes|adulto|adultos|adulti|volwassenen|vuxen|voksne|aikuisille)\\b
 1	regex	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	\\b(?:adult|adults|xxx|porn|porno|pornography|erotic|erotica|erotik|sex|sexy|playboy|hustler|redlight)\\b
@@ -527,6 +528,8 @@
 1	regex	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	\\brated\\s+r\\b
 1	regex	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	\\p{M}+
 1	regex	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	\\s+
+1	json	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	adultSite
+1	json	core/src/main/java/tv/own/owntv/core/content/AdultCategoryClassifier.kt	typeNames
 1	protocol	core/src/main/java/tv/own/owntv/core/content/AirDate.kt	0000
 1	technical	core/src/main/java/tv/own/owntv/core/content/AirDate.kt	UTC
 1	regex	core/src/main/java/tv/own/owntv/core/content/AirDate.kt	\\d{4}-\\d{2}-\\d{2}
@@ -1027,6 +1030,7 @@
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CatalogIndexCursorDao.kt	DELETE FROM catalog_index_cursor WHERE sourceId = :sourceId AND categoryRemoteId = :categoryRemoteId
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CatalogIndexCursorDao.kt	SELECT * FROM catalog_index_cursor WHERE sourceId = :sourceId AND categoryRemoteId = :categoryRemoteId
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CatalogIndexCursorDao.kt	SELECT lastPage FROM catalog_index_cursor WHERE sourceId = :sourceId AND categoryRemoteId = :categoryRemoteId
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CatalogIndexCursorDao.kt	UPDATE catalog_index_cursor SET generation = generation + 1 WHERE sourceId = :sourceId AND categoryRemoteId = :categoryRemoteId
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CategoryDao.kt	AND NOT EXISTS (SELECT 1 FROM movies WHERE movies.categoryId = categories.id)
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CategoryDao.kt	DELETE FROM categories WHERE sourceId = :sourceId AND mediaType = 'MOVIE'
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/CategoryDao.kt	DELETE FROM categories WHERE sourceId = :sourceId AND mediaType = :type
@@ -1495,14 +1499,14 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	SELECT itemId FROM playback_progress
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	SELECT itemId FROM playback_progress WHERE profileId = :profileId AND mediaType = 'EPISODE'
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	SELECT p.profileId AS profileId, p.mediaType AS mediaType, p.itemId AS itemId,
-1	sql	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	UPDATE playback_progress SET positionMs = :positionMs, durationMs = :durationMs, updatedAt = :at
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	UPDATE playback_progress SET positionMs = :positionMs, durationMs = :durationMs, updatedAt = :at, extKey = :extKey
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	WHERE c.sourceId = :sourceId OR m.sourceId = :sourceId OR s.sourceId = :sourceId OR episodeSeries.sourceId = :sourceId
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	WHERE p.profileId = :profileId AND p.mediaType = 'EPISODE' GROUP BY e.seriesId
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	WHERE profileId = :profileId AND mediaType = 'EPISODE'
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	WHERE profileId = :profileId AND mediaType = :type AND itemId = :itemId AND updatedAt < :at
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	e.seasonNumber AS seasonNumber, e.episodeNumber AS episodeNumber,
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	episodeSeries.remoteId AS seriesRemoteId, episodeSeries.name AS seriesName,
-1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	p.updatedAt AS at, p.positionMs AS positionMs, p.durationMs AS durationMs
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/ProgressDao.kt	p.updatedAt AS at, p.positionMs AS positionMs, p.durationMs AS durationMs, p.extKey AS extKey
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/RecordingDao.kt	AND programmeStartMs = :programmeStartMs
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/RecordingDao.kt	AND startMs < :stopMs AND stopMs > :startMs ORDER BY startMs ASC
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/RecordingDao.kt	AND startMs <= :now AND stopMs > :now ORDER BY startMs ASC
