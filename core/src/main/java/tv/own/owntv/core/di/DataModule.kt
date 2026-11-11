@@ -173,6 +173,21 @@ val dataModule = module {
         )
     }
     single { BulkInsertHelper(get()) }
+    // The indexed-catalogue writer (TVBOX sources). Lives in core rather than in the app because the
+    // stable-upsert rules it must obey belong to the catalogue tables every source type shares.
+    single {
+        tv.own.owntv.core.catalog.CatalogIndexWriter(
+            db = get(),
+            sourceDao = get(),
+            categoryDao = get(),
+            movieDao = get(),
+            favoriteDao = get(),
+            progressDao = get(),
+            historyDao = get(),
+            customCategoryDao = get(),
+            contentOrderDao = get(),
+        )
+    }
     single {
         tv.own.owntv.core.sync.ImportFinalizer(
             channelDao = get(),

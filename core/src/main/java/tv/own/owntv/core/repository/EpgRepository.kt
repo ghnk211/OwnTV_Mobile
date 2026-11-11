@@ -275,6 +275,8 @@ class EpgRepository(
         SourceType.XTREAM -> source.epgUrl?.takeIf { it.isNotBlank() } ?: xtream.xmltvUrl(source)
         SourceType.M3U -> source.epgUrl?.takeIf { it.isNotBlank() }
         SourceType.LOCAL_BACKUP -> null
+        // No guide: a TVbox configuration is content, not a live playlist.
+        SourceType.TVBOX -> null
         // Stalker: user-pasted XMLTV, or the portal-advertised one adopted into epgUrl at sync
         // (StalkerSyncer.adoptPortalXmltvUrl) — and failing both, the portal's OWN
         // guide, addressed by the marker URL below — unless the user has switched that off for this

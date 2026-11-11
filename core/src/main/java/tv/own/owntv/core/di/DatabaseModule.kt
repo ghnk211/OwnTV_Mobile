@@ -118,6 +118,7 @@ val databaseModule = module {
     single { get<OwnTVDatabase>().recordingDao() }
     single { get<OwnTVDatabase>().reminderDao() }
     single { get<OwnTVDatabase>().catalogBackfillDao() }
+    single { get<OwnTVDatabase>().catalogIndexCursorDao() }
     single { get<OwnTVDatabase>().epgDao() }
     single { get<OwnTVDatabase>().metadataDao() }
     single { get<OwnTVDatabase>().trendingDao() }

@@ -44,6 +44,8 @@ class ProbeChannelSource(
             SourceType.M3U -> m3uUrls(source, count)
             SourceType.STALKER -> stalkerUrls(source, count)
             SourceType.LOCAL_BACKUP -> emptyList()
+            // Indexed from the TVbox configuration; it has no playlist to probe a limit on.
+            SourceType.TVBOX -> emptyList()
         }
     }.onFailure { Log.w(TAG, "no probe channels for source ${source.id}: ${it.message}") }
         .getOrDefault(emptyList())

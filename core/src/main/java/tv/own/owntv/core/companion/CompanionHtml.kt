@@ -396,6 +396,12 @@ internal object CompanionHtml {
                     ${field(c.epgUrl, "epgUrl", prefill.epgUrl, c.optional)}
                 """.trimIndent()
             }
+            // Provisioned from the TVbox configuration, not editable here; the submission is refused
+            // in CompanionHttpProtocol, so the form renders empty.
+            SourceType.TVBOX -> {
+                path = ""
+                fields = ""
+            }
         }
         val m3u = prefill.type == SourceType.M3U
         val formId = if (m3u) " id=\"m3uForm\"" else ""

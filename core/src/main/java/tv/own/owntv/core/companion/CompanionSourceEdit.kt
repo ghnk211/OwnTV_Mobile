@@ -38,6 +38,8 @@ internal object CompanionSourceEdit {
             userAgent = source.userAgent.orEmpty(),
             epgUrl = source.epgUrl.orEmpty(),
         )
+        // Provisioned from the TVbox configuration, not a playlist: nothing to pre-fill.
+        SourceType.TVBOX -> CompanionPayload(type = SourceType.TVBOX, name = source.name)
     }
 
     /**
@@ -78,6 +80,8 @@ internal object CompanionSourceEdit {
                 userAgent = sent.userAgent,
                 epgUrl = sent.epgUrl,
             )
+            // Nothing is merged: a TVBOX source is provisioned from its configuration.
+            SourceType.TVBOX -> sent
         }
     }
 }

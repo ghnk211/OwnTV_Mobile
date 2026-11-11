@@ -103,6 +103,7 @@
 2	json	core/src/main/java/tv/own/owntv/core/backup/BackupManager.kt	epgSources
 2	json	core/src/main/java/tv/own/owntv/core/backup/BackupManager.kt	epgUrl
 2	json	core/src/main/java/tv/own/owntv/core/backup/BackupManager.kt	epgUseLogos
+2	json	core/src/main/java/tv/own/owntv/core/backup/BackupManager.kt	externalKey
 3	json	core/src/main/java/tv/own/owntv/core/backup/BackupManager.kt	fav
 2	json	core/src/main/java/tv/own/owntv/core/backup/BackupManager.kt	file
 2	json	core/src/main/java/tv/own/owntv/core/backup/BackupManager.kt	fileName
@@ -333,7 +334,7 @@
 1	technical	core/src/main/java/tv/own/owntv/core/companion/CompanionController.kt	owntv-remote-restore
 1	file-path	core/src/main/java/tv/own/owntv/core/companion/CompanionController.kt	remote-backup-export
 1	json	core/src/main/java/tv/own/owntv/core/companion/CompanionController.kt	{}
-13	empty	core/src/main/java/tv/own/owntv/core/companion/CompanionHtml.kt	\0
+15	empty	core/src/main/java/tv/own/owntv/core/companion/CompanionHtml.kt	\0
 1	technical	core/src/main/java/tv/own/owntv/core/companion/CompanionHtml.kt	"
 1	technical	core/src/main/java/tv/own/owntv/core/companion/CompanionHtml.kt	${field(c.name, "name", prefill.name, c.defaultIptv)} ${field(c.serverUrl, "server", prefill.server, c.serverExample)} <div class="grid"> ${field(c.username, "user", prefill.user, attrs = noFill)} ${field(c.passwordKeep, "pass", placeholder = c.keepCurrent, attrs = secret)} </div> ${field(c.userAgent, "userAgent", prefill.userAgent, c.optional)} ${field(c.epgUrl, "epgUrl", prefill.epgUrl, c.optional)}
 1	technical	core/src/main/java/tv/own/owntv/core/companion/CompanionHtml.kt	${field(c.name, "name", prefill.name, c.defaultPortal)} ${field(c.portalUrl, "portalUrl", prefill.portalUrl, c.portalExample)} ${field(context.getString(R.string.setup_mac_address), "mac", placeholder = c.keepCurrent, attrs = secret)} <div class="grid"> ${field(context.getString(R.string.settings_username_optional), "user", prefill.user, attrs = noFill)} ${field(context.getString(R.string.settings_password_optional), "pass", placeholder = c.keepCurrent, attrs = secret)} </div> <h3>${context.getString(R.string.setup_stalker_advanced_identity).h()}</h3> <div class="grid"> ${field(context.getString(R.string.setup_stalker_serial_number_optional), "serialNumber", placeholder = c.keepCurrent, attrs = secret)} ${field(context.getString(R.string.setup_stalker_device_id_optional), "deviceId", placeholder = c.keepCurrent, attrs = secret)} ${field(context.getString(R.string.setup_stalker_device_id2_optional), "deviceId2", placeholder = c.keepCurrent, attrs = secret)} ${field(context.getString(R.string.setup_stalker_signature_optional), "signature", placeholder = c.keepCurrent, attrs = secret)} </div> ${field(c.userAgent, "userAgent", prefill.userAgent, c.optional)}
@@ -612,6 +613,31 @@
 1	sql	core/src/main/java/tv/own/owntv/core/database/Migration52To53.kt	ALTER TABLE `sources` ADD COLUMN `ignoreConnectionLimit` INTEGER NOT NULL DEFAULT 0
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration52To53.kt	ignoreConnectionLimit
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration52To53.kt	sources
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	ALTER TABLE `categories` ADD COLUMN `extJson` TEXT
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	ALTER TABLE `movies` ADD COLUMN `extGroup` TEXT
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	ALTER TABLE `movies` ADD COLUMN `extJson` TEXT
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	ALTER TABLE `movies` ADD COLUMN `lastSeenAt` INTEGER
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	ALTER TABLE `playback_progress` ADD COLUMN `extKey` TEXT
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	ALTER TABLE `sources` ADD COLUMN `externalKey` TEXT
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	CREATE INDEX IF NOT EXISTS `index_movies_lastSeenAt` ON `movies` (`lastSeenAt`)
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	CREATE INDEX IF NOT EXISTS `index_movies_sourceId_extGroup_lastSeenAt`
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	CREATE TABLE IF NOT EXISTS `catalog_index_cursor` (
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	ON `movies` (`sourceId`, `extGroup`, `lastSeenAt`)
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	PRIMARY KEY(`sourceId`, `categoryRemoteId`))
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	`categoryRemoteId` TEXT NOT NULL,
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	`generation` INTEGER NOT NULL,
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	`lastPage` INTEGER NOT NULL,
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	`sourceId` INTEGER NOT NULL,
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	`syncedAt` INTEGER NOT NULL,
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	categories
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	extGroup
+2	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	extJson
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	extKey
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	externalKey
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	lastSeenAt
+3	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	movies
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	playback_progress
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	sources
 18	sql	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	)
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	,
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	?
@@ -701,8 +727,10 @@
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	CREATE INDEX IF NOT EXISTS `index_movies_categoryId_name` ON `movies` (`categoryId`, `name`)
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	CREATE INDEX IF NOT EXISTS `index_movies_categoryId_rating_name` ON `movies` (`categoryId`, `rating`, `name`)
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	CREATE INDEX IF NOT EXISTS `index_movies_categoryId_sortOrder_name` ON `movies` (`categoryId`, `sortOrder`, `name`)
+1	sql	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	CREATE INDEX IF NOT EXISTS `index_movies_lastSeenAt` ON `movies` (`lastSeenAt`)
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	CREATE INDEX IF NOT EXISTS `index_movies_name` ON `movies` (`name`)
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	CREATE INDEX IF NOT EXISTS `index_movies_sourceId_addedAt_sortOrder` ON `movies` (`sourceId`, `addedAt`, `sortOrder`)
+1	sql	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	CREATE INDEX IF NOT EXISTS `index_movies_sourceId_extGroup_lastSeenAt` ON `movies` (`sourceId`, `extGroup`, `lastSeenAt`)
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	CREATE INDEX IF NOT EXISTS `index_movies_sourceId_name` ON `movies` (`sourceId`, `name`)
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	CREATE INDEX IF NOT EXISTS `index_movies_sourceId_rating_name` ON `movies` (`sourceId`, `rating`, `name`)
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	CREATE INDEX IF NOT EXISTS `index_movies_sourceId_sortOrder_name` ON `movies` (`sourceId`, `sortOrder`, `name`)
@@ -995,6 +1023,10 @@
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CatalogBackfillDao.kt	UPDATE catalog_backfill SET done = 0, nextPage = 2 WHERE sourceId = :sourceId
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CatalogBackfillDao.kt	UPDATE catalog_backfill SET done = 1, nextPage = lastPage + 1 WHERE sourceId = :sourceId
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CatalogBackfillDao.kt	UPDATE catalog_backfill SET nextPage = :nextPage WHERE sourceId = :sourceId
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CatalogIndexCursorDao.kt	DELETE FROM catalog_index_cursor WHERE sourceId = :sourceId
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CatalogIndexCursorDao.kt	DELETE FROM catalog_index_cursor WHERE sourceId = :sourceId AND categoryRemoteId = :categoryRemoteId
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CatalogIndexCursorDao.kt	SELECT * FROM catalog_index_cursor WHERE sourceId = :sourceId AND categoryRemoteId = :categoryRemoteId
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CatalogIndexCursorDao.kt	SELECT lastPage FROM catalog_index_cursor WHERE sourceId = :sourceId AND categoryRemoteId = :categoryRemoteId
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CategoryDao.kt	AND NOT EXISTS (SELECT 1 FROM movies WHERE movies.categoryId = categories.id)
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CategoryDao.kt	DELETE FROM categories WHERE sourceId = :sourceId AND mediaType = 'MOVIE'
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/CategoryDao.kt	DELETE FROM categories WHERE sourceId = :sourceId AND mediaType = :type
@@ -1307,7 +1339,14 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND h.mediaType = 'MOVIE' AND m.sourceId IN (:sourceIds) AND (m.categoryId IS NULL OR m.categoryId NOT IN (:excluded))
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id IN (SELECT rowid FROM movies_fts WHERE movies_fts MATCH :ftsQuery) ORDER BY name ASC LIMIT :limit
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id IN (SELECT rowid FROM movies_fts WHERE movies_fts MATCH :query) ORDER BY name ASC
+2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id NOT IN (SELECT itemId FROM content_order WHERE mediaType = 'MOVIE')
+2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id NOT IN (SELECT itemId FROM custom_category_members WHERE mediaType = 'MOVIE')
+2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id NOT IN (SELECT itemId FROM favorites WHERE mediaType = 'MOVIE')
+2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id NOT IN (SELECT itemId FROM playback_progress WHERE mediaType = 'MOVIE')
+2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id NOT IN (SELECT itemId FROM watch_history WHERE mediaType = 'MOVIE')
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	DELETE FROM movies WHERE id IN (:ids)
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	DELETE FROM movies WHERE sourceId = :sourceId
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	DELETE FROM movies WHERE sourceId = :sourceId AND IFNULL(lastSeenAt, 0) < :cutoff
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	DELETE FROM movies WHERE sourceId = :sourceId AND remoteId IN (:remoteIds)
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	DELETE FROM movies WHERE sourceId = :sourceId AND remoteId IS NULL
 2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	FROM movies m
@@ -1318,6 +1357,7 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	LEFT JOIN watch_history h ON h.itemId = m.id AND h.mediaType = 'MOVIE' AND h.profileId = :profileId
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	ORDER BY (CASE WHEN o.position IS NULL THEN 1 ELSE 0 END), o.position, f.addedAt DESC
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	ORDER BY (CASE WHEN o.position IS NULL THEN 1 ELSE 0 END), o.position, f.addedAt DESC LIMIT :limit
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	ORDER BY IFNULL(lastSeenAt, 0) ASC, id ASC LIMIT :limit
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	ORDER BY sortOrder ASC, name ASC, id ASC
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	ORDER BY sortOrder ASC, name ASC, id ASC LIMIT :limit
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT * FROM movies WHERE categoryId = :categoryId AND name LIKE '%' || :query || '%' ORDER BY addedAt DESC, sortOrder DESC, id DESC
@@ -1350,6 +1390,7 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT COUNT(*) FROM watch_history h INNER JOIN movies m ON m.id = h.itemId WHERE h.profileId = :profileId
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT categoryId, COUNT(*) AS itemCount FROM movies
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT categoryId, COUNT(*) AS itemCount FROM movies WHERE sourceId = :sourceId AND categoryId IS NOT NULL GROUP BY categoryId
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT id FROM movies WHERE sourceId = :sourceId
 2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT id, sourceId, categoryId, name, year, remoteId, sortOrder, canonicalTitle,
 7	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT m.* FROM movies m
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT m.* FROM movies m INNER JOIN favorites f ON f.itemId = m.id AND f.mediaType = 'MOVIE'
@@ -1359,8 +1400,10 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT remoteId FROM movies WHERE sourceId = :sourceId AND categoryId = :categoryId AND remoteId IS NOT NULL
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT remoteId FROM movies WHERE sourceId = :sourceId AND categoryId IN (:categoryIds) AND remoteId IS NOT NULL
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT remoteId FROM movies WHERE sourceId = :sourceId AND remoteId IS NOT NULL
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT remoteId, categoryId, extJson FROM movies WHERE sourceId = :sourceId AND remoteId IN (:remoteIds)
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	SELECT remoteId, id, contentHash, sortOrder FROM movies WHERE sourceId = :sourceId AND remoteId IS NOT NULL
 2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	UNION ALL SELECT id, ROW_NUMBER() OVER (ORDER BY CASE WHEN :alpha THEN nm END, mp, so, nm) - 1 AS slot, 1 AS grp, 0 AS tie FROM base WHERE pos IS NULL)
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	UPDATE movies SET lastSeenAt = :at WHERE sourceId = :sourceId AND remoteId IN (:remoteIds)
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	UPDATE movies SET sortOrder = :sortOrder WHERE id = :id
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	UPDATE movies SET sortOrder = sortOrder + :delta WHERE sourceId = :sourceId AND sortOrder BETWEEN :fromSortOrder AND :toSortOrder
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	UPDATE movies SET sortOrder = sortOrder - :parked WHERE sourceId = :sourceId AND sortOrder >= :parked / 2
@@ -1591,6 +1634,8 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	SELECT * FROM profile_source
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	SELECT * FROM sources ORDER BY createdAt ASC
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	SELECT * FROM sources WHERE id = :id
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	SELECT * FROM sources WHERE type = :type AND externalKey = :externalKey LIMIT 1
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	SELECT * FROM sources WHERE type = :type ORDER BY createdAt ASC
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	SELECT id FROM sources
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	SELECT profileId FROM profile_source WHERE sourceId = :sourceId
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	SELECT s.* FROM sources s
@@ -1606,6 +1651,7 @@
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	UPDATE sources SET maxConnections = :maxConnections WHERE id = :id AND maxConnectionsProbedAt <= 0
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	UPDATE sources SET maxConnections = :maxConnections, maxConnectionsProbedAt = :probedAt WHERE id = :id
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	UPDATE sources SET serverTimeZone = :zone WHERE id = :id
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	UPDATE sources SET syncMovies = :enabled WHERE id = :id
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	UPDATE sources SET vodEnginePreference = :preference WHERE id = :id
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/SourceDao.kt	WHERE ps.profileId = :profileId ORDER BY s.createdAt ASC
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/SubtitleDao.kt	DELETE FROM subtitle_cache WHERE id = :id
@@ -1668,7 +1714,9 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	channels
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	epgChannelId
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	episodes
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	extGroup
 10	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	id
+2	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	lastSeenAt
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	mediaType
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	movies
 19	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	name
@@ -1681,7 +1729,7 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	series
 5	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	seriesId
 10	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	sortOrder
-23	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	sourceId
+24	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	sourceId
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	titleSignature
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/EpgEntities.kt	0
 3	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/EpgEntities.kt	epgChannelId
@@ -1757,6 +1805,8 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/TvProviderEntities.kt	tv_provider_programs
 1	sql	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	-1
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	__fav__
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	catalog_index_cursor
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	categoryRemoteId
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	contentKey
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	content_order
 2	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	contextKey
@@ -1774,7 +1824,7 @@
 30	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	profileId
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	seriesId
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	series_sort_order
-2	sql	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	sourceId
+3	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	sourceId
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	status
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	user_data_tombstones
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	watch_history

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import tv.own.owntv.core.database.entity.ProfileSourceCrossRef
 import tv.own.owntv.core.database.entity.SourceEntity
 import tv.own.owntv.core.model.HlsSupport
+import tv.own.owntv.core.model.SourceType
 
 @Dao
 interface SourceDao {
@@ -24,6 +25,17 @@ interface SourceDao {
 
     @Query("SELECT * FROM sources WHERE id = :id")
     suspend fun getById(id: Long): SourceEntity?
+
+    /** Non-playlist sources are looked up by identity, not by URL: see [SourceEntity.externalKey]. */
+    @Query("SELECT * FROM sources WHERE type = :type AND externalKey = :externalKey LIMIT 1")
+    suspend fun findByTypeAndExternalKey(type: SourceType, externalKey: String): SourceEntity?
+
+    @Query("SELECT * FROM sources WHERE type = :type ORDER BY createdAt ASC")
+    suspend fun getAllOfType(type: SourceType): List<SourceEntity>
+
+    /** Flips a source's participation in movie reads without touching anything a user owns. */
+    @Query("UPDATE sources SET syncMovies = :enabled WHERE id = :id")
+    suspend fun updateSyncMovies(id: Long, enabled: Boolean)
 
     @Query("SELECT * FROM sources ORDER BY createdAt ASC")
     fun observeAll(): Flow<List<SourceEntity>>
