@@ -3,8 +3,8 @@
 > 集成对象：`E:\develop\ideaPoject\git\Own\OwnTV_Core`（来自第三方仓库；本地 clone 关联自己的 GitHub fork，下称 **Core**）
 > 集成目标：`E:\develop\ideaPoject\git\Own\OwnTV_Mobile`（下称 **Mobile**）
 > 采用方式：**Core 源码入仓（`vendor/OwnTV_Core`）+ 无条件 `includeBuild`；Core 的改造分支推送到自己的 fork，按需吸收上游功能**
-> 状态：**已落地并保持同步（2026-11-08）**。Core fork：https://github.com/ghnk211/OwnTV_Core，`mobile` 分支 `0619549b`；Mobile `mobile-mini` 分支 `62c5058`；`vendor/OwnTV_Core` 快照 = Core `mobile` @`0619549b`（Mobile 最近一次 vendor 同步提交 `de64a34`，squash `4ffc0f3`）。
-> 日期：2026-11-07（初版）；2026-11-08 按本地实际状态修订
+> 状态：**P0–P5 已落地，本地两仓已同步（2026-11-11）；尚未推送到 fork（按用户选择，仅本地提交）**。Core fork：https://github.com/ghnk211/OwnTV_Core，本地 `mobile` @`e0556f0f`（`origin/mobile` 仍在 `c6f90356`）；Mobile 本地 `mobile-mini` @`50dcd42e`（`origin/mobile-mini` 仍在 `59ddf147`）；`vendor/OwnTV_Core` 快照 = Core `mobile` @`e0556f0f`（Mobile vendor 同步提交 `50dcd42e`，squash `db380e0e`；P1–P5 app 提交 `8aa37857`）。两仓 1019 个文件 blob 哈希逐一致。推送时按 §4.6：先 `git -C ../OwnTV_Core push origin mobile`，再 `git push origin mobile-mini`。
+> 日期：2026-11-07（初版）；2026-11-08 按本地实际状态修订；2026-11-11 P0–P5 实施并本地同步
 
 ---
 

@@ -151,6 +151,10 @@ App 侧（`vendor` 之外）：新增 `tvbox/play/TvboxExtKey.kt`、`tvbox/index
 守护测试 `SettingsSearchCoverageTest` 全绿（367 app 用例），Core 用例全绿，app/Core i18n 闸均通过
 （app 0 baseline + 1976 safe；Core 360 baseline + 5830 safe）。
 
-同步状态：vendor 改动尚未提交回 Core `mobile`，亦未 `git subtree pull`。按
-`docs/Core源码集成方案.md` §4.6 流程：Core 提交 → `push origin mobile` → Mobile 提交 →
-`git subtree pull --prefix=vendor/OwnTV_Core … mobile --squash` → 校验逐字节一致 → 回填本表提交号。
+同步状态（2026-11-11，**仅本地提交，未推送**——按用户选择）：vendor 的 10 文件改动已复制回
+Core checkout 并提交为 Core `mobile` @`e0556f0f`（在 `c6f90356` 之上）；Mobile 全部 P1–P5 改动
+（app + docs + vendor）提交为 `mobile-mini` @`8aa37857`；随后从本地 Core 路径
+`git subtree pull --prefix=vendor/OwnTV_Core … mobile --squash`，得 squash `db380e0e` + 同步合并
+`50dcd42e`（与 P0 的 `b1aa2ee0`/`59ddf147` 同形）。校验：合并不改 vendor 内容，Core HEAD 与
+Mobile vendor HEAD 的 **1019 个文件 blob 哈希逐一致**。两仓 `origin` 仍停在推送前（Core
+`c6f90356`、Mobile `59ddf147`）；推送时按 `docs/Core源码集成方案.md` §4.6 先 Core 后 Mobile。
