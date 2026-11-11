@@ -70,10 +70,11 @@ fun VodScreen(
             onToggleLock = homeVm::toggleLock,
             onConsumeLockEvent = homeVm::consumeLockEvent,
             onUnlockCategory = homeVm::unlockCategory,
+            onHideCategory = homeVm::hideCategory,
+            onRenameCategory = homeVm::renameCategory,
+            onMoveCategory = homeVm::moveCategory,
             onSetFilter = homeVm::setFilter,
             onLoadMore = homeVm::loadMore,
-            onSearch = homeVm::search,
-            onClearSearch = homeVm::clearSearch,
             onOpenDetail = { siteKey, vodId, typeId, typeName ->
                 pendingDetail = listOf(siteKey, vodId, typeId, typeName)
                 detailVm.open(siteKey, vodId, typeId, typeName)

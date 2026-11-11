@@ -39,6 +39,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -48,6 +49,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import tv.own.owntv.core.categorylock.PinAttempt
+import tv.own.owntv.core.customize.MoveKind
 import androidx.compose.runtime.rememberCoroutineScope
 import tv.own.owntv.mobile.R
 import tv.own.owntv.mobile.tvbox.config.model.SiteConfig
@@ -203,7 +205,7 @@ internal fun TvboxConfigPage(
             Text(
                 text = when (banner) {
                     is TvboxBanner.Imported ->
-                        stringResource(R.string.tvbox_import_ok, banner.siteCount) +
+                        pluralStringResource(R.plurals.tvbox_import_ok, banner.siteCount, banner.siteCount) +
                             if (banner.spiderDownloading) stringResource(R.string.tvbox_import_downloading) else ""
                     is TvboxBanner.Failed -> banner.message
                 },
@@ -317,13 +319,14 @@ internal fun TvboxHomePage(
     onOpenConfig: () -> Unit,
     onOpenSite: (SiteConfig) -> Unit,
     onSelectCategory: (String, String) -> Unit,
-    onToggleLock: (String, String) -> Unit,
+    onToggleLock: (TvboxCategory) -> Unit,
     onConsumeLockEvent: () -> Unit,
-    onUnlockCategory: suspend (String, String, String) -> PinAttempt,
+    onUnlockCategory: suspend (TvboxCategory, String) -> PinAttempt,
+    onHideCategory: (String) -> Unit,
+    onRenameCategory: (String, String?) -> Unit,
+    onMoveCategory: (TvboxCategory, MoveKind) -> Unit,
     onSetFilter: (String, String) -> Unit,
     onLoadMore: () -> Unit,
-    onSearch: (String) -> Unit,
-    onClearSearch: () -> Unit,
     onOpenDetail: (String, String, String, String) -> Unit,
     categoryContext: Pair<String, String>,
 ) {
@@ -332,9 +335,9 @@ internal fun TvboxHomePage(
     // dimensions alike: the bottom bar's accent tile and accent text.
     val accent = stageAccent.accent
     var siteMenu by remember { mutableStateOf(false) }
-    var searchOpen by remember { mutableStateOf(false) }
-    var lockMenuFor by remember { mutableStateOf<tv.own.owntv.mobile.tvbox.engine.ClassInfo?>(null) }
-    var pinSheetFor by remember { mutableStateOf<tv.own.owntv.mobile.tvbox.engine.ClassInfo?>(null) }
+    var lockMenuFor by remember { mutableStateOf<TvboxCategory?>(null) }
+    var pinSheetFor by remember { mutableStateOf<TvboxCategory?>(null) }
+    var renamingFor by remember { mutableStateOf<TvboxCategory?>(null) }
     val lockedPrefix = stringResource(R.string.tvbox_locked_prefix)
 
     // Lock/unlock feedback (no-PIN guidance included); held for a read, then consumed.
@@ -365,7 +368,8 @@ internal fun TvboxHomePage(
     }
 
     Column(Modifier.fillMaxSize()) {
-        // Top bar: site selector, search, config.
+        // Top bar: site selector and config. Search lives in the shell header now — one entry, the
+        // global search page, whose online section covers the TVbox sites (plan P3).
         Row(
             Modifier.fillMaxWidth().padding(horizontal = PageSidePadding),
             verticalAlignment = Alignment.CenterVertically,
@@ -377,7 +381,6 @@ internal fun TvboxHomePage(
                 trailing = state.sites.size.let { if (it > 0) it.toString() else null },
             )
             Spacer(Modifier.weight(1f))
-            StageButton(onClick = { searchOpen = true }, icon = MobileIcons.Search)
             StageButton(onClick = onOpenConfig, icon = MobileIcons.VideoLibrary)
         }
         Spacer(Modifier.height(10.dp))
@@ -391,12 +394,8 @@ internal fun TvboxHomePage(
                     contentPadding = PaddingValues(horizontal = PageSidePadding),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    itemsIndexed(state.categories, key = { _, c -> c.typeId + c.typeName }) { _, cat ->
-                        val sealed = state.currentSite?.let {
-                            tv.own.owntv.mobile.tvbox.category.TvboxCategoryLock.keyOfStatic(
-                                it.key, cat.typeId, cat.typeName,
-                            )
-                        } in state.sealedKeys
+                    itemsIndexed(state.categories, key = { _, c -> c.key }) { _, cat ->
+                        val sealed = cat.sealed
                         // The open category is marked the way the bottom bar marks the tab the user is
                         // on — the accent's 14 % tile for the fill and the accent for the text, the
                         // same treatment the filter rows below use.
@@ -410,13 +409,13 @@ internal fun TvboxHomePage(
                                     onClick = {
                                         if (sealed) pinSheetFor = cat else onSelectCategory(cat.typeId, cat.typeName)
                                     },
-                                    // plan §5.5.7: the category row's "..." entry — long press locks.
+                                    // plan §5.5.7: the category row's "..." entry — long press opens the menu.
                                     onLongClick = { lockMenuFor = cat },
                                 )
                                 .padding(horizontal = 14.dp, vertical = 8.dp),
                         ) {
                             Text(
-                                (if (sealed) lockedPrefix else "") + cat.typeName,
+                                (if (sealed) lockedPrefix else "") + cat.displayName,
                                 style = stageText(12f, 600),
                                 color = when {
                                     sealed -> palette.muted
@@ -474,7 +473,7 @@ internal fun TvboxHomePage(
                     onOpenDetail = { site, vod ->
                         // A home-row movie may be borrowed from another site (donorSiteKey);
                         // rows from the current site's own list belong to that site.
-                        val owner = site.ifBlank { state.currentSite?.key.orEmpty() }
+                        val owner = site.ifBlank { state.currentSite.key }
                         onOpenDetail(owner, vod, categoryContext.first, categoryContext.second)
                     },
                     onLoadMore = onLoadMore,
@@ -484,25 +483,9 @@ internal fun TvboxHomePage(
         }
     }
 
-    // Search overlay: results carry no list-layer category identity, so the detail opens with an
-    // empty context and the play-time check falls back to the movie's own typeName (plan R14).
-    if (searchOpen) {
-        TvboxSearchPage(
-            state = state,
-            onSearch = onSearch,
-            onClearSearch = onClearSearch,
-            onOpenDetail = { siteKey, vodId -> onOpenDetail(siteKey, vodId, "", "") },
-            onClose = { searchOpen = false },
-        )
-    }
-
-    // plan §5.5.7: long-press menu → lock/unlock (StageMenuItem).
+    // plan §5.5.7: long-press menu → rename / hide / move / lock (StageMenuItem), the same
+    // customization verbs the Library rail uses, applied through the shared Core store.
     lockMenuFor?.let { cat ->
-        val sealed = state.currentSite?.let {
-            tv.own.owntv.mobile.tvbox.category.TvboxCategoryLock.keyOfStatic(
-                it.key, cat.typeId, cat.typeName,
-            )
-        } in state.sealedKeys
         Column(
             Modifier
                 .fillMaxWidth()
@@ -512,7 +495,7 @@ internal fun TvboxHomePage(
                 .padding(vertical = 6.dp),
         ) {
             Text(
-                cat.typeName,
+                cat.displayName,
                 style = stageText(13f, 700),
                 color = palette.muted,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
@@ -520,10 +503,42 @@ internal fun TvboxHomePage(
                 overflow = TextOverflow.Ellipsis,
             )
             StageMenuItem(
-                label = stringResource(if (sealed) R.string.tvbox_lock_action_unlock else R.string.tvbox_lock_action_lock),
+                label = stringResource(R.string.settings_customize_rename),
+                icon = MobileIcons.Edit,
+                onClick = {
+                    renamingFor = cat
+                    lockMenuFor = null
+                },
+            )
+            StageMenuItem(
+                label = stringResource(R.string.settings_customize_hide),
+                icon = MobileIcons.VisibilityOff,
+                onClick = {
+                    onHideCategory(cat.key)
+                    lockMenuFor = null
+                },
+            )
+            StageMenuItem(
+                label = stringResource(R.string.settings_row_menu_move_up),
+                icon = MobileIcons.KeyboardArrowUp,
+                onClick = {
+                    onMoveCategory(cat, MoveKind.UP)
+                    lockMenuFor = null
+                },
+            )
+            StageMenuItem(
+                label = stringResource(R.string.settings_row_menu_move_down),
+                icon = MobileIcons.KeyboardArrowDown,
+                onClick = {
+                    onMoveCategory(cat, MoveKind.DOWN)
+                    lockMenuFor = null
+                },
+            )
+            StageMenuItem(
+                label = stringResource(if (cat.locked) R.string.tvbox_lock_action_unlock else R.string.tvbox_lock_action_lock),
                 icon = MobileIcons.Check,
                 onClick = {
-                    onToggleLock(cat.typeId, cat.typeName)
+                    onToggleLock(cat)
                     lockMenuFor = null
                 },
             )
@@ -533,6 +548,19 @@ internal fun TvboxHomePage(
                 onClick = { lockMenuFor = null },
             )
         }
+    }
+
+    // Rename dialog: blank restores the site's original name (the Core store treats null as reset).
+    renamingFor?.let { cat ->
+        TextPromptDialog(
+            title = stringResource(R.string.settings_customize_rename),
+            initial = cat.displayName,
+            onDismiss = { renamingFor = null },
+            onConfirm = { entered ->
+                onRenameCategory(cat.key, entered.takeIf { it.isNotBlank() })
+                renamingFor = null
+            },
+        )
     }
 
     // Locked-category PIN sheet (list-layer gate, plan §5.5.6).
@@ -545,7 +573,7 @@ internal fun TvboxHomePage(
             description = stringResource(R.string.tvbox_pin_unlock_desc),
             onSubmit = { entered ->
                 scope.launch {
-                    when (onUnlockCategory(cat.typeId, cat.typeName, entered)) {
+                    when (onUnlockCategory(cat, entered)) {
                         PinAttempt.Accepted -> pinSheetFor = null
                         PinAttempt.Wrong -> wrong = true
                         is PinAttempt.Wait -> {
@@ -663,83 +691,6 @@ private fun PosterGrid(
 }
 
 // ---------------------------------------------------------------------------
-// Search page
-// ---------------------------------------------------------------------------
-
-@Composable
-private fun TvboxSearchPage(
-    state: TvboxHomeUiState,
-    onSearch: (String) -> Unit,
-    onClearSearch: () -> Unit,
-    onOpenDetail: (String, String) -> Unit,
-    onClose: () -> Unit,
-) {
-    val palette = LocalStagePalette.current
-    Column(Modifier.fillMaxSize().background(palette.scrim)) {
-        Spacer(Modifier.height(24.dp))
-        Row(Modifier.padding(horizontal = PageSidePadding), verticalAlignment = Alignment.CenterVertically) {
-            StageButton(onClick = onClose, icon = MobileIcons.ArrowBack)
-            Spacer(Modifier.width(12.dp))
-            Text(
-                stringResource(R.string.tvbox_search_title),
-                style = stageText(15f, 800),
-                color = palette.text,
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        var entering by remember { mutableStateOf(true) }
-        if (entering) {
-            TextPromptDialog(
-                title = stringResource(R.string.tvbox_search_title),
-                initial = state.searchKeyword,
-                allowBlank = false,
-                confirmLabel = stringResource(R.string.tvbox_search_go),
-                onConfirm = {
-                    onSearch(it.trim())
-                    entering = false
-                },
-                onDismiss = {
-                    entering = false
-                    onClose()
-                },
-            )
-        }
-        if (state.searching) {
-            EmptyHint(stringResource(R.string.tvbox_searching))
-        } else if (state.searchResults.isEmpty()) {
-            EmptyHint(stringResource(R.string.tvbox_search_empty))
-        } else {
-            LazyColumn(contentPadding = PaddingValues(horizontal = PageSidePadding, vertical = 4.dp)) {
-                state.searchResults.forEach { group ->
-                    item(key = "site-" + group.siteKey) {
-                        Text(
-                            group.siteName,
-                            style = stageText(12.5f, 700),
-                            color = palette.muted,
-                            modifier = Modifier.padding(top = 12.dp, bottom = 6.dp),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    items(group.movies, key = { group.siteKey + it.id + it.name }) { movie ->
-                        StageRow(onClick = { onOpenDetail(group.siteKey, movie.id) }) {
-                            Text(
-                                movie.name,
-                                style = stageText(12.5f, 600),
-                                color = palette.text,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(vertical = 6.dp),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Detail page
 // ---------------------------------------------------------------------------
 
@@ -827,7 +778,7 @@ internal fun TvboxDetailPage(
                 } else {
                     val names = episodeDisplayNames(episodes)
                     Text(
-                        stringResource(R.string.tvbox_episodes, episodes.size),
+                        pluralStringResource(R.plurals.tvbox_episodes, episodes.size, episodes.size),
                         style = stageText(12f, 700),
                         color = palette.muted,
                         modifier = Modifier.padding(horizontal = PageSidePadding, vertical = 6.dp),

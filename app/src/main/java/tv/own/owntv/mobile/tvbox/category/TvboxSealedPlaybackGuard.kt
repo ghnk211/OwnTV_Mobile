@@ -28,6 +28,7 @@ class TvboxSealedPlaybackGuard(
     private val settings: SettingsRepository,
     private val unlocks: CategoryUnlockSession,
     private val profileDao: ProfileDao,
+    private val provisioner: tv.own.owntv.mobile.tvbox.repository.TvboxSourceProvisioner,
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -47,7 +48,7 @@ class TvboxSealedPlaybackGuard(
             val pid = runCatching { settings.activeProfileId.first() }.getOrDefault(-1L)
             if (pid < 0) return@launch
             val sealed = runCatching {
-                lock.seals(pid, siteKey, category.typeId, category.typeName, anySession = false)
+                lock.seals(pid, provisioner.activeSourceId(), siteKey, category.typeId, category.typeName, anySession = false)
             }.getOrElse {
                 // 读锁异常 fail-closed：宁可停播，不可漏播
                 TbLog.tag(TAG).w(it, "TVbox 重锁检查失败，按锁定处理（%s）", reason)

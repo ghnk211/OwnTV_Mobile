@@ -211,7 +211,7 @@ class UserDataResolver(
         }
         if ("prog" in kinds) progressDao.getAllOnce().forEach { pr ->
             describe(pr.mediaType, pr.itemId)?.let {
-                out.put(it.put("p", pr.profileId).put("kind", "prog").put("at", pr.updatedAt).put("pos", pr.positionMs).put("dur", pr.durationMs))
+                out.put(it.put("p", pr.profileId).put("kind", "prog").put("at", pr.updatedAt).put("pos", pr.positionMs).put("dur", pr.durationMs).putOpt("ext", pr.extKey))
             }
         }
         if ("order" in kinds) contentOrderDao.getAllOnce().forEach { o ->
@@ -287,7 +287,7 @@ class UserDataResolver(
             }
         }
         json.put("p", profileId).put("kind", kind).put("at", at).put("oid", itemId)
-        if (kind == "prog") json.put("pos", positionMs).put("dur", durationMs)
+        if (kind == "prog") json.put("pos", positionMs).put("dur", durationMs).putOpt("ext", extKey)
         return json
     }
 
@@ -559,13 +559,15 @@ class UserDataResolver(
                 "prog" -> {
                     val positionMs = e.optLong("pos", 0)
                     val durationMs = e.optLong("dur", 0)
+                    val extKey = e.optStringOrNull("ext")
                     progressDao.insertIfAbsent(
                         PlaybackProgressEntity(
                             profileId = pid, mediaType = type, itemId = itemId,
                             positionMs = positionMs, durationMs = durationMs, updatedAt = at,
+                            extKey = extKey,
                         ),
                     )
-                    progressDao.updateIfNewer(pid, type, itemId, positionMs, durationMs, at)
+                    progressDao.updateIfNewer(pid, type, itemId, positionMs, durationMs, at, extKey)
                 }
                 "order" -> contentOrderDao.insertAll(
                     listOf(ContentOrderEntity(profileId = pid, mediaType = type, contextKey = e.getString("ctx"), itemId = itemId, position = e.getInt("pos"))),

@@ -5,19 +5,21 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import tv.own.owntv.core.customize.CategoryUnlockSession
 import tv.own.owntv.core.categorylock.PinAttempt
 import tv.own.owntv.core.categorylock.PinAttemptLimiter
+import tv.own.owntv.core.customize.CategoryUnlockSession
+import tv.own.owntv.core.database.dao.CategoryDao
+import tv.own.owntv.core.database.entity.CategoryEntity
 import tv.own.owntv.core.model.MediaType
 import tv.own.owntv.core.settings.CustomizePinSettings
-import tv.own.owntv.mobile.tvbox.engine.ClassInfo
 
 /**
- * 分类锁判定层的 JVM 单测（回归 D2/D3 的防线）：seals 的四步判定顺序、双轨 key 匹配
- * （typeId 写锁 / typeName 别名命中）、解锁会话的 epoch 防绕过协议。
+ * 分类锁判定层的 JVM 单测（P1 Core 口径）：seals 的判定顺序、规范 key
+ * `<sourceId>:<siteKey>/<typeId>`、typeName 身份回查（回归 R14）、解锁会话的 epoch 防绕过协议。
  */
 class TvboxCategoryLockTest {
 
@@ -40,12 +42,24 @@ class TvboxCategoryLockTest {
         override suspend fun importCustomizePins(o: org.json.JSONObject, existingProfileIds: Set<Long>) = error("unused")
     }
 
+    /** 身份解析假件：typeName → typeId 映射模拟已索引分类行的按名回查。 */
+    private class FakeLockKeys : TvboxLockKeys {
+        val names = mutableMapOf("电影" to "1", "剧集" to "2")
+        override suspend fun keyOf(sourceId: Long, siteKey: String, typeId: String?, typeName: String): String? {
+            val tid = typeId?.takeIf { it.isNotBlank() } ?: names[typeName] ?: return null
+            return "$sourceId:$siteKey/$tid"
+        }
+    }
+
     private val store = FakeLockStore()
     private val unlocks = CategoryUnlockSession()
+    private val keys = FakeLockKeys()
     private lateinit var lock: TvboxCategoryLock
 
     private val pid = 1L
+    private val sourceId = 7L
     private val site = "local_cms"
+    private val key = "7:local_cms/1"
 
     @Before
     fun setUp() {
@@ -55,118 +69,155 @@ class TvboxCategoryLockTest {
             unlocks = unlocks,
             customizePinSettings = FakePinSettings("1234"),
             pinLimiter = PinAttemptLimiter(clock = { t += 100; t }),
+            keys = keys,
         )
     }
 
     @Test
     fun `无 PIN 时不算锁 即使 key 在锁集合里`() = runTest {
-        val noPin = TvboxCategoryLock(store, unlocks, FakePinSettings(null), PinAttemptLimiter({ 0L }))
-        store.locked.add("tvbox:$site:1")
-        assertFalse(noPin.seals(pid, site, "1", "电影"))
+        val noPin = TvboxCategoryLock(store, unlocks, FakePinSettings(null), PinAttemptLimiter({ 0L }), keys)
+        store.locked.add(key)
+        assertFalse(noPin.seals(pid, sourceId, site, "1", "电影"))
+    }
+
+    @Test
+    fun `sourceId 为 null 时不算锁`() = runTest {
+        store.locked.add(key)
+        assertFalse(lock.seals(pid, null, site, "1", "电影"))
     }
 
     @Test
     fun `key 不在锁集合时不算锁`() = runTest {
-        assertFalse(lock.seals(pid, site, "1", "电影"))
+        assertFalse(lock.seals(pid, sourceId, site, "1", "电影"))
     }
 
     @Test
     fun `锁定且会话未解锁时为锁`() = runTest {
-        store.locked.add("tvbox:$site:1")
-        assertTrue(lock.seals(pid, site, "1", "电影"))
+        store.locked.add(key)
+        assertTrue(lock.seals(pid, sourceId, site, "1", "电影"))
     }
 
     @Test
     fun `锁定且本会话已解锁时放行`() = runTest {
-        store.locked.add("tvbox:$site:1")
-        assertTrue(unlocks.unlock(pid, MediaType.MOVIE, "tvbox:$site:1"))
-        assertFalse(lock.seals(pid, site, "1", "电影"))
+        store.locked.add(key)
+        assertTrue(unlocks.unlock(pid, MediaType.MOVIE, key))
+        assertFalse(lock.seals(pid, sourceId, site, "1", "电影"))
     }
 
     @Test
-    fun `双轨 - 搜索来源只有 typeName 也能命中双写的锁`() = runTest {
-        // 真实链路：toggleLock 双写主键与别名；搜索来源的播放只有 typeName
-        lock.toggleLock(pid, site, "1", "电影", locked = true)
-        assertTrue(lock.seals(pid, site, null, "电影"))
-        // 历史单键锁（旧版本写入）在带 typeId 的调用上仍命中
-        assertTrue(lock.seals(pid, site, "1", "电影"))
+    fun `搜索来源只有 typeName 也命中同一把规范 key 的锁`() = runTest {
+        lock.toggleLock(pid, key, locked = true)
+        assertTrue(lock.seals(pid, sourceId, site, null, "电影"))
+        assertTrue(lock.seals(pid, sourceId, site, "1", "电影"))
     }
 
     @Test
-    fun `双轨 - 通过 typeName 解锁后 typeId 形态的播放也放行`() = runTest {
-        store.locked.add("tvbox:$site:1")
-        val attempt = lock.unlock(pid, site, null, "电影", "1234")
+    fun `通过 typeName 解锁后 typeId 形态的播放也放行`() = runTest {
+        store.locked.add(key)
+        val attempt = lock.unlock(pid, sourceId, site, null, "电影", "1234")
         assertTrue(attempt is PinAttempt.Accepted)
-        assertFalse(lock.seals(pid, site, "1", "电影"))
-        assertFalse(lock.seals(pid, site, null, "电影"))
+        assertFalse(lock.seals(pid, sourceId, site, "1", "电影"))
+        assertFalse(lock.seals(pid, sourceId, site, null, "电影"))
     }
 
     @Test
-    fun `双轨 - 通过 typeId 解锁后 typeName 形态的播放也放行`() = runTest {
-        store.locked.add("tvbox:$site:1")
-        val attempt = lock.unlock(pid, site, "1", "电影", "1234")
+    fun `身份解析不出 key 时不算锁`() = runTest {
+        store.locked.add(key)
+        assertFalse(lock.seals(pid, sourceId, site, null, "未索引的分类"))
+    }
+
+    @Test
+    fun `身份解析不出 key 时解锁直接放行`() = runTest {
+        val attempt = lock.unlock(pid, sourceId, site, null, "未索引的分类", "0000")
         assertTrue(attempt is PinAttempt.Accepted)
-        assertFalse(lock.seals(pid, site, null, "电影"))
-    }
-
-    @Test
-    fun `双轨 - keysOf 在 typeId 缺失时两形态合一`() {
-        assertEquals(listOf("tvbox:$site:电影"), TvboxCategoryLock.keysOf(site, null, "电影"))
-        assertEquals(listOf("tvbox:$site:电影"), TvboxCategoryLock.keysOf(site, "", "电影"))
-    }
-
-    @Test
-    fun `双轨 - keysOf 在 typeId 存在时返回主键与别名`() {
-        assertEquals(
-            listOf("tvbox:$site:1", "tvbox:$site:电影"),
-            TvboxCategoryLock.keysOf(site, "1", "电影"),
-        )
     }
 
     @Test
     fun `anySession 忽略解锁会话 - 重锁停播 guard 口径`() = runTest {
-        store.locked.add("tvbox:$site:1")
-        assertTrue(unlocks.unlock(pid, MediaType.MOVIE, "tvbox:$site:1"))
-        assertTrue(lock.seals(pid, site, "1", "电影", anySession = true))
+        store.locked.add(key)
+        assertTrue(unlocks.unlock(pid, MediaType.MOVIE, key))
+        assertTrue(lock.seals(pid, sourceId, site, "1", "电影", anySession = true))
     }
 
     @Test
     fun `错误 PIN 返回 Wrong 且不进会话`() = runTest {
-        store.locked.add("tvbox:$site:1")
-        val attempt = lock.unlock(pid, site, "1", "电影", "9999")
+        store.locked.add(key)
+        val attempt = lock.unlockKey(pid, key, "9999")
         assertTrue(attempt is PinAttempt.Wrong)
-        assertTrue(lock.seals(pid, site, "1", "电影"))
+        assertTrue(lock.seals(pid, sourceId, site, "1", "电影"))
     }
 
     @Test
     fun `relockAll 后解锁协议拒绝旧 epoch`() {
-        val key = "tvbox:$site:1"
         val since = unlocks.epoch()
         unlocks.relockAll()
-        // 与 TvboxCategoryLock.unlock 相同的协议：PIN 过了、epoch 变了也不放行
+        // 与 TvboxCategoryLock.unlockKey 相同的协议：PIN 过了、epoch 变了也不放行
         assertFalse(unlocks.unlock(pid, MediaType.MOVIE, key, since))
     }
 
     @Test
-    fun `toggleLock 双写主键与别名`() = runTest {
-        lock.toggleLock(pid, site, "1", "电影", locked = true)
-        assertEquals(setOf("tvbox:$site:1", "tvbox:$site:电影"), store.locked)
-        assertTrue(lock.seals(pid, site, "1", "电影"))
-        lock.toggleLock(pid, site, "1", "电影", locked = false)
+    fun `toggleLock 只写单一规范 key`() = runTest {
+        lock.toggleLock(pid, key, locked = true)
+        assertEquals(setOf(key), store.locked)
+        assertTrue(lock.seals(pid, sourceId, site, "1", "电影"))
+        lock.toggleLock(pid, key, locked = false)
         assertEquals(emptySet<String>(), store.locked)
     }
 
     @Test
-    fun `sealedKeys 返回命中锁的完整 key`() = runTest {
-        store.locked.add("tvbox:$site:1")
-        val keys = lock.sealedKeys(pid, site, listOf(ClassInfo("1", "电影"), ClassInfo("2", "剧集")))
-        assertEquals(setOf("tvbox:$site:1"), keys)
+    fun `unlockKey 无 PIN 时直接放行`() = runTest {
+        val noPin = TvboxCategoryLock(store, unlocks, FakePinSettings(null), PinAttemptLimiter({ 0L }), keys)
+        assertTrue(noPin.unlockKey(pid, key, "0000") is PinAttempt.Accepted)
     }
 
     @Test
-    fun `无 PIN 时 sealedKeys 为空集`() = runTest {
-        val noPin = TvboxCategoryLock(store, unlocks, FakePinSettings(null), PinAttemptLimiter({ 0L }))
-        store.locked.add("tvbox:$site:1")
-        assertTrue(noPin.sealedKeys(pid, site, listOf(ClassInfo("1", "电影"))).isEmpty())
+    fun `unlockKey 正确 PIN 进会话`() = runTest {
+        store.locked.add(key)
+        assertTrue(lock.unlockKey(pid, key, "1234") is PinAttempt.Accepted)
+        assertFalse(lock.seals(pid, sourceId, site, "1", "电影"))
+    }
+
+    // ---- CoreLockKeys：生产身份解析（typeId 直拼 / typeName 按名回查 + 站点前缀限定） ----
+
+    /** 只实现 observe 的 CategoryDao 假件，其余方法不应被触达。 */
+    private class FakeCategoryDao(private val rows: List<CategoryEntity>) : CategoryDao {
+        override suspend fun upsertAll(categories: List<CategoryEntity>): List<Long> = error("unused")
+        override suspend fun insertAll(categories: List<CategoryEntity>): List<Long> = error("unused")
+        override suspend fun updateAll(categories: List<CategoryEntity>) = error("unused")
+        override fun observe(sourceIds: List<Long>, type: MediaType): Flow<List<CategoryEntity>> =
+            flowOf(rows.filter { it.sourceId in sourceIds && it.mediaType == type })
+        override suspend fun getById(id: Long): CategoryEntity? = error("unused")
+        override fun count(sourceIds: List<Long>, type: MediaType): Flow<Int> = error("unused")
+        override suspend fun clear(sourceId: Long, type: MediaType) = error("unused")
+        override suspend fun findByRemoteIds(sourceId: Long, type: MediaType, remoteIds: List<String>): List<CategoryEntity> = error("unused")
+        override suspend fun remoteIdsForSource(sourceId: Long, type: MediaType): List<String> = error("unused")
+        override suspend fun deleteByRemoteIds(sourceId: Long, type: MediaType, remoteIds: List<String>) = error("unused")
+        override suspend fun deleteEmptyMovieCategories(sourceId: Long): Int = error("unused")
+    }
+
+    private fun row(id: Long, name: String, remoteId: String) =
+        CategoryEntity(id = id, sourceId = sourceId, mediaType = MediaType.MOVIE, name = name, remoteId = remoteId)
+
+    @Test
+    fun `CoreLockKeys - typeId 在手直接拼规范 key`() = runTest {
+        val resolver = CoreLockKeys(FakeCategoryDao(emptyList()))
+        assertEquals(key, resolver.keyOf(sourceId, site, "1", "电影"))
+    }
+
+    @Test
+    fun `CoreLockKeys - typeName 按名回查且站点前缀限定`() = runTest {
+        // 同名分类来自别的站点（前缀不同）不能命中；本站点的行才解析得出。
+        val resolver = CoreLockKeys(
+            FakeCategoryDao(listOf(row(12, "电影", "other_site/9"), row(11, "电影", "local_cms/1"))),
+        )
+        assertEquals(key, resolver.keyOf(sourceId, site, null, "电影"))
+    }
+
+    @Test
+    fun `CoreLockKeys - 查无分类行或名字为空返回 null`() = runTest {
+        val resolver = CoreLockKeys(FakeCategoryDao(listOf(row(11, "电影", "local_cms/1"))))
+        assertNull(resolver.keyOf(sourceId, site, null, "剧集"))
+        assertNull(resolver.keyOf(sourceId, site, null, ""))
+        assertNull(resolver.keyOf(sourceId, "other_site", null, "电影"))
     }
 }

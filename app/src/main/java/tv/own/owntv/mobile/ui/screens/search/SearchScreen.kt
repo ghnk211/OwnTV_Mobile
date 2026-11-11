@@ -53,6 +53,9 @@ import tv.own.owntv.core.epg.displayLogoUrl
 import tv.own.owntv.core.live.ProviderTags
 import tv.own.owntv.core.ui.stage.PlaylistMark
 import tv.own.owntv.mobile.R
+import tv.own.owntv.mobile.tvbox.search.OnlineSearchGroup
+import tv.own.owntv.mobile.tvbox.search.OnlineSearchRow
+import tv.own.owntv.mobile.tvbox.search.OnlineSearchState
 import tv.own.owntv.mobile.ui.components.ChannelLogoImage
 import tv.own.owntv.mobile.ui.components.MobileIcons
 import tv.own.owntv.mobile.ui.screens.home.formatRating
@@ -92,6 +95,7 @@ fun SearchScreen(
     onOpenChannel: (Long) -> Unit,
     onOpenMovie: (Long) -> Unit,
     onOpenSeries: (Long) -> Unit,
+    onOpenSiteResult: (siteKey: String, vodId: String) -> Unit,
     modifier: Modifier = Modifier,
     vm: SearchViewModel = koinViewModel(),
 ) {
@@ -108,11 +112,12 @@ fun SearchScreen(
     val marks by vm.playlistMarks.collectAsStateWithLifecycle()
     val categories by vm.categoryNames.collectAsStateWithLifecycle()
     val nowPlaying by vm.nowPlaying.collectAsStateWithLifecycle()
+    val online by vm.online.collectAsStateWithLifecycle()
     val palette = LocalStagePalette.current
 
     val trimmed = query.trim()
     val searching = trimmed.length >= MIN_QUERY
-    val total = typed.channels.size + typed.programmes.size + typed.movies.size + typed.series.size
+    val total = typed.channels.size + typed.programmes.size + typed.movies.size + typed.series.size + online.rowCount
     if (searching) {
         val accent = stringResource(R.string.search_query_quoted, trimmed)
         val rest = groupedCountText(R.plurals.search_result_count, total)
@@ -137,6 +142,9 @@ fun SearchScreen(
     val shown: SearchResults = if (searching) typed.only(kinds) else curated
     // One filter button on lists that kind alone, flat and uncapped; otherwise the kinds are grouped.
     val singleKind = searching && kinds.size == 1
+    // The online supplement keeps the results list up while sites answer, so an empty local match is
+    // not "nothing found" until the online round has finished too.
+    val onlineActive = online.hasSites && (online.searching || !online.isEmpty)
     val goChannel: (Long) -> Unit = { vm.rememberQuery(); onOpenChannel(it) }
 
     Column(modifier.fillMaxSize().imePadding()) {
@@ -162,7 +170,7 @@ fun SearchScreen(
         }
 
         when {
-            searching && shown.isEmpty -> NothingFound(stringResource(R.string.search_nothing_found, trimmed), stringResource(R.string.search_nothing_found_body))
+            searching && shown.isEmpty && !onlineActive -> NothingFound(stringResource(R.string.search_nothing_found, trimmed), stringResource(R.string.search_nothing_found_body))
             !searching && intent == null -> Launcher(recents = recents, onIntent = vm::setIntent, onPick = vm::setQuery, onClear = vm::clearRecentSearches)
             else -> LazyColumn(
                 state = listState,
@@ -185,6 +193,9 @@ fun SearchScreen(
                     onSeries = { vm.rememberQuery(); onOpenSeries(it) },
                     onAllChannels = { vm.showOnly(SearchKind.LIVE) },
                 )
+                if (onlineActive) {
+                    onlineSection(online, first = shown.isEmpty, onOpenSiteResult = { site, vod -> vm.rememberQuery(); onOpenSiteResult(site, vod) })
+                }
             }
         }
     }
@@ -236,6 +247,57 @@ private fun LazyListScope.results(
         if (headings) item(key = "h-series") { GroupHeading(R.string.common_nav_series, shown.series.size, first = shown.channels.isEmpty() && shown.programmes.isEmpty() && shown.movies.isEmpty()) }
         items(shown.series, key = { "s" + it.id }) { s ->
             VodResult(s.posterUrl, s.name, s.year ?: s.parsedYear, s.rating, s.categoryId?.let { categories[it] }, marks[s.sourceId]) { onSeries(s.id) }
+        }
+    }
+}
+
+/** The online supplement (plan P3): a heading, then each site's hits under its name, streaming in. */
+private fun LazyListScope.onlineSection(
+    online: OnlineSearchState,
+    first: Boolean,
+    onOpenSiteResult: (String, String) -> Unit,
+) {
+    item(key = "h-online") { GroupHeading(R.string.search_online, online.rowCount, first = first) }
+    if (online.searching && online.isEmpty) {
+        item(key = "online-searching") {
+            Text(
+                stringResource(R.string.search_online_searching),
+                style = stageText(12.5f, 500),
+                color = LocalStagePalette.current.muted,
+                modifier = Modifier.padding(start = 12.dp, top = 4.dp, bottom = 8.dp),
+            )
+        }
+    }
+    online.groups.forEach { g ->
+        item(key = "online-site-" + g.siteKey) {
+            StageLabel(g.siteName, Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 2.dp))
+        }
+        items(g.rows, key = { "online-" + g.siteKey + "-" + it.vodId }) { row ->
+            OnlineResult(row) { onOpenSiteResult(row.siteKey, row.vodId) }
+        }
+    }
+}
+
+/** An online hit: the poster, the title, "year · category · remark". No playlist mark — it is remote. */
+@Composable
+private fun OnlineResult(row: OnlineSearchRow, onClick: () -> Unit) {
+    val palette = LocalStagePalette.current
+    val sep = stringResource(R.string.content_epg_bits_separator)
+    val line = listOfNotNull(
+        row.year?.takeIf { it.isNotBlank() },
+        row.typeName?.takeIf { it.isNotBlank() },
+        row.remark?.takeIf { it.isNotBlank() },
+    ).joinToString(sep)
+    StageRow(onClick = onClick, height = 76.dp) {
+        AsyncImage(
+            row.posterUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.size(42.dp, 63.dp).clip(RoundedCornerShape(8.dp)).background(palette.cardSolid),
+        )
+        Column(Modifier.weight(1f)) {
+            Text(row.title, style = stageText(14.5f, 700), color = palette.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (line.isNotEmpty()) Text(line, style = stageText(12f, 500), color = palette.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

@@ -137,7 +137,7 @@ object ConfigParser {
             return ConfigParseResult(null, error = "配置内容为空")
         }
         // 部分配置带 BOM 或前后有空白/HTML 包裹
-        var cleaned = text.trim().removePrefix("﻿").trim()
+        var cleaned = text.trim().removePrefix("\uFEFF").trim()
         // 剥离注释 + 转义裸控制字符（生态配置的常态，见 DirtyJsonRepair）
         cleaned = runCatching { DirtyJsonRepair.stripComments(cleaned) }
             .getOrElse { e ->
@@ -486,7 +486,7 @@ object ConfigParser {
 
     /** 供测试用：宽松解析任意 JSON 的 sites 数量（配置体检） */
     fun quickSiteCount(text: String): Int = runCatching {
-        val el = json.parseToJsonElement(text.trim().removePrefix("﻿"))
+        val el = json.parseToJsonElement(text.trim().removePrefix("\uFEFF"))
         (el.jsonObject["sites"] as? JsonArray)?.size ?: 0
     }.getOrDefault(0)
 }

@@ -53,16 +53,29 @@ class TvboxIndexer(
         val categoryId = categoryIdOf(sourceId, site.key, typeId)
         val written = index(sourceId, site, movies, categoryId, categoryTypeName = typeName)
         runCatching {
+            val categoryRemoteId = TvboxIndexMapper.categoryRemoteId(site.key, typeId)
+            // REPLACE would reset the generation a filter change bumped; carry it across page writes.
+            val generation = cursorDao.get(sourceId, categoryRemoteId)?.generation ?: 0
             cursorDao.save(
                 CatalogIndexCursorEntity(
                     sourceId = sourceId,
-                    categoryRemoteId = TvboxIndexMapper.categoryRemoteId(site.key, typeId),
+                    categoryRemoteId = categoryRemoteId,
                     lastPage = page,
+                    generation = generation,
                     syncedAt = System.currentTimeMillis(),
                 ),
             )
         }
         return written
+    }
+
+    /**
+     * The remote filter changed (plan §4.8 B2): the pages indexed under the old filter no longer
+     * describe this category's pagination. Mark the cursor; the stale rows age out through the TTL
+     * sweep, and the next unfiltered REFRESH starts the page count over.
+     */
+    suspend fun bumpGeneration(sourceId: Long, siteKey: String, typeId: String) {
+        runCatching { cursorDao.bumpGeneration(sourceId, TvboxIndexMapper.categoryRemoteId(siteKey, typeId)) }
     }
 
     /**

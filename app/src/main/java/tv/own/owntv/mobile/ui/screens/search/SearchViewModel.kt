@@ -32,6 +32,9 @@ import tv.own.owntv.core.repository.ActiveProfileSources
 import tv.own.owntv.core.repository.activeProfileSources
 import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.core.ui.stage.PlaylistMark
+import tv.own.owntv.mobile.tvbox.search.OnlineSearchAdapter
+import tv.own.owntv.mobile.tvbox.search.OnlineSearchState
+import tv.own.owntv.mobile.tvbox.search.TvboxOnlineSearch
 
 /**
  * Search, the shipped television's: one field over channels, films, shows and the guide.
@@ -49,6 +52,7 @@ class SearchViewModel(
     private val categoryDao: CategoryDao,
     private val epgReader: LiveEpgReader,
     private val customize: CustomizationStore,
+    private val onlineSearch: TvboxOnlineSearch,
 ) : ViewModel() {
 
     private val ctx: StateFlow<ActiveProfileSources> = activeProfileSources(settings, sourceDao)
@@ -142,6 +146,29 @@ class SearchViewModel(
         _kinds.value = emptySet()
     }
 
+    /**
+     * The online supplement (plan P3): TVbox site hits for the typed term, streamed as each site
+     * answers and deduped against what the local index already shows. Runs only when a film could be
+     * shown (no kind filter, or Movies on) and debounced longer than the local search — a remote round
+     * costs a dozen site requests, not one Room query. Swapping the term cancels the previous round.
+     */
+    val online: StateFlow<OnlineSearchState> = combine(
+        combine(
+            _query.map { it.trim() }.debounce(REMOTE_DEBOUNCE_MS).distinctUntilChanged(),
+            _kinds,
+            ctx,
+        ) { q, kinds, c -> Triple(q, kinds, c) }
+            .flatMapLatest { (q, kinds, c) ->
+                val moviesShown = kinds.isEmpty() || SearchKind.MOVIES in kinds
+                if (q.length < MIN_QUERY || !moviesShown) flowOf(OnlineSearchState())
+                else onlineSearch.search(q, c.profileId)
+            },
+        results,
+    ) { raw, local ->
+        OnlineSearchAdapter.dedupe(raw, local.movies.mapNotNull { it.remoteId }.toSet())
+    }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), OnlineSearchState())
+
     /** Remembered only when a result is actually opened — a term nobody used is not a search. */
     fun rememberQuery() {
         viewModelScope.launch { settings.addRecentSearch(_query.value) }
@@ -153,6 +180,7 @@ class SearchViewModel(
 
     private companion object {
         const val DEBOUNCE_MS = 300L
+        const val REMOTE_DEBOUNCE_MS = 800L
         const val MIN_QUERY = 2
     }
 }

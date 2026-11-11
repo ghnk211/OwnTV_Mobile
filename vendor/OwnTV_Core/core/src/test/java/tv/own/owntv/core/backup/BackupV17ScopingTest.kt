@@ -150,6 +150,9 @@ class BackupV17ScopingTest {
             "cleanChannelNames", "channelNameStrip",
             // v53: the playlist's "Ignore connection limit" choice.
             "ignoreConnectionLimit",
+            // v54: a TVBOX source's configuration identity. Carried both ways; on merge the device
+            // row keeps its own (it names a configuration on THIS device, not the file's).
+            "externalKey",
         )
         // v49 `serverTimeZone`: the Xtream panel's own report, re-read at EVERY sync (unlike a measured
         // `maxConnections`, nothing expensive is lost) and only ever set for Xtream. A restored row

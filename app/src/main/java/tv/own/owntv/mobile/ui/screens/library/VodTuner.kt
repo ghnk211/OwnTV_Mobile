@@ -62,12 +62,12 @@ import tv.own.owntv.player.PlaylistItem
 const val RECORDING_ITEM_ID = -1L
 
 /**
- * The `itemId` a TVbox stream carries.
+ * The `itemId` a TVbox stream carries when indexing failed.
  *
- * A TVbox item's identity is `(siteKey, vodId)` strings, which the Core progress/history/favourite
- * tables cannot hold — they are keyed by catalogue row ids. So the playing state carries this
- * sentinel instead, every TVbox write goes to the app-private [tv.own.owntv.mobile.tvbox.repository.TvboxStore],
- * and the player screen hides the favourite entry when it sees this id (plan §5.4, decision C3).
+ * An indexed TVbox item plays under its real Core `movieId` (plan P2): progress, history and
+ * favourites all key off it. Only when no Core row could be written does the stream fall back to
+ * this sentinel — it still plays, but no resume position is kept, and the player screen hides the
+ * favourite entry, because `itemId = -2` must never reach the Core tables.
  */
 const val TVBOX_ITEM_ID = -2L
 
@@ -90,6 +90,8 @@ data class VodPlayback(
     val sourceId: Long? = null,
     /** The category of the film, the show or the recording's channel: what a category lock checks. */
     val categoryId: Long? = null,
+    /** A TVbox stream: no subtitle interface exists for it, whatever its [itemId] says (plan §4.7). */
+    val isExternal: Boolean = false,
 )
 
 /**
@@ -126,8 +128,6 @@ class VodTuner(
     private val watchSession: tv.own.owntv.core.live.WatchSession,
     /** Category locks: nothing in a category the PIN has not opened plays. */
     private val customize: CustomizationStore,
-    /** TVbox-only progress/history/favourites storage — never the Core tables (plan §5.4). */
-    private val tvboxStore: tv.own.owntv.mobile.tvbox.repository.TvboxStore,
     /** A TVBOX Core row reached through a Core screen: resolves the real stream before playing. */
     private val tvboxPlayback: tv.own.owntv.mobile.tvbox.play.TvboxPlaybackRouter,
 ) : CastHandoff {
@@ -162,12 +162,10 @@ class VodTuner(
      *  resume position into the new profile's list. */
     private var playingProfileId = -1L
 
-    /** Which side the current stream belongs to. Every Core-table write keys off this: in the
-     *  TVBOX state [saveProgress] writes only [tvboxStore] and `began`/`recordHistory` are never
-     *  called, so a TVbox item cannot land in the Core progress/history/favourite tables; in the
-     *  CORE state the TVbox identity fields are cleared. Switching through [beginPlay] is the one
-     *  place the switch happens — a play path that forgets it cannot leak writes across the two
-     *  stores (plan R4). */
+    /** Which side the current stream belongs to. In the TVBOX state [saveProgress] writes Core
+     *  progress with a TVBOX `extKey` when the stream has a Core id; the engine/subtitle branches
+     *  and the relock guard key off this too. In the CORE state the TVbox identity fields are
+     *  cleared. Switching through [beginPlay] is the one place the switch happens (plan R4). */
     private enum class PlayKind { CORE, TVBOX }
 
     @Volatile
@@ -199,10 +197,8 @@ class VodTuner(
     @Volatile
     private var lastSavedPositionMs = -1L
 
-    /** Identity of a playing TVbox episode, for [tv.own.owntv.mobile.tvbox.repository.TvboxStore]. */
+    /** Identity of a playing TVbox episode, for the Core progress row's `extKey`. */
     data class TvboxProgressCtx(
-        val siteKey: String,
-        val vodId: String,
         val episodeFlag: String,
         val episodeId: String,
         val episodeIndex: Int,
@@ -300,14 +296,13 @@ class VodTuner(
             return playTvbox(
                 resolved = prepared.play,
                 queue = prepared.queue,
-                startPositionMs = startPositionMs,
+                startPositionMs = startPositionMs.takeIf { it > 0 } ?: prepared.positionMs,
                 progressCtx = TvboxProgressCtx(
-                    siteKey = prepared.siteKey,
-                    vodId = prepared.vodId,
                     episodeFlag = prepared.episodeFlag,
                     episodeId = prepared.episodeId,
                     episodeIndex = prepared.episodeIndex,
                 ),
+                movieId = movie.id,
             )
         }
 
@@ -526,14 +521,13 @@ class VodTuner(
     }
 
     /**
-     * Play a resolved TVbox stream (plan §7 step 17).
+     * Play a resolved TVbox stream (plan §7 step 17, P2 §4.7).
      *
      * The [tv.own.owntv.mobile.tvbox.play.TvboxPlayResolver] has already done the parsing and the
      * lock/kids checks; this is pure hand-off to the shared engine, following the [playRecording]
-     * skeleton for housekeeping — with one decisive difference: **nothing here touches the Core
-     * tables**. No `began()` (it writes watch history), no `recordHistory()`, and `playingProfileId`
-     * stays at -1 so even the shared [saveProgress] guard short-circuits. Progress goes to
-     * [tvboxStore] on the same five-second timer the Core plays use.
+     * skeleton for housekeeping. With a [movieId] (the indexed Core row) the stream writes Core
+     * progress/history under the real profile, so Continue watching and the history page see it;
+     * without one it degrades to the sentinel id: it plays, but nothing is persisted.
      *
      * A multi-episode queue hands [queue] over with per-item headers (decision C5: never share the
      * first episode's headers with the rest); a single stream passes null and plays [resolved] directly.
@@ -543,6 +537,7 @@ class VodTuner(
         queue: List<PlaylistItem>?,
         startPositionMs: Long = 0,
         progressCtx: TvboxProgressCtx,
+        movieId: Long? = null,
     ): Boolean {
         if (!dataSaver.allowsStreaming()) return false
         saveProgress()
@@ -585,16 +580,21 @@ class VodTuner(
         player.exitAudioOnly()
         session.attach(engine)
         PlaybackService.start(context)
-        // playingProfileId stays -1: the Core saveProgress guard must always short-circuit for TVbox.
-        playingProfileId = -1L
+        val pid = currentProfileId()
+        val coreId = movieId?.takeIf { it > 0 && pid != null }
+        // The real profile: the five-second saver writes Core progress for the indexed stream.
+        // Only the unindexed fallback keeps -1, which short-circuits the Core write.
+        playingProfileId = if (coreId != null) pid ?: -1L else -1L
         _playing.value = VodPlayback(
             MediaType.MOVIE,
-            TVBOX_ITEM_ID,
+            coreId ?: TVBOX_ITEM_ID,
             resolved.title,
             resolved.subtitle,
             resolved.posterUrl,
+            isExternal = true,
         )
         playingQueue = null
+        if (coreId != null && pid != null) recordHistory(pid, MediaType.MOVIE, coreId)
         return true
     }
 
@@ -716,24 +716,29 @@ class VodTuner(
         // record every five seconds only churns the file (regression §6.9).
         if (position == lastSavedPositionMs) return
         lastSavedPositionMs = position
-        // A TVbox stream never writes the Core progress table: same five-second cadence, but the
-        // entry lands in the app-private TvboxStore under its own (siteKey, vodId) identity (§5.4).
+        // A TVbox stream with a Core row writes the same progress table as every other film —
+        // one row per (profile, MOVIE, movieId), the line/episode identity in extKey (plan §4.6).
+        // An unindexed stream (sentinel id) plays but keeps no resume position.
         if (playKind == PlayKind.TVBOX) {
             val ctx = tvboxProgressCtx ?: return
-            runCatching {
-                withContext(Dispatchers.IO) {
-                    tvboxStore.saveProgress(
-                        tv.own.owntv.mobile.tvbox.repository.TvboxStore.ProgressEntry(
-                            siteKey = ctx.siteKey,
-                            vodId = ctx.vodId,
-                            episodeFlag = ctx.episodeFlag,
-                            episodeId = ctx.episodeId,
-                            episodeIndex = ctx.episodeIndex,
-                            positionMs = position,
-                            durationMs = duration,
-                            updatedAt = System.currentTimeMillis(),
-                        ),
-                    )
+            if (current.itemId > 0 && playingProfileId >= 0 && currentProfileId() == playingProfileId) {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        progressDao.save(
+                            PlaybackProgressEntity(
+                                profileId = playingProfileId,
+                                mediaType = MediaType.MOVIE,
+                                itemId = current.itemId,
+                                positionMs = position,
+                                durationMs = duration,
+                                extKey = tv.own.owntv.mobile.tvbox.play.TvboxExtKey.encode(
+                                    flag = ctx.episodeFlag,
+                                    episodeId = ctx.episodeId,
+                                    index = ctx.episodeIndex,
+                                ),
+                            ),
+                        )
+                    }
                 }
             }
             return

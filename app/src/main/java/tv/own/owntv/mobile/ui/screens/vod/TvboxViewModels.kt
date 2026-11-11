@@ -2,18 +2,27 @@ package tv.own.owntv.mobile.ui.screens.vod
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import tv.own.owntv.core.categorylock.visibleOnceRead
+import tv.own.owntv.core.customize.CategoryRailEditor
+import tv.own.owntv.core.customize.CustomizationStore
+import tv.own.owntv.core.customize.MoveKind
+import tv.own.owntv.core.customize.railCategories
+import tv.own.owntv.core.database.dao.CategoryDao
 import tv.own.owntv.core.database.dao.ProfileDao
 import tv.own.owntv.core.database.entity.ProfileEntity
+import tv.own.owntv.core.live.LiveKey
+import tv.own.owntv.core.model.MediaType
 import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.core.categorylock.PinAttempt
 import tv.own.owntv.mobile.tvbox.category.TvboxCategoryLock
@@ -28,11 +37,10 @@ import tv.own.owntv.mobile.tvbox.engine.PlayUrlCodec
 import tv.own.owntv.mobile.tvbox.engine.SpiderResult
 import tv.own.owntv.mobile.tvbox.play.ResolvedPlay
 import tv.own.owntv.mobile.tvbox.play.TvboxCategoryKey
+import tv.own.owntv.mobile.tvbox.play.TvboxExtKey
 import tv.own.owntv.mobile.tvbox.play.TvboxPlayResolver
 import tv.own.owntv.mobile.tvbox.repository.SourceRepository
-import tv.own.owntv.mobile.tvbox.repository.SourceSearchResult
 import tv.own.owntv.mobile.tvbox.repository.TvboxConfigRepository
-import tv.own.owntv.mobile.tvbox.repository.TvboxStore
 import tv.own.owntv.mobile.tvbox.util.TextUtil
 import tv.own.owntv.mobile.ui.screens.library.VodTuner
 
@@ -145,13 +153,26 @@ class TvboxConfigViewModel(
 /** Home errors as data; the screen renders localized copy. */
 enum class TvboxLoadError { LOAD_FAILED, DETAIL_FAILED }
 
+/**
+ * 分类条上的一枚芯片：Core `categories` 行叠加本档案定制（P1，方案 §4.8 B1）。
+ * [key] 是 Core 定制 key `<sourceId>:<siteKey>/<typeId>`，隐藏/改名/排序/锁都写它；
+ * [typeName] 保留站点原名（索引与详情身份用），[displayName] 是改名后的展示名。
+ */
+data class TvboxCategory(
+    val key: String,
+    val categoryId: Long,
+    val typeId: String,
+    val typeName: String,
+    val displayName: String,
+    val locked: Boolean,
+    val sealed: Boolean,
+)
+
 data class TvboxHomeUiState(
     /** 站点列表（儿童档案已过滤；聚合搜索也只用这里剩下的源）。 */
     val sites: List<SiteConfig> = emptyList(),
     val currentSite: SiteConfig? = null,
-    val categories: List<tv.own.owntv.mobile.tvbox.engine.ClassInfo> = emptyList(),
-    /** 当前分类行的锁定 key（上锁图标显示用；行不隐藏，点击弹 PIN，方案 §5.5.4）。 */
-    val sealedKeys: Set<String> = emptySet(),
+    val categories: List<TvboxCategory> = emptyList(),
     val filters: List<FilterDef> = emptyList(),
     val selectedFilters: Map<String, String> = emptyMap(),
     val movies: List<Movie> = emptyList(),
@@ -160,10 +181,6 @@ data class TvboxHomeUiState(
     val loading: Boolean = false,
     val loadingMore: Boolean = false,
     val error: TvboxLoadError? = null,
-    /** 搜索面板状态（聚合搜索：先到先显示）。 */
-    val searchKeyword: String = "",
-    val searchResults: List<SourceSearchResult> = emptyList(),
-    val searching: Boolean = false,
     /** One-shot lock/unlock feedback; the screen renders localized copy. */
     val lockEvent: TvboxLockEvent? = null,
 )
@@ -180,6 +197,8 @@ class TvboxHomeViewModel(
     private val profileDao: ProfileDao,
     private val provisioner: tv.own.owntv.mobile.tvbox.repository.TvboxSourceProvisioner,
     private val indexer: tv.own.owntv.mobile.tvbox.index.TvboxIndexer,
+    private val categoryDao: CategoryDao,
+    private val customize: CustomizationStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TvboxHomeUiState())
@@ -189,8 +208,57 @@ class TvboxHomeViewModel(
     private var currentCategoryName: String = ""
     private var currentCategoryTid: String = ""
 
+    /** The extend the current category was last indexed under; a change bumps the cursor generation. */
+    private var currentExtend: String? = null
+
     /** The active configuration's Core source id, refreshed on every openSite. */
     private var tvboxSourceId: Long? = null
+
+    /** 分类条的数据源（P1）：当前站点 + 它的 Core 源 id；openSite 时置位。
+     *  SharedFlow 而非 StateFlow：重开同一站点也要重新发射（StateFlow 会合并相等值）。 */
+    private val railSite = kotlinx.coroutines.flow.MutableSharedFlow<Pair<SiteConfig, Long>?>(replay = 1)
+
+    /** 站点已打开、等分类条第一次发射后自动进第一个分类。 */
+    private var pendingFirstCategory = false
+
+    /**
+     * 分类条 = Core 分类行 × 本档案定制（方案 §4.8 B1）：隐藏/改名/排序/锁全部复用
+     * Library 的 [railCategories] 口径，锁行保留在条上（sealed 标记），点击弹 PIN。
+     * 儿童档案的分类名判定仍走 [TvboxCategoryPolicy]（站点 ext 标记 + 词表，P3 词表上移 Core）。
+     */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val rail = combine(railSite, settings.activeProfileId) { site, pid -> site to pid }
+        .flatMapLatest { (siteSource, pid) ->
+            if (siteSource == null || pid < 0) {
+                flowOf("" to emptyList())
+            } else {
+                val (site, sourceId) = siteSource
+                combine(
+                    categoryDao.observe(listOf(sourceId), MediaType.MOVIE),
+                    customize.visibleOnceRead(pid, MediaType.MOVIE).filterNotNull(),
+                    profileDao.observeById(pid),
+                ) { cats, cust, profile ->
+                    val siteCats = cats.filter { it.remoteId?.startsWith("${site.key}/") == true }
+                    val kids = profile?.isKids == true
+                    val visible = if (kids) siteCats.filterNot { policy.blockedByKids(profile, site, it.name) } else siteCats
+                    val byId = visible.associateBy { it.id }
+                    site.key to visible.railCategories(cust, kids = kids).mapNotNull { c ->
+                        // 自定义合并分类是 Library 的概念，VOD 分类条只显示站点分类。
+                        val entity = c.categoryId?.let(byId::get) ?: return@mapNotNull null
+                        val typeId = entity.remoteId?.substringAfter('/') ?: return@mapNotNull null
+                        TvboxCategory(
+                            key = c.key,
+                            categoryId = entity.id,
+                            typeId = typeId,
+                            typeName = entity.name,
+                            displayName = c.displayName,
+                            locked = c.locked,
+                            sealed = c.sealed,
+                        )
+                    }
+                }
+            }
+        }
 
     /**
      * homeContent 返回的「分类 → 筛选树」。
@@ -215,6 +283,27 @@ class TvboxHomeViewModel(
         viewModelScope.launch {
             settings.activeProfileId.collect { refreshSites() }
         }
+        viewModelScope.launch {
+            rail.collect { (siteKey, cats) ->
+                // 切站点的竞态防护：只认当前站点的发射。
+                if (siteKey != _state.value.currentSite?.key) return@collect
+                _state.value = _state.value.copy(categories = cats)
+                when {
+                    pendingFirstCategory -> {
+                        pendingFirstCategory = false
+                        if (cats.isNotEmpty()) {
+                            selectCategory(cats.first().typeId, cats.first().typeName)
+                        } else {
+                            // 分类全被隐藏（或儿童全过滤）：停留在家首页推荐列表。
+                            _state.value = _state.value.copy(loading = false)
+                        }
+                    }
+                    // 打开中的分类被隐藏：落到第一个可见分类，与 Library 隐藏后回 All 同语义。
+                    currentCategoryTid.isNotBlank() && cats.isNotEmpty() && cats.none { it.typeId == currentCategoryTid } ->
+                        selectCategory(cats.first().typeId, cats.first().typeName)
+                }
+            }
+        }
         refreshSites()
     }
 
@@ -235,6 +324,7 @@ class TvboxHomeViewModel(
             if (target != null && target.key != _state.value.currentSite?.key) {
                 openSite(target)
             } else if (target == null) {
+                railSite.tryEmit(null)
                 _state.value = _state.value.copy(currentSite = null, categories = emptyList(), movies = emptyList())
             }
         }
@@ -242,10 +332,9 @@ class TvboxHomeViewModel(
 
     fun openSite(site: SiteConfig) {
         viewModelScope.launch {
-            _state.value = _state.value.copy(currentSite = site, loading = true, error = null, movies = emptyList(), page = 1, selectedFilters = emptyMap())
+            _state.value = _state.value.copy(currentSite = site, loading = true, error = null, movies = emptyList(), page = 1, selectedFilters = emptyMap(), categories = emptyList())
             val profile = currentProfile()
             val result = sourceRepository.homeContent(site, filter = true)
-            val classes = policy.visibleCategories(profile, site, result?.classes.orEmpty())
             // Index what the remote showed, not the filtered view: content is shared between
             // profiles, and the kids check runs when a profile reads it.
             val sourceId = provisioner.activeSourceId()
@@ -255,31 +344,24 @@ class TvboxHomeViewModel(
                 indexer.indexHome(sourceId, site, result?.list.orEmpty())
                 indexer.markSynced(sourceId)
             }
+            homeFilters = result?.filters.orEmpty()
             // 分类为空时兜底：homeVideoContent（纯推荐源）
             val movies = filterMovies(profile, site, result?.list.orEmpty())
-            val lockPid = settings.activeProfileId.first()
-            val sealed = lock.sealedKeys(lockPid, site.key, classes)
-            tv.own.owntv.mobile.tvbox.util.TbLog.tag("TvboxLock").i(
-                "openSite sealedKeys：pid=%d site=%s classes=%d sealed=%s",
-                lockPid, site.key, classes.size, sealed,
-            )
-            homeFilters = result?.filters.orEmpty()
-            if (classes.isEmpty()) {
-                _state.value = _state.value.copy(loading = false, categories = emptyList(), sealedKeys = emptySet(), filters = emptyList(), movies = movies, pageCount = result?.pagecount ?: 1)
-                return@launch
+            val hasClasses = !result?.classes.isNullOrEmpty()
+            // 分类条改由 Core 发射（indexClasses 落库后）：第一次发射到达时自动进第一个分类。
+            pendingFirstCategory = hasClasses && sourceId != null
+            railSite.tryEmit(sourceId?.let { site to it })
+            if (pendingFirstCategory) {
+                _state.value = _state.value.copy(movies = movies, pageCount = result?.pagecount ?: 1)
+            } else {
+                _state.value = _state.value.copy(loading = false, filters = emptyList(), movies = movies, pageCount = result?.pagecount ?: 1)
             }
-            _state.value = _state.value.copy(
-                loading = false,
-                categories = classes,
-                sealedKeys = sealed,
-                filters = homeFilters[classes.first().typeId].orEmpty(),
-            )
-            loadCategory(classes.first().typeId, classes.first().typeName, replace = true)
         }
     }
 
     fun selectCategory(tid: String, typeName: String) {
         // 换分类 = 换一套筛选维度：筛选行同步切换，旧分类的选择不能带过去。
+        currentExtend = null
         _state.value = _state.value.copy(
             filters = homeFilters[tid].orEmpty(),
             selectedFilters = emptyMap(),
@@ -303,8 +385,7 @@ class TvboxHomeViewModel(
     }
 
     private fun categoryTid(): String =
-        _state.value.categories.firstOrNull { it.typeName == currentCategoryName }?.typeId
-            ?: _state.value.categories.firstOrNull()?.typeId ?: ""
+        currentCategoryTid.ifBlank { _state.value.categories.firstOrNull()?.typeId ?: "" }
 
     private fun loadCategory(tid: String, typeName: String, replace: Boolean, page: Int = 1, extend: String? = null) {
         val site = _state.value.currentSite ?: return
@@ -321,7 +402,12 @@ class TvboxHomeViewModel(
             val sourceId = tvboxSourceId ?: provisioner.activeSourceId()
             if (sourceId != null && result != null) {
                 indexer.indexCategoryPage(sourceId, site, tid, typeName, result.list, page)
+                // 筛选变了：旧分页不再描述这个分类，标记游标让旧行随 TTL 过期（方案 §4.8 B2）。
+                if (replace && extend != currentExtend) {
+                    indexer.bumpGeneration(sourceId, site.key, tid)
+                }
             }
+            if (replace) currentExtend = extend
             val incoming = filterMovies(profile, site, result?.list.orEmpty())
             val merged = if (replace || page <= 1) incoming else _state.value.movies + incoming
             _state.value = _state.value.copy(
@@ -358,83 +444,53 @@ class TvboxHomeViewModel(
         return obj.takeIf { it.isNotEmpty() }?.toString()
     }
 
-    fun search(keyword: String) {
-        if (keyword.isBlank() || _state.value.searching) return
-        viewModelScope.launch {
-            _state.value = _state.value.copy(searchKeyword = keyword, searching = true, searchResults = emptyList())
-            val profile = currentProfile()
-            val visibleKeys = _state.value.sites.filter { it.canSearch }.map { it.key }.toSet()
-
-            // 先到先显示：每个源的聚合结果一出就发 searchProgress，逐条过滤即时上屏
-            //（VodPlayer 的同名体验）。SharedFlow 无 replay，必须先等订阅建立再触发搜索，
-            // 否则快源的头部结果会丢在订阅前。
-            val collector = launch {
-                sourceRepository.searchProgress.collect { r ->
-                    val site = _state.value.sites.firstOrNull { it.key == r.siteKey } ?: return@collect
-                    if (r.siteKey !in visibleKeys || !r.isSuccess) return@collect
-                    val filtered = filteredForSearch(profile, site, r)
-                    if (filtered.movies.isEmpty()) return@collect
-                    val current = _state.value.searchResults
-                    if (current.none { it.siteKey == filtered.siteKey }) {
-                        _state.value = _state.value.copy(searchResults = current + filtered)
-                    }
-                }
-            }
-            sourceRepository.searchProgressSubscribers.first { it > 0 }
-
-            val results = sourceRepository.aggregateSearch(keyword, onlySiteKeys = visibleKeys)
-                .filter { r -> r.isSuccess }
-                .map { r ->
-                    val site = _state.value.sites.firstOrNull { it.key == r.siteKey }
-                    if (site == null) r else filteredForSearch(profile, site, r)
-                }
-                .filter { it.movies.isNotEmpty() }
-            collector.cancel()
-            // 最终以返回列表为准（权威排序；也兜住订阅前丢掉的早期 emission）。
-            val sourceId = tvboxSourceId ?: provisioner.activeSourceId()
-            if (sourceId != null) {
-                results.forEach { indexer.indexSearchResults(sourceId, it.siteKey, it.movies) }
-            }
-            _state.value = _state.value.copy(searching = false, searchResults = results)
-        }
-    }
-
-    /** 搜索结果行：儿童过滤 + 海报相对地址补全（与列表网格同一口径）。 */
-    private fun filteredForSearch(
-        profile: ProfileEntity?,
-        site: SiteConfig,
-        r: SourceSearchResult,
-    ): SourceSearchResult = r.copy(
-        movies = r.movies
-            .filter { policy.movieAllowed(profile, site, it) }
-            .map { it.copy(pic = TextUtil.absoluteUrl(it.pic, site.api)) },
-    )
-
-    fun clearSearch() {
-        _state.value = _state.value.copy(searchKeyword = "", searchResults = emptyList(), searching = false)
-    }
-
-    /** 分类行 ⋯ 菜单：上锁/解锁（方案 §5.5.7）。无 Customize PIN 时给引导，不在 TVbox 内设 PIN。 */
-    fun toggleLock(tid: String, typeName: String) {
-        val site = _state.value.currentSite ?: return
-        tv.own.owntv.mobile.tvbox.util.TbLog.tag("TvboxLock").i("toggleLock 调用：%s / %s", site.key, typeName)
+    /** 分类条 ⋯ 菜单：上锁/撤锁（方案 §5.5.7）。无 Customize PIN 时给引导，不在 TVbox 内设 PIN。
+     *  锁状态写 Core `lockedCats`，分类条经 observeVisible 自动刷新。 */
+    fun toggleLock(category: TvboxCategory) {
         viewModelScope.launch {
             val pid = settings.activeProfileId.first()
-            val hasPin = !lock.isNoPinProfile(pid)
-            if (!hasPin) {
+            if (lock.isNoPinProfile(pid)) {
                 _state.value = _state.value.copy(lockEvent = TvboxLockEvent.NO_PIN)
                 return@launch
             }
-            val key = lock.keyOf(site.key, tid, typeName)
-            val locked = key in _state.value.sealedKeys
-            tv.own.owntv.mobile.tvbox.util.TbLog.tag("TvboxLock").i("toggleLock 执行：pid=%d locked->%s", pid, !locked)
-            lock.toggleLock(pid, site.key, tid, typeName, !locked)
-            tv.own.owntv.mobile.tvbox.util.TbLog.tag("TvboxLock").i("toggleLock 完成")
-            // 重算锁定集合（无 PIN 时 sealedKeys 为空集，锁行照常显示）
-            val sealed = lock.sealedKeys(pid, site.key, _state.value.categories)
+            lock.toggleLock(pid, category.key, !category.locked)
             _state.value = _state.value.copy(
-                sealedKeys = sealed,
-                lockEvent = if (locked) TvboxLockEvent.UNLOCKED else TvboxLockEvent.LOCKED,
+                lockEvent = if (category.locked) TvboxLockEvent.UNLOCKED else TvboxLockEvent.LOCKED,
+            )
+        }
+    }
+
+    /** 分类条 ⋯ 菜单：隐藏（与 Library/Customize 同一份 hiddenCats）。 */
+    fun hideCategory(key: String) {
+        viewModelScope.launch {
+            val pid = settings.activeProfileId.first()
+            if (pid >= 0) customize.setCategoryHidden(pid, MediaType.MOVIE, key, true)
+        }
+    }
+
+    /** 分类条 ⋯ 菜单：改名；空名恢复站点原名。与 Library 共用 categoryNames，两处同步。 */
+    fun renameCategory(key: String, name: String?) {
+        viewModelScope.launch {
+            val pid = settings.activeProfileId.first()
+            if (pid >= 0) customize.renameCategory(pid, MediaType.MOVIE, key, name?.trim()?.takeIf { it.isNotEmpty() })
+        }
+    }
+
+    private val categoryEditor by lazy { CategoryRailEditor(customize, categoryDao, profileDao) }
+
+    /** 分类条 ⋯ 菜单：上移/下移一步，走 Library 同一个编辑器（手动位置跨排序保留）。 */
+    fun moveCategory(category: TvboxCategory, kind: MoveKind) {
+        val sourceId = tvboxSourceId ?: return
+        viewModelScope.launch {
+            val pid = settings.activeProfileId.first()
+            if (pid < 0) return@launch
+            categoryEditor.move(
+                profileId = pid,
+                sourceIds = listOf(sourceId),
+                type = MediaType.MOVIE,
+                alphabetical = false,
+                key = LiveKey.Folder(category.categoryId),
+                kind = kind,
             )
         }
     }
@@ -445,14 +501,13 @@ class TvboxHomeViewModel(
 
     /**
      * 点击已锁定分类：PIN 通过后放行进入（方案 §5.5.6 列表层强校验）。
-     * epoch 防绕过协议在 [TvboxCategoryLock.unlock] 内；失败由 UI 出 WRONG/WAIT。
+     * epoch 防绕过协议在 [TvboxCategoryLock.unlockKey] 内；失败由 UI 出 WRONG/WAIT。
      */
-    suspend fun unlockCategory(tid: String, typeName: String, pin: String): PinAttempt {
-        val site = _state.value.currentSite ?: return PinAttempt.Wrong
+    suspend fun unlockCategory(category: TvboxCategory, pin: String): PinAttempt {
         val pid = settings.activeProfileId.first()
-        val result = lock.unlock(pid, site.key, tid, typeName, pin)
+        val result = lock.unlockKey(pid, category.key, pin)
         if (result is PinAttempt.Accepted) {
-            selectCategory(tid, typeName)
+            selectCategory(category.typeId, category.typeName)
         }
         return result
     }
@@ -503,7 +558,6 @@ class TvboxDetailViewModel(
     private val lock: TvboxCategoryLock,
     private val settings: SettingsRepository,
     private val profileDao: ProfileDao,
-    private val store: TvboxStore,
     private val vodTuner: VodTuner,
     private val provisioner: tv.own.owntv.mobile.tvbox.repository.TvboxSourceProvisioner,
     private val indexer: tv.own.owntv.mobile.tvbox.index.TvboxIndexer,
@@ -524,13 +578,14 @@ class TvboxDetailViewModel(
             _state.value = TvboxDetailUiState(site = site, vodId = vodId, loading = true)
             val pid = settings.activeProfileId.first()
             val profile = profileDao.getById(pid)
+            val sourceId = provisioner.activeSourceId()
             val baseKey = TvboxCategoryKey(site.key, site.name, typeId, typeName.orEmpty())
             // 分类名此时还不知道（详情才知道 typeName）——先用站点级判定拦截 ext 标记的站
             if (policy.blockedByKids(profile, site, null)) {
                 _state.value = _state.value.copy(loading = false, blockedByKids = true)
                 return@launch
             }
-            if (lock.seals(pid, site.key, baseKey.typeId, baseKey.typeName)) {
+            if (lock.seals(pid, sourceId, site.key, baseKey.typeId, baseKey.typeName)) {
                 _state.value = _state.value.copy(loading = false, sealed = true)
                 return@launch
             }
@@ -550,15 +605,17 @@ class TvboxDetailViewModel(
             detailMovie = movie
             // Index the detail payload: the plot/year/type name here are richer than the list's, and
             // the resulting Core id is what a favourite and a resume position are keyed by.
-            val sourceId = provisioner.activeSourceId()
             val movieId = sourceId?.let { id ->
                 // typeId as well as typeName: the category row is what gives this film its kids/lock
                 // attribution, and the writer keeps the first non-null one it was given.
                 indexer.ensureIndexed(id, site, movie, categoryTypeId = key.typeId, categoryTypeName = key.typeName)
             }
-            val sealedNow = lock.seals(pid, site.key, key.typeId, key.typeName)
+            val sealedNow = lock.seals(pid, sourceId, site.key, key.typeId, key.typeName)
             val lines = resolver.parseLines(movie.playUrl, movie.playFrom)
-            val resume = store.latestProgressForVod(site.key, vodId)
+            // 续播以 Core 进度为准（extKey 带线路/集数）；未索引成功的流没有进度可读。
+            val coreResume = movieId?.let { userData.progress(pid, it) }
+            val ext = TvboxExtKey.decode(coreResume?.extKey)
+            val resumeLine = ext?.let { e -> lines.indexOfFirst { l -> l.episodes.any { it.id == e.episodeId } } }?.takeIf { it >= 0 }
             _state.value = _state.value.copy(
                 loading = false,
                 name = movie.name,
@@ -569,10 +626,11 @@ class TvboxDetailViewModel(
                 content = movie.content?.takeIf { it.isNotBlank() },
                 movieId = movieId,
                 lines = lines,
-                favorite = movieId?.let { userData.isFavorite(pid, it) } ?: store.isFavorite(site.key, vodId),
+                favorite = movieId?.let { userData.isFavorite(pid, it) } ?: false,
                 sealed = sealedNow,
-                resumeIndex = resume?.episodeIndex ?: -1,
-                resumePositionMs = resume?.positionMs ?: 0,
+                currentLineIndex = resumeLine ?: 0,
+                resumeIndex = ext?.index ?: -1,
+                resumePositionMs = coreResume?.positionMs ?: 0,
             )
         }
     }
@@ -591,9 +649,8 @@ class TvboxDetailViewModel(
         val site = s.site ?: return
         viewModelScope.launch {
             val pid = settings.activeProfileId.first()
-            // The Core id is the primary path: a favourite written there shows up in the Favourites
-            // page, the backup and every other profile-scoped surface. Indexing can fail (a donor
-            // site that has since been removed), and then the old app-private store is the fallback.
+            // The Core id is the only path: a favourite written there shows up in the Favourites
+            // page, the backup and every other profile-scoped surface.
             val movieId = s.movieId ?: detailMovie?.let { movie ->
                 provisioner.activeSourceId()?.let { sourceId ->
                     indexer.ensureIndexed(
@@ -604,22 +661,9 @@ class TvboxDetailViewModel(
                         categoryTypeName = categoryKey?.typeName,
                     )
                 }
-            }
-            if (movieId != null) {
-                val added = userData.toggleFavorite(pid, movieId)
-                _state.value = _state.value.copy(movieId = movieId, favorite = added)
-                return@launch
-            }
-            val added = store.toggleFavorite(
-                TvboxStore.FavoriteEntry(
-                    siteKey = site.key,
-                    vodId = s.vodId,
-                    name = s.name,
-                    pic = s.pic,
-                    addedAt = System.currentTimeMillis(),
-                ),
-            )
-            _state.value = _state.value.copy(favorite = added)
+            } ?: return@launch
+            val added = userData.toggleFavorite(pid, movieId)
+            _state.value = _state.value.copy(movieId = movieId, favorite = added)
         }
     }
 
@@ -637,12 +681,12 @@ class TvboxDetailViewModel(
         val site = s.site ?: return PinAttempt.Wrong
         val pid = settings.activeProfileId.first()
         val key = categoryKey
-        val result = lock.unlock(pid, site.key, key?.typeId, key?.typeName ?: s.typeName ?: "", pin)
+        val result = lock.unlock(pid, provisioner.activeSourceId(), site.key, key?.typeId, key?.typeName ?: s.typeName ?: "", pin)
         if (result is PinAttempt.Accepted) {
             _state.value = _state.value.copy(sealed = false)
             // open() 在 seals 命中时提前返回、没取详情 —— 解锁后必须重跑，
             // 否则页面停在"No playable episodes"（回归发现）。
-            open(s.site?.key ?: return result, s.vodId, key?.typeId, key?.typeName ?: s.typeName)
+            open(site.key, s.vodId, key?.typeId, key?.typeName ?: s.typeName)
         }
         return result
     }
@@ -698,27 +742,13 @@ class TvboxDetailViewModel(
                     val play = outcome.play
                     val queue = buildQueue(site, s, play)
                     val ctx = VodTuner.TvboxProgressCtx(
-                        siteKey = site.key,
-                        vodId = s.vodId,
                         episodeFlag = episode.flag,
                         episodeId = episode.id,
                         episodeIndex = episodeIndex,
                     )
-                    val ok = vodTuner.playTvbox(play, queue, startPositionMs, ctx)
+                    val ok = vodTuner.playTvbox(play, queue, startPositionMs, ctx, movieId = indexedId)
                     _state.value = _state.value.copy(resolving = false)
-                    if (ok) {
-                        store.recordHistory(
-                            TvboxStore.HistoryEntry(
-                                siteKey = site.key,
-                                vodId = s.vodId,
-                                name = s.name,
-                                pic = s.pic,
-                                episodeIndex = episodeIndex,
-                                updatedAt = System.currentTimeMillis(),
-                            ),
-                        )
-                        onPlayStarted()
-                    }
+                    if (ok) onPlayStarted()
                 }
             }
         }

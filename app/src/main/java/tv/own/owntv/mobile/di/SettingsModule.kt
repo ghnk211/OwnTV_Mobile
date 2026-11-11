@@ -48,6 +48,7 @@ val settingsModule = module {
             enginePool = get(),
             sourceEditor = get(),
             profileManager = get(),
+            tvboxIndexer = get(),
         )
     }
     viewModel {

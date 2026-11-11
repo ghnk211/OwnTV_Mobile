@@ -8,7 +8,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.snap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -18,6 +21,7 @@ import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavBackStackEntry
 import androidx.compose.animation.AnimatedContentScope
 import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
 import tv.own.owntv.mobile.ui.screens.live.LiveTuner
 import tv.own.owntv.mobile.ui.shell.ReportShownPage
 import androidx.navigation.navArgument
@@ -215,6 +219,40 @@ fun MobileNavHost(
                 onOpenSeries = { id ->
                     navController.navigate(detailRoute(LibraryTab.SERIES.parent.route, LibraryTab.SERIES, id))
                 },
+                // An online hit opens the TVbox detail subroute; Back returns to Search.
+                onOpenSiteResult = { siteKey, vodId ->
+                    navController.navigate(vodDetailRoute(siteKey, vodId))
+                },
+            )
+        }
+        // A TVbox title opened from an online search hit. A subroute, not a tab: Back returns to
+        // Search. A search hit carries no list-layer category identity, so typeId/typeName stay empty
+        // and the detail's own fallback applies (plan R14).
+        page(
+            route = VOD_DETAIL_ROUTE_PATTERN,
+            arguments = listOf(
+                navArgument(ARG_SITE) { type = NavType.StringType },
+                navArgument(ARG_VOD_ID) { type = NavType.StringType },
+                navArgument(ARG_TYPE_ID) { type = NavType.StringType; defaultValue = "" },
+                navArgument(ARG_TYPE_NAME) { type = NavType.StringType; defaultValue = "" },
+            ),
+        ) { entry ->
+            val site = entry.arguments?.getString(ARG_SITE).orEmpty()
+            val vodId = entry.arguments?.getString(ARG_VOD_ID).orEmpty()
+            val typeId = entry.arguments?.getString(ARG_TYPE_ID).orEmpty()
+            val typeName = entry.arguments?.getString(ARG_TYPE_NAME).orEmpty()
+            val detailVm: tv.own.owntv.mobile.ui.screens.vod.TvboxDetailViewModel = koinViewModel()
+            detailVm.onPlayStarted = { navController.navigate(PLAYER_ROUTE) }
+            LaunchedEffect(site, vodId) { detailVm.open(site, vodId, typeId, typeName) }
+            val detailState by detailVm.state.collectAsStateWithLifecycle()
+            tv.own.owntv.mobile.ui.screens.vod.TvboxDetailPage(
+                state = detailState,
+                onBack = { navController.popBackStack() },
+                onSelectLine = detailVm::selectLine,
+                onPlay = detailVm::play,
+                onToggleFavorite = detailVm::toggleFavorite,
+                onUnlockPin = detailVm::unlockWithPin,
+                onUnlocked = detailVm::markUnlocked,
             )
         }
         // The eight group pages and the full pages under them. Each is a route, so the
@@ -368,3 +406,21 @@ const val SEARCH_ROUTE = "search"
 const val SEARCH_ROUTE_PATTERN = "search?$ARG_QUERY={$ARG_QUERY}"
 
 fun searchRoute(query: String): String = "search?$ARG_QUERY=${Uri.encode(query)}"
+
+/**
+ * A TVbox title reached from an online search hit. A subroute under no tab, so Back returns to Search
+ * rather than switching tabs. typeId/typeName are optional: a search hit has no list-layer category
+ * identity, and the detail page falls back to the title's own type name (plan R14).
+ */
+private const val ARG_SITE = "site"
+private const val ARG_VOD_ID = "id"
+private const val ARG_TYPE_ID = "typeId"
+private const val ARG_TYPE_NAME = "typeName"
+
+const val VOD_DETAIL_ROUTE = "vod/detail"
+const val VOD_DETAIL_ROUTE_PATTERN =
+    "$VOD_DETAIL_ROUTE?$ARG_SITE={$ARG_SITE}&$ARG_VOD_ID={$ARG_VOD_ID}&$ARG_TYPE_ID={$ARG_TYPE_ID}&$ARG_TYPE_NAME={$ARG_TYPE_NAME}"
+
+fun vodDetailRoute(site: String, id: String, typeId: String = "", typeName: String = ""): String =
+    "$VOD_DETAIL_ROUTE?$ARG_SITE=${Uri.encode(site)}&$ARG_VOD_ID=${Uri.encode(id)}" +
+        "&$ARG_TYPE_ID=${Uri.encode(typeId)}&$ARG_TYPE_NAME=${Uri.encode(typeName)}"

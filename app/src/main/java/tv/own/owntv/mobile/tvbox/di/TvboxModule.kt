@@ -1,9 +1,6 @@
 package tv.own.owntv.mobile.tvbox.di
 
 import android.content.Context
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -31,7 +28,6 @@ import tv.own.owntv.mobile.tvbox.net.OkHttpProvider
 import tv.own.owntv.mobile.tvbox.play.TvboxPlayResolver
 import tv.own.owntv.mobile.tvbox.repository.SourceRepository
 import tv.own.owntv.mobile.tvbox.repository.TvboxConfigRepository
-import tv.own.owntv.mobile.tvbox.repository.TvboxStore
 import tv.own.owntv.mobile.ui.screens.library.VodTuner
 import tv.own.owntv.mobile.ui.screens.vod.TvboxConfigViewModel
 import tv.own.owntv.mobile.ui.screens.vod.TvboxDetailViewModel
@@ -46,7 +42,6 @@ import tv.own.owntv.mobile.ui.screens.vod.TvboxHomeViewModel
 val tvboxModule = module {
 
     single { TvboxPrefs(androidContext()) }
-    single { TvboxStore(androidContext()) }
     single {
         tv.own.owntv.mobile.tvbox.repository.TvboxSourceProvisioner(
             context = androidContext(),
@@ -69,6 +64,26 @@ val tvboxModule = module {
             progressDao = get(),
             movieDao = get(),
             userDataWriter = get(),
+        )
+    }
+    single {
+        tv.own.owntv.mobile.tvbox.search.TvboxOnlineSearch(
+            sourceRepository = get(),
+            configRepository = get(),
+            policy = get(),
+            profileDao = get(),
+            provisioner = get(),
+            indexer = get(),
+        )
+    }
+    single {
+        tv.own.owntv.mobile.tvbox.index.TvboxRemoteMediatorFactory(
+            categoryDao = get(),
+            sourceDao = get(),
+            configRepository = get(),
+            sourceRepository = get(),
+            indexer = get(),
+            cursorDao = get(),
         )
     }
 
@@ -105,7 +120,6 @@ val tvboxModule = module {
         SourceRepository(
             configRepository = get(),
             engines = listOf<Engine>(get<CmsEngine>(), get<JarEngine>()),
-            scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
         )
     }
 
@@ -119,15 +133,18 @@ val tvboxModule = module {
             unlocks = get<CategoryUnlockSession>(),
             customizePinSettings = get<SettingsRepository>() as CustomizePinSettings,
             pinLimiter = get<PinAttemptLimiter>(),
+            keys = tv.own.owntv.mobile.tvbox.category.CoreLockKeys(get()),
         )
     }
-    single { TvboxPlayResolver(get(), get(), get(), get(), get<ProfileDao>(), get(), get()) }
+    single { TvboxPlayResolver(get(), get(), get(), get(), get<ProfileDao>(), get(), get(), get()) }
     single {
         tv.own.owntv.mobile.tvbox.play.TvboxPlaybackRouter(
             sourceDao = get(),
             configRepository = get(),
             sourceRepository = get(),
             resolver = get(),
+            progressDao = get(),
+            categoryDao = get(),
         )
     }
     single {
@@ -137,6 +154,7 @@ val tvboxModule = module {
             settings = get(),
             unlocks = get(),
             profileDao = get<ProfileDao>(),
+            provisioner = get(),
         )
     }
 

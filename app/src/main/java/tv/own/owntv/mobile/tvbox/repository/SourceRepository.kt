@@ -13,14 +13,11 @@ import tv.own.owntv.mobile.tvbox.engine.SpiderResult
 import tv.own.owntv.mobile.tvbox.util.SourceHealth
 import tv.own.owntv.mobile.tvbox.util.onIo
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withTimeoutOrNull
@@ -48,7 +45,6 @@ data class SourceSearchResult(
 class SourceRepository(
     private val configRepository: TvboxConfigRepository,
     private val engines: List<Engine>,
-    private val scope: CoroutineScope,
 ) {
 
     /** 全局并发上限 4，防止某源拖垮全局 */
@@ -70,17 +66,6 @@ class SourceRepository(
     private val detailCache = ConcurrentHashMap<String, CachedResult>()
 
     private data class CachedResult(val result: SpiderResult, val at: Long)
-
-    private val _searchProgress = MutableSharedFlow<SourceSearchResult>(
-        replay = 0, extraBufferCapacity = 16,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
-
-    /** 聚合搜索的流式结果（先到先显示） */
-    val searchProgress: kotlinx.coroutines.flow.SharedFlow<SourceSearchResult> = _searchProgress.asSharedFlow()
-
-    /** 订阅数：调用方先等它 >0 再触发搜索，快源 emission 才不会丢在订阅前 */
-    val searchProgressSubscribers = _searchProgress.subscriptionCount
 
     fun siteOf(siteKey: String): SiteConfig? = configRepository.siteMap[siteKey]
 
@@ -258,6 +243,8 @@ class SourceRepository(
         countHealth: Boolean = true,
         block: suspend (Spider) -> T?,
     ): T? {
+        // 调用方已取消时不再占许可、不再发请求（搜索换词取消的关键闸口）
+        kotlin.coroutines.coroutineContext.ensureActive()
         if (SourceHealth.isCooling(site.key)) {
             TbLog.d("站点 %s 冷却中，跳过调用", site.name)
             return null
@@ -369,13 +356,15 @@ class SourceRepository(
          * 这里单独限搜索并发，既不让单次搜索打爆源站，也不影响其它链路。
          */
         concurrency: Int = SEARCH_CONCURRENCY,
-    ): List<SourceSearchResult> {
-        if (keyword.isBlank()) return emptyList()
+        /** 每源完成时的进度回调（先到先显示），由调用方桥接到自己的事件流。 */
+        onProgress: (SourceSearchResult) -> Unit,
+    ): List<SourceSearchResult> = coroutineScope {
+        if (keyword.isBlank()) return@coroutineScope emptyList()
         val targets = supportedSites()
             .filter { it.canSearch && !SourceHealth.isCooling(it.key) }
             .filter { onlySiteKeys.isEmpty() || it.key in onlySiteKeys }
 
-        if (targets.isEmpty()) return emptyList()
+        if (targets.isEmpty()) return@coroutineScope emptyList()
 
         // A4-2：冷源搜索降级 —— 未 init 的 JS 源本轮不发起（冷启动 9~11s 会白吃
         // 8.5s 预算还拖垮首屏），进度里标「预热中」并触发预热插队；context 就绪后
@@ -386,16 +375,16 @@ class SourceRepository(
         }
         warming.forEach { site ->
             TbLog.tag(TAG).i("搜索跳过未 init 的 JS 源（预热中）：%s", site.name)
-            _searchProgress.tryEmit(
-                SourceSearchResult(site.key, site.name, emptyList(), "预热中，本轮暂不参与"),
-            )
+            onProgress(SourceSearchResult(site.key, site.name, emptyList(), "预热中，本轮暂不参与"))
         }
-        if (ready.isEmpty()) return emptyList()
+        if (ready.isEmpty()) return@coroutineScope emptyList()
 
         val searchSemaphore = Semaphore(concurrency.coerceAtLeast(1))
 
+        // 调用方作用域：上层 flatMapLatest 取消即全部站点请求一起取消，
+        // 换词后旧请求不再跑完、也不再迟到 emission。
         val results = ready.map { site ->
-            scope.async {
+            async {
                 val r = searchSemaphore.withPermit {
                     withTimeoutOrNull(searchTimeoutMs + 500) {
                         searchContent(site, keyword, quick, null)
@@ -407,17 +396,17 @@ class SourceRepository(
                     movies = r?.list.orEmpty(),
                     error = if (r == null) "超时或无结果" else null,
                 )
-                // A5：真流式 —— 谁先完成谁先 emit（SearchViewModel 已 collect searchProgress），
-                // 快源 1~2s 即出结果，不再等最慢的 8.5s 超时源；过滤口径与原批量 emit 一致
+                // A5：真流式 —— 谁先完成谁先 emit，快源 1~2s 即出结果，
+                // 不再等最慢的 8.5s 超时源；过滤口径与原批量 emit 一致
                 if (item.movies.isNotEmpty() || item.error != null) {
-                    _searchProgress.tryEmit(item)
+                    onProgress(item)
                 }
                 item
             }
         }
 
         val all = awaitAll(*results.toTypedArray())
-        return all.filter { it.movies.isNotEmpty() || it.error != null }
+        all.filter { it.movies.isNotEmpty() || it.error != null }
     }
 
     // ---------------- 分类辅助 ----------------

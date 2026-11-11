@@ -78,6 +78,7 @@ fun SettingsPlaylistsPage(
     val expiry by vm.sourceExpiry.collectAsStateWithLifecycle()
     val deleting by vm.deletingSourceIds.collectAsStateWithLifecycle()
     val test by vm.sourceTest.collectAsStateWithLifecycle()
+    val hasTvbox by vm.hasTvboxSource.collectAsStateWithLifecycle()
     val playlistRefresh = vm.settings.playlistAutoRefresh.pref(emptyMap())
     val nav = LocalSettingsNav.current
 
@@ -88,6 +89,7 @@ fun SettingsPlaylistsPage(
     var confirmDelete by remember { mutableStateOf<SourceEntity?>(null) }
     // Set while the "this will stop playback and take a while" confirmation is on screen.
     var confirmRetest by remember { mutableStateOf<SourceEntity?>(null) }
+    var confirmIndexCleanup by remember { mutableStateOf(false) }
 
     SettingsCrumb(pluralStringResource(R.plurals.settings_sources_count, sources.size, sources.size), SettingsGroup.SOURCES)
     SettingsStagePage(modifier) {
@@ -110,6 +112,15 @@ fun SettingsPlaylistsPage(
                     onClick = { if (source.id !in deleting) menuSource = source },
                 )
             }
+        }
+        // A TVBOX source is not a playlist row, but its index is maintained here (plan §7.2).
+        if (hasTvbox) item(key = "tvbox-index-cleanup") {
+            StageSettingRow(
+                title = stringResource(R.string.settings_tvbox_index_cleanup),
+                subtitle = stringResource(R.string.settings_tvbox_index_cleanup_hint),
+                icon = MobileIcons.Delete,
+                onClick = { confirmIndexCleanup = true },
+            )
         }
     }
 
@@ -260,6 +271,17 @@ fun SettingsPlaylistsPage(
             confirm = stringResource(R.string.settings_sources_retest),
             onConfirm = { vm.retestSource(src) },
             onDismiss = { confirmRetest = null },
+        )
+    }
+
+    if (confirmIndexCleanup) {
+        StageConfirmSheet(
+            title = stringResource(R.string.settings_tvbox_index_cleanup),
+            text = stringResource(R.string.settings_tvbox_index_cleanup_confirm),
+            confirm = stringResource(R.string.settings_tvbox_index_cleanup),
+            confirmIcon = MobileIcons.Delete,
+            onConfirm = { vm.clearTvboxIndex() },
+            onDismiss = { confirmIndexCleanup = false },
         )
     }
 }

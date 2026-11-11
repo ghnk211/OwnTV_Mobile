@@ -36,7 +36,6 @@ val libraryModule = module {
             player = get(),
             watchSession = get(),
             customize = get(),
-            tvboxStore = get(),
             tvboxPlayback = get(),
         )
     }

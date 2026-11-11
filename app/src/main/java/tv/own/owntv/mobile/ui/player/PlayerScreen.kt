@@ -79,7 +79,6 @@ import tv.own.owntv.mobile.ui.stage.StageSheetHeader
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.semantics.Role
-import tv.own.owntv.mobile.ui.screens.library.TVBOX_ITEM_ID
 import tv.own.owntv.mobile.ui.screens.library.VodTuner
 import tv.own.owntv.mobile.ui.screens.live.LiveTuner
 import tv.own.owntv.player.ErrorInfo
@@ -262,15 +261,15 @@ fun PlayerScreen(
     }
 
     // What Favourite would act on: the channel, the film, or — for an episode — the show it is from,
-    // because an episode is never favourited on its own.
-    // A TVbox stream carries the TVBOX_ITEM_ID sentinel: its identity lives in the app-private
-    // TvboxStore, and writing `itemId = -2` into the Core favourites table would corrupt it — so
-    // the favourite (and the subtitle search, which has nothing to match either) stay hidden.
-    val tvboxPlaying = film?.itemId == TVBOX_ITEM_ID
+    // because an episode is never favourited on its own. An indexed TVbox film favourites like any
+    // other film (it carries a real Core id); only the unindexed sentinel has nothing to write.
+    // Subtitles are a separate question: a TVbox stream has no subtitle interface whatever its id
+    // (decision C8), so that gate reads isExternal, not the id.
+    val tvboxPlaying = film?.isExternal == true
     val favoriteType = channel?.let { MediaType.LIVE }
         ?: film?.let { if (it.mediaType == MediaType.EPISODE) MediaType.SERIES else it.mediaType }
     val favoriteId = channel?.id
-        ?: film?.let { if (it.itemId == TVBOX_ITEM_ID) null else it.seriesId ?: it.itemId }
+        ?: film?.let { if (it.itemId > 0) it.seriesId ?: it.itemId else null }
     val favoriteIds by remember(favoriteType) {
         favoriteType?.let { actions.favoriteIds(it) } ?: flowOf(emptySet())
     }.collectAsStateWithLifecycle(emptySet())

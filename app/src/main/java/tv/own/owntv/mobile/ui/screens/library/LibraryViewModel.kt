@@ -2,6 +2,7 @@ package tv.own.owntv.mobile.ui.screens.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
@@ -119,7 +120,7 @@ data class VodItem(
  * Nothing here queries until a tab is actually collected — a catalogue of 170,000 films must not cost
  * anything at launch, and the count under the chips is the only whole-list question ever asked.
  */
-@OptIn(ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
+@OptIn(ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class, ExperimentalPagingApi::class)
 class LibraryViewModel(
     private val movieDao: MovieDao,
     private val seriesDao: SeriesDao,
@@ -140,6 +141,7 @@ class LibraryViewModel(
     private val vodTuner: VodTuner,
     private val metadata: MetadataRepository,
     private val subtitleController: SubtitleController,
+    private val tvboxMediators: tv.own.owntv.mobile.tvbox.index.TvboxRemoteMediatorFactory,
 ) : ViewModel() {
 
     private val _tab = MutableStateFlow(LibraryTab.MOVIES)
@@ -202,6 +204,13 @@ class LibraryViewModel(
     ) { cats, cust, profile ->
         AdultCategoryClassifier.hiddenCategoryIds(cats, cust.hiddenCategories, profile?.isKids == true)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    /** Kids profiles additionally drop items whose indexed category names are adult (§4.5.2), even
+     *  when the row has no category link — TVBOX search hits never have one. */
+    private val isKids: StateFlow<Boolean> = ctx
+        .flatMapLatest { profileDao.observeById(it.profileId) }
+        .map { it?.isKids == true }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     // Eagerly: nothing collects it, it is only read as `.value` (the pager, Move, restore) — shared
     // "while subscribed" it stayed empty and Move was never offered in a folder (Live TV had the same fix).
@@ -359,6 +368,7 @@ class LibraryViewModel(
         val hidden: Set<Long>,
         val query: String = "",
         val sort: SettingsRepository.SortMode = SettingsRepository.SortMode.PLAYLIST,
+        val isKids: Boolean = false,
     )
 
     private val _query = MutableStateFlow("")
@@ -380,15 +390,20 @@ class LibraryViewModel(
             .combine(orderedContexts) { args, _ -> args }
             .combine(_query.debounce(SEARCH_DEBOUNCE_MS)) { args, q -> args.copy(query = q.trim()) }
             .combine(sort) { args, s -> args.copy(sort = s) }
+            .combine(isKids) { args, kids -> args.copy(isKids = kids) }
 
     /** The films of the current selection. Collected only while the Movies tab is on screen. */
     val movies: Flow<PagingData<VodItem>> =
         args(_selectedMovies, settings.sortMovies)
-            .flatMapLatest { (key, c, cust, hidden, query, sort) ->
+            .flatMapLatest { (key, c, cust, hidden, query, sort, kids) ->
                 if (c.profileId < 0) {
                     flowOf(PagingData.empty())
                 } else {
-                    Pager(pagingConfig()) {
+                    // A TVBOX folder pages its category from the remote as the user scrolls; every
+                    // other selection reads Room alone. Rebuilt with the pager, so a query or sort
+                    // change re-queries the index — the page-1 fetch behind REFRESH is cached.
+                    val mediator = if (key is LiveKey.Folder) tvboxMediators.forFolder(key.id) else null
+                    Pager(pagingConfig(), remoteMediator = mediator) {
                         moviePagingSource(
                             key = key,
                             profileId = c.profileId,
@@ -401,7 +416,10 @@ class LibraryViewModel(
                             hasManualOrder = { it in orderedContexts.value },
                         )
                     }.flow.map { paging ->
-                        paging.customized(key, cust, hidden, { CustomizeKeys.movie(it) }, { it.categoryId })
+                        paging.customized(
+                            key, cust, hidden, { CustomizeKeys.movie(it) }, { it.categoryId },
+                            isAdultItem = if (kids) { { m: MovieEntity -> AdultCategoryClassifier.isAdultItem(m.extJson) } } else null,
+                        )
                             .map { m -> m.asItem(cust) }
                     }
                 }
@@ -448,11 +466,13 @@ class LibraryViewModel(
         hidden: Set<Long>,
         itemKey: (T) -> String,
         categoryOf: (T) -> Long?,
+        isAdultItem: ((T) -> Boolean)? = null,
     ): PagingData<T> {
-        if (cust.hiddenItems.isEmpty() && hidden.isEmpty() && cust.movedFromOrigin.isEmpty() && cust.sealedCategories.isEmpty()) return this
+        if (cust.hiddenItems.isEmpty() && hidden.isEmpty() && cust.movedFromOrigin.isEmpty() && cust.sealedCategories.isEmpty() && isAdultItem == null) return this
         return filter { item ->
             itemKey(item) !in cust.hiddenItems && !cust.seals(key) && !cust.sealsItemIn(categoryOf(item)) &&
                 (categoryOf(item) == null || categoryOf(item) !in hidden) &&
+                (isAdultItem == null || !isAdultItem(item)) &&
                 (cust.movedFromOrigin[itemKey(item)]?.let { origin ->
                     key !is LiveKey.Folder || origin != folderContextKeys.value[key.id]
                 } ?: true)

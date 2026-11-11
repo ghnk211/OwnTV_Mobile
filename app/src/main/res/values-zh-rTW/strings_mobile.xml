@@ -51,21 +51,26 @@
     <string name="tvbox_config_source_local">本機匯入</string>
     <string name="tvbox_config_delete_confirm">刪除這份配置？</string>
     <string name="tvbox_config_delete">刪除</string>
-    <string name="tvbox_import_ok">已匯入 %1$d 個站點</string>
+    <plurals name="tvbox_import_ok">
+        <item quantity="other">已匯入 %1$d 個站點</item>
+    </plurals>
     <string name="tvbox_import_downloading"> · 元件背景下載中</string>
     <string name="tvbox_home_pick_site">選擇站點</string>
     <string name="tvbox_home_no_site">目前配置沒有可用站點，請換一份配置或檢查源。</string>
     <string name="tvbox_home_empty">這裡還沒有內容。</string>
     <string name="tvbox_locked_prefix">🔒 </string>
-    <string name="tvbox_search_title">聚合搜尋</string>
-    <string name="tvbox_search_go">搜尋</string>
-    <string name="tvbox_searching">搜尋中…</string>
-    <string name="tvbox_search_empty">沒有結果。</string>
+    <string name="search_online">線上</string>
+    <string name="search_online_searching">正在搜尋站點…</string>
+    <string name="settings_tvbox_index_cleanup">清理點播索引</string>
+    <string name="settings_tvbox_index_cleanup_hint">刪除快取的索引條目；收藏、歷史與播放進度保留。</string>
+    <string name="settings_tvbox_index_cleanup_confirm">快取的索引條目將被刪除，瀏覽時重新建立。收藏、歷史與播放進度不受影響。</string>
     <string name="tvbox_loading">載入中…</string>
     <string name="tvbox_error_load">分類載入失敗，請稍後再試。</string>
     <string name="tvbox_error_detail">詳情取得失敗，請稍後再試。</string>
     <string name="tvbox_line_name">線路 %1$d · %2$s</string>
-    <string name="tvbox_episodes">%1$d 集</string>
+    <plurals name="tvbox_episodes">
+        <item quantity="other">%1$d 集</item>
+    </plurals>
     <string name="tvbox_detail_blocked_kids">目前設定檔不可觀看此內容。</string>
     <string name="tvbox_detail_locked">該分類已上鎖，請輸入 PIN 解鎖。</string>
     <string name="tvbox_detail_no_episodes">該線路沒有可播放的分集。</string>

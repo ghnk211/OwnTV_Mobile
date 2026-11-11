@@ -25,6 +25,10 @@ interface CatalogIndexCursorDao {
     @Query("DELETE FROM catalog_index_cursor WHERE sourceId = :sourceId AND categoryRemoteId = :categoryRemoteId")
     suspend fun reset(sourceId: Long, categoryRemoteId: String)
 
+    /** A remote-filter change invalidates the old pagination; the sweep ages the stale rows out. */
+    @Query("UPDATE catalog_index_cursor SET generation = generation + 1 WHERE sourceId = :sourceId AND categoryRemoteId = :categoryRemoteId")
+    suspend fun bumpGeneration(sourceId: Long, categoryRemoteId: String)
+
     @Query("DELETE FROM catalog_index_cursor WHERE sourceId = :sourceId")
     suspend fun clearSource(sourceId: Long)
 }

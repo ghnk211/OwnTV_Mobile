@@ -183,6 +183,7 @@ extras/         品牌资源、字体许可、五份文档（含本梳理与精�
 - 字段优先级：本地 provider 数据与 TMDB 记录按 `tmdbWins` 决定谁胜出；进度：电影 progress、逐集 episodeProgress、≥95% 视为完成、nextUpId（`DetailViewModel.kt:125-285`）。
 - `VodTuner` **不是设置面板**，是 VOD 播放控制器（LiveTuner 的孪生）：`playMovie/playEpisode`（整季排队 + 自动续播）/`playDownload`/`playRecording`/`playExternal`/`stop`/`saveProgress`（每 5 秒）/Cast 交接；受外部播放器设置、省流量闸、类目锁约束（`VodTuner.kt:212-527`）。
 - **档案变更跟随**：ViewModel 比"当前档案是哪一行"活得久（界面上已无档案可切，但一次恢复/同步可以把 `activeProfileId` 指向另一行），因此 `init` 里按 `profileId` 变化重读记忆分类；库里没有那个文件夹就回落到 All（`LibraryViewModel.kt:634-666`）。
+- **TVbox 点播接入 Core（P1–P5，2026-11-11）**：在线站点内容不再走私有 `TvboxStore`（已删除），而是索引进 Core `movies/categories`（`SourceType.TVBOX`，一配置一源、仅激活配置可见）。Library 网格经 `TvboxRemoteMediator` 续页（Room 单一真相，游标 `siteKey/typeId`，页 1 进程级缓存）；分类面板读 Core `categories` 并复用 Customize 的隐藏/改名/排序/锁（锁 key `<sourceId>:<siteKey>/<typeId>`）。收藏/历史/进度按档案写 Core 用户态表（进度带 `extKey` 记线路/集数）；儿童档案在条目级查 `extJson.typeNames`（`AdultCategoryClassifier.isAdultItem`）。索引失败仍可播放（`TVBOX_ITEM_ID = -2L` 哨兵：不写进度、隐藏收藏入口）。设置 › 播放列表有"清理点播索引"（`maintain(ttlDays=0)` 清未受保护行，浏览时重建）。方案见 `docs/点播内容接入Core方案.md`。
 
 ### 3.9 搜索
 
@@ -190,6 +191,7 @@ extras/         品牌资源、字体许可、五份文档（含本梳理与精�
 - 结果分组：LIVE TV（前 4 + "All n channels"）/ ON TV / MOVIES / SERIES；`kinds` 多选筛选（全不选=全选）；JUMP TO：Continue / Unwatched / Channels（`SearchScreen.kt:194-342`）。
 - 历史只在**真正打开结果**时写入，可一键清空；搜索页自身"只展示，不播放不编辑"，长按无动作（`SearchViewModel.kt:42,146`）。
 - **点频道结果 = 打开 Live TV 并落在该频道所在文件夹**：先 `startupLive.requestReveal(channelId)`（一次性句柄），预览开着则 `tuner.preview`，否则先切 tab 再全屏播；Live 侧把选中分类设为该频道的文件夹（**仅显示，不写记忆**）、清掉 Live 搜索框并滚动定位（`MobileNavHost.kt:255-279`、`LiveViewModel.kt:545-568`、`LiveScreen.kt:218-573`）。
+- **TVbox 点播（P3）**：已索引的 TVBOX 条目经 core `SearchReader` 命中（与电影/剧集同列）；在线站点补充搜索由 `TvboxOnlineSearch` 聚合（每源先到先显示，`SourceRepository.aggregateSearch` 回调桥接）。儿童档案在 `SearchReader.search/curated`、`HomeFeed`、`LibraryViewModel` 四处按 `isAdultItem(extJson)` 做条目级过滤（统一 Core 中文词表）。
 
 ### 3.10 下载与离线
 
@@ -468,5 +470,6 @@ extras/         品牌资源、字体许可、五份文档（含本梳理与精�
 
 ## 9. 近期演进
 
+- **TVbox 点播接入 Core（P0–P5，2026-11-11）**：在线站点内容从私有 `TvboxStore`/JSON 迁到 Core 表 —— P0 索引写 `movies/categories`（`SourceType.TVBOX`、Room v54、`CatalogIndexWriter` 稳定 upsert + TTL/LRU 清理）；P1 分类条读 Core + Customize 隐藏/改名/排序/锁；P2 历史/进度/继续观看落 Core（进度 `extKey` 带线路/集数、备份兼容）；P3 搜索复用 `SearchReader` + 在线补充 + 儿童条目级 `isAdultItem` 四处过滤；P4 Library `TvboxRemoteMediator` 全量续页；P5 删除 `TvboxStore` 与旧 JSON（**不迁移存量**）、保留 `TVBOX_ITEM_ID = -2L` 播放哨兵、设置新增"清理点播索引"。Core 改动经 fork `mobile` 分支 + `git subtree pull` 同步，清单见 `docs/core-changes.md`，方案见 `docs/点播内容接入Core方案.md`。
 - `mobile-mini`（本期，2026-11）：**瘦身三阶段**——① 语言收到三种并把白名单搬进代码（`AppLocales` + `localeFilters` + 四个归一化入口 + 本仓 `strings_mobile.xml`）；② 体育整块撤除（13 个页面文件删除、`di/SportsModule.kt` 摘掉、清单三条 `tools:node="remove"`、启动时清旧闹钟与卡片服务、读取时过滤 `LIVE_SPORTS` 行，core 残留按 D8 接受）；③ 档案模型收成隐式单档案（PROFILE 设置组与档案编辑页删除、`ProfileGate` 重写为纯 App 锁、新增 Settings→App→App 锁页、儿童模式改全局开关、允许下载搬到 Settings→App、Setup 简化、备份/同步按 `BackupProfiles` 拒多档案）。方案与偏差记录见 `extras/SLIMMING_PLAN.md`（§10 为实施结果）。
 - `15a85f0` 合并第一阶段：剧集日期、按截止日下载节目单、~~按档案的分类记忆~~、Guide 跟随 Live、Search 打开 Live 并落在该频道文件夹；`a58c6ad` Guide 里选分类即时反映到 Live；`ede807e` 电影/剧集跟随档案切换免重启；`277d144` 搜索跳频道改用一次性句柄。（单档案之后，"切档"相关表述只剩存储层含义，界面上已无档案可切。）

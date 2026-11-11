@@ -27,7 +27,7 @@ interface ProgressDao {
 
     /** Overwrites the position only when [at] is later than the one already stored. */
     @Query(
-        "UPDATE playback_progress SET positionMs = :positionMs, durationMs = :durationMs, updatedAt = :at " +
+        "UPDATE playback_progress SET positionMs = :positionMs, durationMs = :durationMs, updatedAt = :at, extKey = :extKey " +
             "WHERE profileId = :profileId AND mediaType = :type AND itemId = :itemId AND updatedAt < :at",
     )
     suspend fun updateIfNewer(
@@ -37,6 +37,7 @@ interface ProgressDao {
         positionMs: Long,
         durationMs: Long,
         at: Long,
+        extKey: String?,
     )
 
     @Query("SELECT * FROM playback_progress WHERE profileId = :profileId AND mediaType = :type AND itemId = :itemId")
@@ -99,7 +100,7 @@ interface ProgressDao {
             "COALESCE(c.name, m.name, s.name) AS name, " +
             "episodeSeries.remoteId AS seriesRemoteId, episodeSeries.name AS seriesName, " +
             "e.seasonNumber AS seasonNumber, e.episodeNumber AS episodeNumber, " +
-            "p.updatedAt AS at, p.positionMs AS positionMs, p.durationMs AS durationMs " +
+            "p.updatedAt AS at, p.positionMs AS positionMs, p.durationMs AS durationMs, p.extKey AS extKey " +
             "FROM playback_progress p " +
             "LEFT JOIN channels c ON p.mediaType = 'LIVE' AND p.itemId = c.id " +
             "LEFT JOIN movies m ON p.mediaType = 'MOVIE' AND p.itemId = m.id " +

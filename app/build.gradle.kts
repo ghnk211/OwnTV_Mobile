@@ -384,6 +384,8 @@ dependencies {
 
     // Test
     testImplementation(libs.junit)
+    // android.jar's org.json is a stub under isReturnDefaultValues; extKey codec tests need the real one.
+    testImplementation(libs.org.json)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -101,6 +101,7 @@ class SettingsViewModel(
     private val enginePool: tv.own.owntv.player.LiveEnginePool,
     private val sourceEditor: SourceEditor,
     private val profileManager: ProfileManager,
+    private val tvboxIndexer: tv.own.owntv.mobile.tvbox.index.TvboxIndexer,
 ) : ViewModel() {
 
     /** Run a setter on a scope that survives the row being scrolled off the screen. */
@@ -118,6 +119,23 @@ class SettingsViewModel(
         // and every favourite/resume position pointing at them.
         .map { list -> list.filter { it.type != SourceType.TVBOX } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Whether a TVBOX source exists — the playlists page shows the index-cleanup row only then. */
+    val hasTvboxSource: StateFlow<Boolean> = sourceDao.observeAll()
+        .map { list -> list.any { it.type == SourceType.TVBOX } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /**
+     * Drop the TVBOX index rows no user data protects, so the next browse rebuilds them fresh —
+     * the only way to un-flag a mislabelled category name (plan §10). Favourites, resume positions,
+     * history, custom-category memberships and manual orders all survive the sweep.
+     */
+    fun clearTvboxIndex() {
+        viewModelScope.launch {
+            val ids = sourceDao.observeAll().first().filter { it.type == SourceType.TVBOX }.map { it.id }
+            ids.forEach { id -> runCatching { tvboxIndexer.maintain(id, ttlDays = 0) } }
+        }
+    }
 
     val profiles: StateFlow<List<ProfileEntity>> = profileDao.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())

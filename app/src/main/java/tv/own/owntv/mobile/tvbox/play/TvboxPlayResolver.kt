@@ -39,6 +39,7 @@ class TvboxPlayResolver(
     private val profileDao: ProfileDao,
     private val categoryPolicy: TvboxCategoryPolicy,
     private val categoryLock: TvboxCategoryLock,
+    private val provisioner: tv.own.owntv.mobile.tvbox.repository.TvboxSourceProvisioner,
 ) {
 
     sealed interface Outcome {
@@ -66,7 +67,7 @@ class TvboxPlayResolver(
         // ---- 锁/儿童强制校验（详情层已查过，这里按方案再查一次） ----
         val profile = profileDao.getById(profileId)
         val blockedKids = categoryPolicy.blockedByKids(profile, site, categoryKey.typeName)
-        val sealed = categoryLock.seals(profileId, categoryKey.siteKey, categoryKey.typeId, categoryKey.typeName)
+        val sealed = categoryLock.seals(profileId, provisioner.activeSourceId(), categoryKey.siteKey, categoryKey.typeId, categoryKey.typeName)
         if (blockedKids) return Outcome.Blocked(byKids = true)
         if (sealed) return Outcome.Blocked(byKids = false)
 

@@ -188,6 +188,8 @@ private fun settingsSearch(query: String, all: Map<SettingsGroup, List<SettingSe
 private val LEAF_ROWS: List<Pair<SettingsLeaf, Int>> = listOf(
     // Set per playlist, in its Names sheet: the hit opens the list of playlists to pick one from.
     SettingsLeaf.PLAYLISTS to R.string.settings_sources_clean_names_toggle,
+    // Only drawn when a TVBOX source exists, but always findable by name.
+    SettingsLeaf.PLAYLISTS to R.string.settings_tvbox_index_cleanup,
     SettingsLeaf.EPG_SOURCES to R.string.settings_epg_sources_auto_refresh_title,
     SettingsLeaf.EPG_SOURCES to R.string.settings_epg_sources_use_logos,
     SettingsLeaf.FONTS to R.string.settings_font_size,

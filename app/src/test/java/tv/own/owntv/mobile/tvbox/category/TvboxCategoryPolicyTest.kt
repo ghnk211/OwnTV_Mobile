@@ -6,7 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import tv.own.owntv.core.database.entity.ProfileEntity
 import tv.own.owntv.mobile.tvbox.config.model.SiteConfig
-import tv.own.owntv.mobile.tvbox.engine.ClassInfo
 import tv.own.owntv.mobile.tvbox.engine.Movie
 
 /**
@@ -73,12 +72,6 @@ class TvboxCategoryPolicyTest {
     }
 
     // ---- 列表行过滤 ----
-
-    @Test
-    fun `儿童档案下 typeName 命中的行隐藏`() {
-        val classes = listOf(ClassInfo("1", "电影"), ClassInfo("6", "伦理片"))
-        assertEquals(listOf("电影"), policy.visibleCategories(kids, site(), classes).map { it.typeName })
-    }
 
     @Test
     fun `儿童档案下 movie typeName 命中即隐藏`() {

@@ -130,7 +130,8 @@ class SearchReader(
                     )
                     .filter {
                         CustomizeKeys.movie(it) !in custMovie.hiddenItems &&
-                            (it.categoryId == null || it.categoryId !in hiddenMovieCats)
+                            (it.categoryId == null || it.categoryId !in hiddenMovieCats) &&
+                            !(isKids && AdultCategoryClassifier.isAdultItem(it.extJson))
                     }
                     .map { m -> custMovie.itemNames[CustomizeKeys.movie(m)]?.let { m.copy(name = it) } ?: m },
             series = if (sources.seriesSourceIds.isEmpty()) emptyList() else
@@ -212,6 +213,10 @@ class SearchReader(
         val live = customize.observeVisible(profileId, MediaType.LIVE).first()
         val movie = customize.observeVisible(profileId, MediaType.MOVIE).first()
         val series = customize.observeVisible(profileId, MediaType.SERIES).first()
+        // Kids item-level check, same predicate as typed search: a TVBOX row with no category link
+        // still carries the category names it was indexed under (方案 §4.5.2).
+        val isKids = profileDao.getById(profileId)?.isKids == true
+        fun kidsAdultMovie(m: MovieEntity): Boolean = isKids && AdultCategoryClassifier.isAdultItem(m.extJson)
         return when (intent) {
             SearchIntent.CONTINUE -> SearchResults(
                 channels = channelDao.recentlyWatched(profileId, limit).first()
@@ -219,7 +224,7 @@ class SearchReader(
                     .map { ChannelSearchResult(it, null) },
                 movies = if (sources.movieSourceIds.isEmpty()) emptyList()
                 else movieDao.recentlyWatchedSnapshot(profileId, sources.movieSourceIds, limit)
-                    .filterNot { movie.sealsItemIn(it.categoryId) },
+                    .filterNot { movie.sealsItemIn(it.categoryId) || kidsAdultMovie(it) },
                 series = if (sources.seriesSourceIds.isEmpty()) emptyList()
                 else seriesDao.recentlyWatchedSnapshot(profileId, sources.seriesSourceIds, limit)
                     .filterNot { series.sealsItemIn(it.categoryId) },
@@ -227,7 +232,7 @@ class SearchReader(
             SearchIntent.UNWATCHED -> SearchResults(
                 movies = if (sources.movieSourceIds.isEmpty()) emptyList()
                 else movieDao.unwatchedFavorites(profileId, sources.movieSourceIds, limit)
-                    .filterNot { movie.sealsItemIn(it.categoryId) },
+                    .filterNot { movie.sealsItemIn(it.categoryId) || kidsAdultMovie(it) },
                 series = if (sources.seriesSourceIds.isEmpty()) emptyList()
                 else seriesDao.unwatchedFavorites(profileId, sources.seriesSourceIds, limit)
                     .filterNot { series.sealsItemIn(it.categoryId) },
