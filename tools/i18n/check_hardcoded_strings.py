@@ -27,12 +27,13 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-# Every Gradle module whose Kotlin ships to users. :app is the only one in this repository — the
-# core library's own Kotlin is gated by the identical check in ahXN00/OwnTV_Core, so a literal
-# cannot escape by moving between the two. A new module here needs a line added, or its text is
-# never scanned.
+# Every Gradle module whose Kotlin ships to users. Code migrates from :app into :core (and later
+# :player-core) module by module, and a literal must not escape this gate merely by moving house —
+# so the scan follows the modules rather than assuming everything lives under app/.
 SRC_ROOTS = [
     ROOT / "app" / "src" / "main" / "java",
+    ROOT / "core" / "src" / "main" / "java",
+    ROOT / "player-core" / "src" / "main" / "java",
 ]
 # The same modules as git pathspecs, for the scanner-migration guard in verify-ci.
 MODULE_MAIN_DIRS = [root.parent.relative_to(ROOT).as_posix() for root in SRC_ROOTS]
@@ -436,8 +437,8 @@ def _render_unclassified(keys: list[tuple[str, str]]) -> list[str]:
         "  * A user can read it -> add it to core/src/main/res/values/strings_*.xml, then reference it:",
         "        stringResource(R.string.your_key)          // Compose",
         "        context.getString(R.string.your_key)       // everywhere else",
-        "    Add the English string only. Translations arrive from Weblate after the merge, and a",
-        "    missing translation never fails a build.",
+        "    Add the English string, then the 简体中文 and 繁體中文 entries. A missing",
+        "    translation never fails a build.",
         "",
         "  * No user can read it (log line, SQL, JSON key, regex, preference key) -> declare it:",
         "        python tools/i18n/check_hardcoded_strings.py classify-safe \\",
@@ -593,13 +594,9 @@ def cmd_verify_ci(args) -> int:
     if probe.returncode != 0:
         return cmd_verify(argparse.Namespace(base=None, bootstrap=True))
 
-    # encoding="utf-8" explicitly, never text=True: that decodes with the platform's preferred
-    # encoding, which is cp1252 on Windows and can be plain ASCII on a CI runner with no locale set.
-    # The baseline is UTF-8 and its literals contain "·" and "…", so either default turns every
-    # non-ASCII line into a phantom REGRESSION against a baseline that in fact already lists it.
     base_text = subprocess.run(
         ["git", "show", f"{base_sha}:tools/i18n/hardcoded_baseline.txt"],
-        cwd=ROOT, encoding="utf-8", capture_output=True, check=True,
+        cwd=ROOT, text=True, capture_output=True, check=True,
     ).stdout
     current_text = BASELINE.read_text(encoding="utf-8")
     base_version = _scanner_version(base_text) or 1

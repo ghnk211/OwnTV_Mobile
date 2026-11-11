@@ -11,9 +11,12 @@ from format_specs import _tokens as format_tokens
 
 ROOT = Path(__file__).resolve().parents[2]
 # Every Gradle module whose Kotlin ships to users, same rule as check_hardcoded_strings.SRC_ROOTS.
-# :app is the only one here; the core library's Kotlin is gated in ahXN00/OwnTV_Core.
+# A single hardcoded "app/src/main/java" silently scanned nothing once the code moved into :core.
+# Roots that do not exist in this repo are skipped, so the same file works in every repo.
 SOURCE_ROOTS = [
     ROOT / "app" / "src" / "main" / "java",
+    ROOT / "core" / "src" / "main" / "java",
+    ROOT / "player-core" / "src" / "main" / "java",
 ]
 ALLOWLIST = ROOT / "tools/i18n/number_format_allowlist.txt"
 LOCALIZED_CONVERSIONS = set("deEfFgGaA")

@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Launch-window background. Same brand background as the TV app so the two apps look like one
-         product on a device that has both installed. -->
-    <color name="owntv_window_bg">#040e0b</color>
-    <!-- Adaptive launcher icon background. -->
-    <color name="owntv_icon_bg">#050914</color>
-</resources>

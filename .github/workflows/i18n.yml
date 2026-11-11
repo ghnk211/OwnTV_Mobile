@@ -1,40 +1,34 @@
 name: i18n
 
-# Lightweight, deliberately SEPARATE from android.yml. Four jobs, all gating:
-#   baseline      — the hardcoded-literal ratchet for app/ against the pull-request merge base (not
-#                   HEAD^, which is bypassable in a multi-commit PR).
-#   core-baseline — the same ratchet for the vendored core (vendor/OwnTV_Core/core and
-#                   vendor/OwnTV_Core/player-core), using core's own checker and baseline.
-#   validate      — the Kotlin-side checks: locale-stable number formatting and bounded text overflow.
-#   pseudo        — inspects the BUILT debug and release APKs and proves pseudolocales survived
-#                   localeFilters in debug and are absent in release. The flag being set is not proof.
+# Every user-visible string in OwnTV lives in :core, so this is where the translation gate belongs.
+# Two jobs, both gating:
+#   baseline  — the hardcoded-literal ratchet against the pull-request merge base (not HEAD^, which
+#               is bypassable in a multi-commit PR).
+#   validate  — locales.json schema + placeholder/plural parity for every present translation, plus
+#               an informational coverage report. English in values/ is the source; a missing
+#               translation never fails this job, but a present, malformed one still does.
 #
-# The strings themselves live in the vendored core (vendor/OwnTV_Core). locales.json schema checks,
-# placeholder/plural parity, translation coverage and the toolkit's own regression tests still run
-# in the core repository; what runs here is the copy those tools need at build time, plus what this
-# repo's own Kotlin can get wrong.
-#
-# Why merge base and not HEAD^: a baseline can grow in commit 2 and stay untouched in the final
-# commit, so the final commit's diff against its parent passes while the PR as a whole regressed.
-# The required invariant is: PR-head baseline ⊆ pull-request merge-base baseline.
-#
-# Why main is also a trigger: work lands on main by direct push, not only by PR. A pull_request-only
-# workflow never inspects those commits, so unclassified literals accumulate on main unseen and the
-# next PR fails for debt that is not its own. On push the ratchet has no merge base to compare
-# against, so it runs in bootstrap mode: main must be self-consistent (nothing unclassified, nothing
-# stale), which is the invariant a PR then inherits.
+# English, 简体中文 and 繁體中文 are the shipped resource sets; there is no community translation
+# sync, so no language can arrive without a matching locale directory in this repository.
 
 on:
   pull_request:
   push:
     branches: [main]
   workflow_dispatch:
+  # Called by publish.yml before it publishes anything. This workflow never ran on a tag at all, so a
+  # release could go out carrying a string that existed in English and nowhere else. Called from the
+  # publish, the `pull_request` branch below is not taken and the ratchet runs its `verify --bootstrap`
+  # form, which is the right check for a tag.
+  workflow_call:
 
 permissions:
   contents: read
 
+# Named after this file rather than ${{ github.workflow }} — see the note in build.yml: a called
+# workflow reports the caller's name, which would collide with publish.yml's own group.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: i18n-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -52,11 +46,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      # Full history, not --depth=1: a shallow fetch brings only the base branch's tip, so
+      # `git merge-base` below cannot reach the branch point of any PR that is not cut from that
+      # exact commit. It exits non-zero with no output, and `set -euo pipefail` kills the step
+      # before the ratchet ever runs — a red check that says nothing about the PR's contents.
       - name: Fetch base branch
         if: ${{ github.event_name == 'pull_request' }}
-        # No --depth here. The checkout above is already complete (fetch-depth: 0), and a shallow
-        # fetch into a complete clone writes .git/shallow and truncates it — after which
-        # `git merge-base` can fail outright, which under `set -e` is an exit 1 with no message.
         run: git fetch --no-tags origin "${GITHUB_BASE_REF}"
 
       - name: Hardcoded-literal ratchet
@@ -72,19 +67,6 @@ jobs:
             python3 tools/i18n/check_hardcoded_strings.py verify --bootstrap
           fi
 
-  core-baseline:
-    # Core's own checker, run against the vendored snapshot. `--bootstrap` is path-based and does
-    # not need git history; core's verify-ci is not used because its git-relative paths assume the
-    # core repository is the git root.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.12'
-      - name: Vendored core hardcoded-literal check
-        run: python3 vendor/OwnTV_Core/tools/i18n/check_hardcoded_strings.py verify --bootstrap
-
   validate:
     runs-on: ubuntu-latest
     steps:
@@ -92,37 +74,13 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - name: Validate strings and locales.json, print coverage report
+        run: python3 tools/i18n/validate_strings.py --report text
+      - name: SupportedLocales.kt freshness
+        run: python3 tools/i18n/gen_supported_locales.py check
       - name: Locale-stable Kotlin number formatting
         run: python3 tools/i18n/check_number_locale.py
       - name: Bounded Compose text overflow
         run: python3 tools/i18n/check_text_overflow.py
-
-  pseudo:
-    # Builds the debug + release standard APKs and inspects their resource tables. Heavier than the
-    # other jobs, so it is its own job rather than piggy-backed on android.yml — and skipped on
-    # push, where android.yml already assembles main.
-    if: ${{ github.event_name != 'push' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Set up JDK 25
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: '25'
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          # 'tools' is obsolete and Google removed it from the SDK repository; the
-          # action still asks for it by default, which fails the whole setup step.
-          packages: 'platform-tools'
-      - name: Assemble standard debug + release APKs
-        run: ./gradlew :app:assembleStandardDebug :app:assembleStandardRelease --console=plain
-      - name: Verify pseudolocale packaging
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
-        run: |
-          DBG=$(ls app/build/outputs/apk/standard/debug/*.apk | head -1)
-          REL=$(ls app/build/outputs/apk/standard/release/*.apk | head -1)
-          python3 tools/i18n/check_pseudo_locales.py --apk "$DBG" --mode debug
-          python3 tools/i18n/check_pseudo_locales.py --apk "$REL" --mode release
+      - name: Python i18n tool regression tests
+        run: python3 tools/i18n/test_i18n_tools.py

@@ -8,9 +8,9 @@ import sys
 from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[2]
-# Every module whose Kotlin ships to users. :app is the only one here; the core library's Kotlin
-# is gated by the identical check in ahXN00/OwnTV_Core.
-SOURCE_ROOTS = [ROOT / "app/src/main/java"]
+# Every module whose Kotlin ships to users, for the same reason check_hardcoded_strings.py scans
+# more than one root: code moves between modules and must not leave the gate by doing so.
+SOURCE_ROOTS = [ROOT / "app/src/main/java", ROOT / "core/src/main/java"]
 ALLOWLIST = ROOT / "tools/i18n/text_overflow_allowlist.txt"
 
 

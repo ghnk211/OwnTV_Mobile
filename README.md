@@ -1,60 +1,50 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: light)" srcset="extras/brand/app-logos/logo_eggshell_light.png">
-    <img src="extras/brand/app-logos/logo_eggshell.png" alt="OwnTV Mobile" width="360">
+    <img src="extras/brand/app-logos/logo_eggshell.png" alt="OwnTV" width="360">
   </picture>
 </p>
 
 <p align="center">
-  <b>Your own IPTV player for Android phones and tablets</b><br>
-  <sub>Touch-first · the same engine as the television — bring your own M3U, Xtream or Stalker (MAC) sources</sub>
+  <b>The shared engine behind the OwnTV apps</b><br>
+  <sub>Data · sync · parsers · EPG · playback — everything that isn't a screen</sub>
 </p>
 
 <p align="center">
-  <img alt="Platform" src="https://img.shields.io/badge/platform-Android%20phone%20%26%20tablet-3DDC84?logo=android&logoColor=white">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Android%20library-3DDC84?logo=android&logoColor=white">
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white">
-  <img alt="Compose" src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white">
+  <img alt="minSdk" src="https://img.shields.io/badge/minSdk-26-3DDC84">
   <img alt="Player" src="https://img.shields.io/badge/engines-libmpv%20%2B%20ExoPlayer-FB8C00">
   <img alt="License" src="https://img.shields.io/badge/license-GPLv3-blue">
   <img alt="Built with the help of AI" src="https://img.shields.io/badge/built%20with-the%20help%20of%20AI-8A2BE2">
-  <a href="https://hosted.weblate.org/engage/owntv/">
-    <img alt="Translation status" src="https://hosted.weblate.org/widget/owntv/svg-badge.svg">
-  </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/ahXN00/OwnTV_Mobile/actions/workflows/android.yml">
-    <img alt="Android CI" src="https://github.com/ahXN00/OwnTV_Mobile/actions/workflows/android.yml/badge.svg">
+  <a href="https://github.com/ahXN00/OwnTV_Core/actions/workflows/build.yml">
+    <img alt="Core CI" src="https://github.com/ahXN00/OwnTV_Core/actions/workflows/build.yml/badge.svg">
+  </a>
+  <a href="https://github.com/ahXN00/OwnTV_Core/actions/workflows/i18n.yml">
+    <img alt="i18n" src="https://github.com/ahXN00/OwnTV_Core/actions/workflows/i18n.yml/badge.svg">
+  </a>
+  <a href="https://github.com/ahXN00/OwnTV_Core/actions/workflows/publish.yml">
+    <img alt="Publish core" src="https://github.com/ahXN00/OwnTV_Core/actions/workflows/publish.yml/badge.svg">
   </a>
 </p>
 
 ---
 
-OwnTV Mobile is the phone and tablet member of the OwnTV family: a native Android IPTV **player**
-built with Kotlin and Jetpack Compose, sharing its **entire engine** with
-[OwnTV for Android TV](https://github.com/ahXN00/OwnTV) through the
-[OwnTV core library](https://github.com/ahXN00/OwnTV_Core). Two interfaces, one database, one sync,
-one playback stack — a **dual playback engine** of **libmpv (FFmpeg)** for films and series and
-**ExoPlayer (Media3)** for near-instant Live TV.
+OwnTV Core is the **headless half** of [OwnTV](https://github.com/ahXN00/OwnTV), the open-source
+IPTV **player** for Android TV. Everything that is not a screen lives here: the Room database and
+every migration, playlist sync and parsing for **M3U / Xtream / Stalker**, EPG, backup and restore,
+profiles, downloads, settings storage, **every user-visible string**, and the **dual playback
+engine** — libmpv (FFmpeg) plus Media3/ExoPlayer.
 
-It is a *player only* — you bring your own Xtream login, M3U playlist (by **URL or a local
-`.m3u`/`.m3u8` file** on the device), or **Stalker/Ministra portal (Portal URL + MAC, with optional
-Serial Number, Device IDs and Signature)**.
+Neither module renders anything. They use the Compose **runtime** for state, but no `compose-ui`,
+no `compose-foundation`, no `androidx.tv.*` and no navigation — that is exactly what lets one engine
+back both the Android TV app and the phone/tablet app.
 
-> ⚠️ OwnTV does **not** provide any channels, playlists, subscriptions, streams, or media content.
-> You are responsible for adding your own legally accessible sources.
-
-This is an **open-source** project — the code is original (not derived from any other app) and was
-**built with the help of AI**.
-
-> ### 📖 New here? **[User Guide →](extras/USER_GUIDE.md)**
-> Every feature, where to find it, and the gestures — on one page.
-
-> ### 📱 Already using OwnTV on your television?
-> **Local sync** carries your playlists, favourites and watch history across your own
-> Wi-Fi, with no account and no cloud — offered on the very first setup screen, so a new phone is
-> furnished from the television without going near the menus. A **backup** made on the television
-> restores here too, encrypted ones included, as long as it carries one profile.
+> ⚠️ OwnTV provides **no** channels, playlists, subscriptions, streams or media content. This is
+> library code for building a player; the sources are the user's own.
 
 ---
 
@@ -70,215 +60,200 @@ Scan to join from your phone:
 
 ---
 
-## ✨ Features
+## 📦 The two modules
 
-### 🎬 Playback
+Published together, always on one version — two artifacts that must be used as a pair should not
+have numbers that can disagree.
 
-- **Two engines** — libmpv for films and series and the widest codec/HDR support, ExoPlayer for
-  fast-starting Live TV, with an automatic handover between them and a **per-channel compatibility
-  mode** when a stream only likes one of them.
-- **Full-screen player** with the complete control bar — including **previous and next episode** —
-  and **touch gestures** for skip, scrub, volume, brightness, zoom, speed and mute.
-- **Picture-in-Picture**, a **draggable floating window**, and a **docked mini player** above the
-  tabs — whichever you prefer, or none.
-- **Sound-only mode** with artwork, volume to 150 % and a sleep timer; it can switch itself on when
-  the screen goes off or you leave Wi-Fi, and it remembers your choice per channel.
-- **Catch-up TV**, **rewind live TV** into your provider's archive, and **Go live** again.
-- **Multiview** — several live channels at once, with sound on the one you choose.
-- Hand a stream to **another player app** if you would rather.
+| Module | Namespace | What it is |
+|---|---|---|
+| **`:core`** | `tv.own.owntv.core` | Room database and migrations, sync, parsers, EPG, backup, profiles, downloads, settings, metadata, and every string. |
+| **`:player-core`** | `tv.own.owntv.playercore` | The playback engine — libmpv plus the Media3/ExoPlayer handoff, the fallback ladder, watchdogs, live tuning shared by both apps (`LiveTuneController`) and stream diagnostics. Depends on `:core`. |
 
-### 🧭 Browse
+## ✨ What's inside
 
-- **The Stage design** — the same look as the OwnTV television app: frosted glass, a full-picture
-  hero, Dark and Light, and a background of your own picture if you like.
-- **Home** with your own rows in your own order, a hero card for what you were watching, and
-  continue-watching rows for films and shows.
-- **Live TV, Movies and Series** with categories, sorting, grid or list, and **pinch to resize** the
-  posters.
-- **TV guide in three shapes** — On now, Grid and Timeline — with day chips, jump-to-now, search and
-  a category filter.
-- **Film and show details** with the cast, the trailer, seasons, episode progress and Resume; a show
-  opens on the season you last watched, and starting something part-watched asks whether to resume or
-  start over — or stops asking, if you prefer.
-- **Search** across channels, films and shows in one field, grouped by kind, loading more as you
-  scroll.
-- **Bottom bar on a phone, a floating rail on a tablet or held sideways**, with the list and the
-  preview side by side where there is room.
+### 🎬 Playback (`:player-core`)
+- **Dual engine** — libmpv (FFmpeg) for maximum codec compatibility, ExoPlayer (Media3) for
+  near-instant Live TV, with an automatic fallback ladder between them
+- **Every sound format on both engines** — ExoPlayer falls back to the FFmpeg that ships with the mpv
+  engine for audio the device can't decode (DTS, TrueHD, MP2…), after the device's own decoders and
+  passthrough
+- **HLS, MPEG-DASH and raw MPEG-TS**, chosen from what the playlist declares, what the response
+  actually is, and what the panel has already been caught doing — plus **Widevine / ClearKey** for
+  channels that publish a licence server, and ClearKey keys written into the playlist itself
+  (ExoPlayer only; mpv has no CDM)
+- **Watchdogs that assume the stream is hostile** — no-frame detection, stall recovery, surface
+  resets, reconnect logic, and a live diagnostics log
+- Zero-copy **4K HDR** direct rendering, frame-rate matching, throughput tracking, resolution and
+  codec reporting, volume boost, subtitle shift and language selection
+- Live timeline geometry for catch-up/rewind, hero and preview engines for browse screens
 
-### 📥 Sources & EPG
+### 🗄️ Data & sync (`:core`)
+- **Room** database with the full migration chain, plus paging
+- Source parsing and sync for **M3U**, **Xtream Codes** and **Stalker/Ministra (MAC portal)** —
+  incremental upserts, category fallbacks, and relinking of favourites, history and progress
+- **EPG** (XMLTV) ingest, catch-up, and the guide's data model
+- Backup and restore, including encrypted password backup, and cross-device companion transfer
+- **Local sync** — two OwnTV devices on the same Wi-Fi exchanging their data directly, with no
+  account and no cloud: discovery, pairing, the merge rule (the newer of two facts wins), the
+  tombstones that make a deletion survive it, and a payload the two devices seal between
+  themselves without ever asking the user for a passphrase
+- Profiles, downloads, settings storage, TMDB metadata and trending, weather, update checks
 
-- **Xtream, M3U (URL or local file) and Stalker/MAG portals**, with a large import that runs in the
-  background.
-- **EPG** from the playlist or your own XMLTV feeds, with **auto-matching**, a review list, per-feed
-  counts, catch-up timezone handling and guide statistics.
-- OwnTV **measures how many streams your provider actually allows** and tells you before it has to
-  refuse one.
-
-### ⏺️ Recording & downloads
-
-- **Record Live TV** from the guide, the channel list or while you are watching — including **every
-  showing** of a programme, and a catch-up programme from the archive.
-- **Downloads** with pause, resume, retry, free-space and speed, watchable offline.
-- Save downloads and recordings to **a folder you pick**, SD card included, and **export** a copy
-  anywhere.
-
-### 👤 One profile, sync & settings
-
-- **One profile per phone** — the app opens on it, and it carries your favourites, history, resume
-  points, layout and restrictions. An **app lock** (a 4–6 digit PIN asked for when the app opens),
-  **Kids Mode** for the whole app, locking single categories behind a PIN, and optionally Settings too.
-- **Backup & restore** with a password and your own file picker, choosing which parts of your data
-  travel. A backup is always the current profile; a file holding several is refused with a reason.
-- **Local sync** over your own Wi-Fi — pair by QR or on the network, see exactly what will change
-  before it changes, and send, receive or merge. The current profile only.
-- **Settings in eleven groups** with a search box that finds any setting by name, **Quick** for the
-  rows you pin, and **Customize** for renaming, hiding, reordering and regrouping everything in your
-  library.
-- **Three languages** — English, 简体中文 and 繁體中文 — or follow the phone's own language.
-
----
-
-## 📸 Screenshots
-
-<table>
-  <tr>
-    <td align="center"><img src="extras/screenshots/Home.png" alt="Home" width="240"><br><sub>Home — Now Trending</sub></td>
-    <td align="center"><img src="extras/screenshots/LiveTV.png" alt="Live TV" width="240"><br><sub>Live TV</sub></td>
-    <td align="center"><img src="extras/screenshots/Guide.png" alt="TV Guide" width="240"><br><sub>TV Guide</sub></td>
-  </tr>
-</table>
-
-<p align="center">
-  <img src="extras/screenshots/Player.png" alt="The player, full screen" width="740"><br>
-  <sub>The player — live channel, full screen</sub>
-</p>
-
----
+### 🌍 Strings & translations (`:core`)
+- Six Android resource components, **3 locale sets (English, 简体中文, 繁體中文)**, and the toolkit
+  that guards them: hardcoded-literal inventory, plural/CLDR validation, number-locale checks,
+  overflow checks
 
 ## 🧱 Tech stack
 
-| | |
-|---|---|
-| Language | Kotlin 2.4.20 |
-| UI | Jetpack Compose, Material 3 |
-| Build | AGP 9.4.0, `minSdk` 26, `targetSdk` 36 |
-| Engine | [`tv.own.owntv:core`](https://github.com/ahXN00/OwnTV_Core) + `:player-core` — Room, sync, EPG, backup, libmpv and Media3 |
-| DI | Koin |
-| Networking / images | OkHttp · Coil |
+Kotlin 2.4.20 · AGP 9.4.0 · Room 2.8.5 · SQLite 3.50 (bundled) · Media3 1.11.1 · libmpv ·
+Koin 4.2.2 · OkHttp 5 · Coroutines 1.11.0 · WorkManager · DataStore · Paging 3 · KSP 2.3.11 ·
+minSdk 26
 
-**This repository contains the phone and tablet interface and nothing else.** Every entity,
-migration, parser, sync, EPG, backup and playback decision lives in the core library and is shared,
-byte for byte, with the television app. If you are looking for how a playlist is parsed or how the
-database is versioned, it is [over there](https://github.com/ahXN00/OwnTV_Core).
+## 🔗 Who depends on this
 
-The one exception is wording only this app can have — the app lock, the single-profile backup
-notices: `app/src/main/res/values/strings_mobile.xml` and its `zh-rCN` / `zh-rTW` siblings, three
-files with the same keys, checked by a unit test. Anything the television shows too stays in core.
+- **[OwnTV for Android TV](https://github.com/ahXN00/OwnTV)** — televisions and set-top boxes, shipping.
+- **[OwnTV for mobile](https://github.com/ahXN00/OwnTV_Mobile)** — phones and tablets, shipping.
 
-### Project layout
+**A change here affects both.** Nothing is released from here until the TV app has been rebuilt
+against it. There is no such thing as a change that only affects one app.
 
-```
-app/                     the phone & tablet UI: navigation, screens, player chrome
-  src/main/java/tv/own/owntv/mobile/
-    ui/screens/          home · live · library · guide · search · downloads ·
-                         recordings · multiview · settings
-    ui/stage/            the Stage parts every screen is built from (buttons, rows, fields, glass)
-    ui/components/       the sheet host, icons, logos and the shared menus and pickers
-    i18n/                the three-language whitelist the build, the pickers and the stored tag read
-    di/                  Koin modules
-tools/i18n/              core's locale catalogue (kept in step with it) and the consumer-side string checks
-extras/                  logos, credits artwork, and the TV parity checklist
-```
+Both apps are updated automatically. Publishing a release here opens a pull request on each of them
+that moves its `owntvCore` pin and refreshes its copy of `tools/i18n/locales.json`, and each app
+merges that pull request itself once it has confirmed the two files agree with this repository. No
+app pins a core version by hand.
 
-## 📚 Docs (`extras/`)
+## 🛠️ Building
 
-- 📖 **[User Guide](extras/USER_GUIDE.md)** — every feature and where to find it.
-- 🗺️ **[Feature map (中文)](extras/FEATURE_MAP.md)** — 逐屏功能梳理、core 边界、权限门禁与已知取舍，按当前代码核对。
-- 📄 **[Master Product Brief](extras/OwnTV_Master_Product_Brief.md)** — the full as-built feature and
-  architecture reference.
-- ✅ **[Parity checklist](extras/PARITY_CHECKLIST.md)** — every television feature, where it landed
-  here, and why the dropped ones cannot exist on a phone.
-
----
-
-## 📥 Installing
-
-Distribution is **sideloaded** while the app is pre-release: download the APK from the
-[Releases page](https://github.com/ahXN00/OwnTV_Mobile/releases) and install it. Each release
-carries an arm APK and an `x86_64` one for emulators.
-
-The app checks for a new release itself — on startup if you let it, or from **Settings → App →
-Check for updates** — and can download and install it for you. That needs
-`REQUEST_INSTALL_PACKAGES`, which the app declares for exactly this and nothing else; Android will
-still ask you to allow installs from OwnTV the first time.
-
----
-
-## 🛠️ Building & running
-
-```bash
-git clone https://github.com/ahXN00/OwnTV_Mobile.git
-cd OwnTV_Mobile
-./gradlew :app:assembleStandardDebug
-```
-
-`local.properties` is developer-local and never committed:
+Requires **JDK 25** and an Android SDK. Put the SDK path in `local.properties`:
 
 ```properties
-sdk.dir=C:/Users/<you>/AppData/Local/Android/Sdk
+sdk.dir=C:/Path/To/Android/Sdk
 ```
 
-**The core library is vendored.** `vendor/OwnTV_Core` is a git subtree of
-https://github.com/ghnk211/OwnTV_Core (branch `mobile`), itself forked from
-https://github.com/ahXN00/OwnTV_Core. `settings.gradle.kts` includes it as a composite build, so
-Gradle substitutes the `tv.own.owntv:core` and `:player-core` coordinates with the source committed
-here. There is no pin and no `owntv.corePath` step: a clean clone builds exactly the core source in
-this repository. Only the mpv engine, `tv.own.owntv:libmpv`, still resolves from OwnTV's public
-Maven repository.
-
-To update the vendored core, see [docs/Core源码集成方案.md](docs/Core源码集成方案.md): edit the
-`mobile` branch of the fork, run core's tests, then `git subtree pull` into this repository.
-
-Signing and keystore values belong in `~/.gradle/gradle.properties` or CI secrets, never in a
-repository file. With nothing configured the APK simply builds unsigned.
-
-### Checks
+Then:
 
 ```bash
-./gradlew :app:testStandardDebugUnitTest      # unit tests
-./gradlew :app:lintStandardDebug              # Android lint
-python tools/i18n/check_hardcoded_strings.py verify
-python tools/i18n/check_pseudo_locales.py     # needs a built APK
+./gradlew :core:assembleRelease :player-core:assembleRelease   # build both AARs
+./gradlew :core:testDebugUnitTest :player-core:testDebugUnitTest
+./gradlew build                                                # everything, including lint
 ```
 
----
+Instrumentation tests need a device or emulator, and are **never** run against a real TV that holds
+real data — installing a test APK wipes the catalog, playlists, profiles and history.
+
+```bash
+./gradlew :core:assembleDebugAndroidTest        # compiles the test APK, installs nothing
+```
+
+## 📥 Consuming core from an app
+
+Core publishes `tv.own.owntv:core` and `tv.own.owntv:player-core` to OwnTV's own Maven repository —
+public, **no account or token needed**. It also serves `tv.own.owntv:libmpv`, the mpv engine built by
+[OwnTV_libmpv](https://github.com/ahXN00/OwnTV_libmpv), which `player-core` depends on.
+
+```kotlin
+// settings.gradle.kts
+maven {
+    url = uri("https://ahxn00.github.io/OwnTV_Core/maven")
+    content { includeGroup("tv.own.owntv") }
+}
+
+// build.gradle.kts
+implementation("tv.own.owntv:core:1.0.58")
+implementation("tv.own.owntv:player-core:1.0.58")
+```
+
+The repository is this repo's `gh-pages` branch, written only by the publish workflows (the newest 30
+core versions are kept). Versions up to 1.0.57 were also published to GitHub Packages, which needs a
+token.
+
+### Local development against core's source
+
+```properties
+owntv.corePath=E:/Path/To/OwnTV_Core
+```
+
+The app's `settings.gradle.kts` picks that up and includes this repo as a **composite build**, so a
+core edit shows up in the next app build with no publish step. Leave the property unset and the app
+resolves the published artifact instead, which is what CI does.
+
+### Hooks an app must supply
+
+Core deliberately knows nothing about the app hosting it. Five hooks are assigned in the
+application's `onCreate`, **before Koin starts** — `CrashRecorder` reads the version before the
+container exists:
+
+| Hook | Supplies |
+|---|---|
+| `CoreBuildInfo` | versionName, versionCode, edgeKey, devTools, debug, diagnosticBuild |
+| `CrashRecorder.diagnostics` | the live diagnostics log |
+| `LiveSessionLimit.report` | per-provider stream quirks |
+| `SubtitleFontAssets.resourceOf` | the app's bundled subtitle fonts |
+| `AppIconSwitcher.mainActivityClass` | the app's `MainActivity`; the icon colours are it + `AppIcon.activitySuffix` |
+
+`onCreate` also **returns at once when `AppIconSwitcher.isRestartProcess(this)`** — the few
+milliseconds core's `AppRestartActivity` runs in its own process to reopen the app after an icon
+change, where nothing may start. After Koin it calls `AppIconSwitcher.start()` and
+`PlaybackStartup.start(...)`. The two engines are built with player-core's `ownTVPlayer()` and
+`livePreviewEngine()` inside the app's own Koin module (player-core ships none).
+
+One more is supplied from the playback screen rather than `onCreate`, because it is a live signal
+rather than a value:
+
+| Hook | Supplies |
+|---|---|
+| `WatchSession` | which playlist is on screen — `open(sourceId)` / `close(sourceId)` |
+
+`WatchSession` is what lets core's background work step out of the user's way. The playback engines
+in `:player-core` are handed a URL and have no notion of a `sourceId`, and fullscreen playback never
+claims against `OpenStreamRegistry` — that register is the connection budget for Multiview and
+recordings. So the host screen, which holds the row, is the only place the answer exists. An app that
+does not supply it still works; its background catalogue drain simply never yields to playback.
+
+An app also needs `android.nonTransitiveRClass=false` in its `gradle.properties` if it references
+core's strings as a bare `R.string.*`.
+
+## 🌍 Translations
+
+Core ships English (`values/`), Simplified Chinese (`values-zh-rCN/`) and Traditional Chinese
+(`values-zh-rTW/`) — and nothing else. `tools/i18n/locales.json` is the authoritative catalogue, and
+`SupportedLocales.kt` is generated from it plus the actual resource tree.
+
+New user-visible text is never English-only: a string is not finished until it exists in all three
+resource sets. All four validators must pass before any string change lands:
+
+```bash
+python tools/i18n/validate_strings.py
+python tools/i18n/check_hardcoded_strings.py verify --bootstrap
+python tools/i18n/gen_supported_locales.py check
+python tools/i18n/check_text_overflow.py
+```
+
+## 🔢 Versioning
+
+Core versions are **independent of the TV app's `v4.x` releases** and must never be confused with
+them. Tags are prefixed — `core-1.0.0` — and pushing one publishes both modules from CI. The
+**Release core** workflow (Actions tab → Run workflow) pushes that tag for you: it reads `coreVersion`
+from `main` and refuses if the tag already exists or `CHANGELOG.md` has no section for it.
+
+Every published version also gets a [**GitHub Release**](https://github.com/ahXN00/OwnTV_Core/releases),
+and the order is deliberate: CI runs the full gate, publishes both artifacts to the Maven repository, waits
+until they are served, and only then publishes the release. So a release exists only for a version that actually built and
+shipped — and it is the release, not the tag, that opens the pull request moving each app onto the
+new version. A tag whose tests fail stops there, with nothing downstream moved.
 
 ## 🤝 Contributing
 
-Contributions, bug reports and ideas are welcome — open an issue or a pull request. Please keep the
-project's player-only, bring-your-own-source positioning, and match the existing code style.
+Contributions, bug reports and ideas are welcome. Two things to know before opening a pull request:
 
-**Where does a change go?** If it is about the database, playlist sync, EPG, backup, profiles,
-downloads, settings storage, the playback engine **or any user-visible text the television shares**,
-it belongs in [OwnTV_Core](https://github.com/ahXN00/OwnTV_Core), not here. This repository holds the
-phone and tablet interface only. Phone-only wording is the single exception, and it has to be added in
-all three shipped languages at once.
-
-<!-- i18n-contribution:start -->
-## Help translate OwnTV
-
-If your language is already available, contribute interface translations across OwnTV's six Android resource components on [Hosted Weblate](https://hosted.weblate.org/projects/owntv/). If it is not listed, [open a language request ticket](https://github.com/ahXN00/OwnTV/issues/new?template=feature_request.yml&title=%5BLanguage%5D%20Add%20) first. A maintainer will review the request, register the locale, and prepare its base translation files on Hosted Weblate. Once the language appears on Hosted Weblate, you can start translating it there. The strings themselves live in [OwnTV's core library repository](https://github.com/ahXN00/OwnTV_Core), together with the language contributor guide covering identifiers, validation, and promotion policy.
-<!-- i18n-contribution:end -->
+- **Core never imports from an app.** The dependency arrow is one-way: app → `:player-core` →
+  `:core`. If core needs something from the host, it takes a hook the app assigns.
+- **Core stays UI-framework-neutral.** `compose-runtime` is the only Compose artifact allowed.
+  Anything else makes core unusable from the mobile app.
 
 ## 🙏 Credits
-
-<img src="extras/partner-logos/Weblate_logo.svg" alt="Weblate" width="200">
-
-OwnTV speaks 26 languages because people translate it on
-[**Weblate**](https://weblate.org/), which hosts the project free of charge for libre software.
-Thank you to Weblate and to every translator who has given the app their language. This phone build
-ships three of them — English, 简体中文 and 繁體中文 — so the translations it carries are those three;
-the rest stay in core for the television.
 
 <img src="extras/partner-logos/tmdb_logo.svg" alt="TMDB" width="200">
 
@@ -287,31 +262,22 @@ Movie & series metadata and trailers are provided by [TMDB](https://www.themovie
 
 <img src="extras/partner-logos/opensubtitles_logo.svg" alt="OpenSubtitles" width="200">
 
-Subtitle search & download is powered by [OpenSubtitles.com](https://www.opensubtitles.com/).
-**This product uses the OpenSubtitles API but is not endorsed or certified by OpenSubtitles.** You
-sign in with your own OpenSubtitles account and are subject to their terms and download quotas.
+Subtitle search and downloads are powered by [OpenSubtitles](https://www.opensubtitles.com/).
 
 ### ▶️ Playback engines
 
-- **[mpv](https://mpv.io/)** (via [libmpv](https://github.com/mpv-android/mpv-android), built on
-  [FFmpeg](https://ffmpeg.org/)) — the default engine, for the widest IPTV/codec, audio and HDR
-  support.
-- **[Media3 / ExoPlayer](https://github.com/androidx/media)** — the fast-start engine for Live TV
-  and HLS.
-
-Which of the two starts a stream is yours to set, separately for Live TV and for Movies & Series
-(Settings → Player): either order, or one engine only with the automatic handover turned off.
+[libmpv / mpv](https://mpv.io/) (FFmpeg), built for OwnTV by [OwnTV_libmpv](https://github.com/ahXN00/OwnTV_libmpv) from
+[jarnedemeulemeester/libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android) · [Media3 / ExoPlayer](https://developer.android.com/media/media3)
 
 ### 🧩 Built with
 
-[Jetpack Compose](https://developer.android.com/jetpack/compose) ·
-[Material 3](https://m3.material.io/) ·
 [Room](https://developer.android.com/jetpack/androidx/releases/room) ·
 [Koin](https://insert-koin.io/) ·
 [OkHttp](https://square.github.io/okhttp/) ·
-[Coil](https://coil-kt.github.io/coil/) ·
-[ZXing](https://github.com/zxing/zxing) — and the wider Kotlin / AndroidX open-source ecosystem.
-Thank you to all their maintainers. See each project for its own license.
+[Kotlin Coroutines](https://kotlinlang.org/docs/coroutines-overview.html) ·
+[WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) —
+and the wider Kotlin / AndroidX open-source ecosystem. Thank you to all their maintainers. See each
+project for its own license.
 
 ### 🎨 Brand
 
@@ -320,17 +286,16 @@ in [issue #227](https://github.com/ahXN00/OwnTV/issues/227).
 
 ## ⚖️ Legal
 
-OwnTV is a media **player** only. It ships with no channels, playlists, subscriptions or content, and
-does not endorse or facilitate access to unauthorized streams. Users are solely responsible for the
-sources they add and for complying with the laws and rights that apply to them.
+OwnTV Core is media **player** infrastructure only. It ships with no channels, playlists,
+subscriptions or content, and does not endorse or facilitate access to unauthorized streams. Users
+of the apps built on it are solely responsible for the sources they add.
 
 ## 📄 License
 
-Released under the **GNU General Public License v3.0 (GPLv3)**, the same as the rest of OwnTV.
+Released under the **GNU General Public License v3.0 (GPLv3)** — see [LICENSE](LICENSE).
 
-In short: you're free to use, study, modify and redistribute OwnTV, including commercially — but any
-redistributed version (including forks and commercial products built on it) must also be licensed
-under GPLv3 and its source made available.
+In short: you're free to use, study, modify and redistribute this library, including commercially —
+but any redistributed version must also be licensed under GPLv3 and its source made available.
 
 ---
 
