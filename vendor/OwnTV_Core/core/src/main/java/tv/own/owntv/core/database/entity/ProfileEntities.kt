@@ -174,6 +174,13 @@ data class SourceEntity(
      * backed up. Live tuning's single-session handover still follows [maxConnections].
      */
     @ColumnInfo(defaultValue = "0") val ignoreConnectionLimit: Boolean = false,
+    /**
+     * The identity a non-playlist source is keyed by (v54). For [SourceType.TVBOX] this is the
+     * TVbox configuration id; null for every playlist. Provisioning looks a source up by
+     * `type + externalKey` so re-importing a configuration updates its source instead of creating
+     * a second one with a new id (which would orphan every indexed row).
+     */
+    val externalKey: String? = null,
 )
 
 /** Many-to-many link letting a source be shared across profiles (hybrid model). */

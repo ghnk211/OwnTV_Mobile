@@ -1538,6 +1538,9 @@ class BackupManager(
     )
 
     private fun sourceJson(s: SourceEntity, seal: ((String) -> JSONObject)?) = JSONObject().apply {
+        // v54: identity of a non-playlist source (a TVbox configuration id), so a restore can find
+        // the configuration again instead of creating an unaddressable source.
+        put("externalKey", s.externalKey ?: JSONObject.NULL)
         put("id", s.id); put("name", s.name); put("type", s.type.name); put("url", s.url)
         put("username", s.username ?: JSONObject.NULL)
         // Password: encrypted object when a passphrase was given, otherwise omitted (never plaintext).
@@ -1638,6 +1641,9 @@ class BackupManager(
             cleanChannelNames = o.optBoolean("cleanChannelNames", false),
             channelNameStrip = o.optStringOrNull("channelNameStrip"),
             ignoreConnectionLimit = o.optBoolean("ignoreConnectionLimit", false),
+            // v54: absent in older backups; a TVBOX source restored without it is skipped by the app's
+            // provisioner and re-created from its configuration on the next activation.
+            externalKey = o.optStringOrNull("externalKey"),
             // Pre-v22 backups omit both, which restores as "nothing known, never measured" — exactly
             // what those installs had, and what makes a Re-test the obvious next step.
             maxConnections = o.optInt("maxConnections", 0),

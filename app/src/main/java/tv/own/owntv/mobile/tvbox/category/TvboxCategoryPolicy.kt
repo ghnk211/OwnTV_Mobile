@@ -37,11 +37,7 @@ class TvboxCategoryPolicy(private val kidsStrict: () -> Boolean) {
     }
 
     /** 站点 ext 的结构化 adult/nsfw 标记（`{"adult":true}` / `{"nsfw":1}` 等写法）。 */
-    private fun extMarkedAdult(site: SiteConfig): Boolean {
-        val ext = site.ext ?: return false
-        val e = ext.lowercase()
-        return Regex("\"(adult|nsfw)\"\\s*:\\s*(true|1|\"1\"|\"true\")").containsMatchIn(e)
-    }
+    private fun extMarkedAdult(site: SiteConfig): Boolean = siteMarkedAdult(site)
 
     /** 分类名是否命中任何隐藏规则（含站点级 ext 标记）。 */
     private fun hiddenName(site: SiteConfig, typeName: String?): Boolean =
@@ -91,4 +87,15 @@ class TvboxCategoryPolicy(private val kidsStrict: () -> Boolean) {
 
     /** 严格模式（`kidsStrict`）下唯一放行的形态：无结构化 adult 标记的站点。 */
     private fun siteWhitelisted(site: SiteConfig): Boolean = !extMarkedAdult(site)
+}
+
+/**
+ * 站点 ext 的结构化 adult/nsfw 标记，供索引映射写入 `extJson.adultSite` 与列表/播放判定共用。
+ *
+ * 站点级标记没有分类名可查，条目级检查只能把这个标记落进索引（方案 §4.5.2）。
+ */
+internal fun siteMarkedAdult(site: SiteConfig): Boolean {
+    val ext = site.ext ?: return false
+    val e = ext.lowercase()
+    return Regex("\"(adult|nsfw)\"\\s*:\\s*(true|1|\"1\"|\"true\")").containsMatchIn(e)
 }

@@ -4,7 +4,21 @@ package tv.own.owntv.core.model
 enum class MediaType { LIVE, MOVIE, SERIES, EPISODE }
 
 /** How a source delivers its content. */
-enum class SourceType { M3U, XTREAM, LOCAL_BACKUP, STALKER }
+enum class SourceType {
+    M3U,
+    XTREAM,
+    LOCAL_BACKUP,
+    STALKER,
+
+    /**
+     * A TVbox configuration, indexed into the catalogue by the app's own crawler instead of a sync.
+     *
+     * One configuration is one source; the site a row came from is encoded in the row's `remoteId`
+     * (`<siteKey>/<vodId>`). TVBOX sources are not synced, imported or tested like a playlist: they
+     * are provisioned from the configuration list and their rows are written on browse/search/detail.
+     */
+    TVBOX,
+}
 
 /**
  * What we know about an Xtream provider's HLS support, from `user_info.allowed_output_formats`.

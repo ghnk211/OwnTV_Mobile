@@ -15,6 +15,9 @@ import tv.own.owntv.core.database.entity.MovieEntity
 /** One category's current item count for a source (re-sync delta check). */
 data class CategoryItemCount(val categoryId: Long, val itemCount: Int)
 
+/** The fields the catalogue index merges before it hashes a row (v54). */
+data class MovieExtSnapshot(val remoteId: String, val categoryId: Long?, val extJson: String?)
+
 @Dao
 interface MovieDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -53,6 +56,51 @@ interface MovieDao {
 
     @Query("SELECT remoteId FROM movies WHERE sourceId = :sourceId AND remoteId IS NOT NULL")
     suspend fun remoteIdsForSource(sourceId: Long): List<String>
+
+    /** What the index merge needs from a row it already holds: its provider extras, before hashing. */
+    @Query("SELECT remoteId, categoryId, extJson FROM movies WHERE sourceId = :sourceId AND remoteId IN (:remoteIds)")
+    suspend fun extJsonForRemoteIds(sourceId: Long, remoteIds: List<String>): List<MovieExtSnapshot>
+
+    /**
+     * Freshness of an indexed row, written on every sighting even when its content is unchanged.
+     * Without this an unchanged row keeps the `lastSeenAt` it was inserted with and the TTL sweep
+     * deletes content that is being browsed every day.
+     */
+    @Query("UPDATE movies SET lastSeenAt = :at WHERE sourceId = :sourceId AND remoteId IN (:remoteIds)")
+    suspend fun markSeen(sourceId: Long, remoteIds: List<String>, at: Long)
+
+    /**
+     * Age-out the index, never a user's own row.
+     *
+     * The five NOT IN sub-queries are the hard condition of the whole lifecycle: a catalogue row is
+     * what a favourite, a resume position, a history entry, a custom-category membership and a manual
+     * order point at. Dropping the row would make every one of them an orphan, and the subsequent
+     * `purgeOrphans` passes would then delete the user's data itself.
+     */
+    @Query(
+        "DELETE FROM movies WHERE sourceId = :sourceId AND IFNULL(lastSeenAt, 0) < :cutoff " +
+            "AND id NOT IN (SELECT itemId FROM favorites WHERE mediaType = 'MOVIE') " +
+            "AND id NOT IN (SELECT itemId FROM playback_progress WHERE mediaType = 'MOVIE') " +
+            "AND id NOT IN (SELECT itemId FROM watch_history WHERE mediaType = 'MOVIE') " +
+            "AND id NOT IN (SELECT itemId FROM custom_category_members WHERE mediaType = 'MOVIE') " +
+            "AND id NOT IN (SELECT itemId FROM content_order WHERE mediaType = 'MOVIE')",
+    )
+    suspend fun pruneIndexedBefore(sourceId: Long, cutoff: Long): Int
+
+    /** The rows an over-large index drops first: least recently seen, never one a user row protects. */
+    @Query(
+        "SELECT id FROM movies WHERE sourceId = :sourceId " +
+            "AND id NOT IN (SELECT itemId FROM favorites WHERE mediaType = 'MOVIE') " +
+            "AND id NOT IN (SELECT itemId FROM playback_progress WHERE mediaType = 'MOVIE') " +
+            "AND id NOT IN (SELECT itemId FROM watch_history WHERE mediaType = 'MOVIE') " +
+            "AND id NOT IN (SELECT itemId FROM custom_category_members WHERE mediaType = 'MOVIE') " +
+            "AND id NOT IN (SELECT itemId FROM content_order WHERE mediaType = 'MOVIE') " +
+            "ORDER BY IFNULL(lastSeenAt, 0) ASC, id ASC LIMIT :limit",
+    )
+    suspend fun leastRecentlySeenCandidates(sourceId: Long, limit: Int): List<Long>
+
+    @Query("DELETE FROM movies WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Long>): Int
 
     @Query("SELECT remoteId, id, contentHash, sortOrder FROM movies WHERE sourceId = :sourceId AND remoteId IS NOT NULL")
     suspend fun contentHashesForSource(sourceId: Long): List<ContentHashProjection>

@@ -397,6 +397,8 @@ class DetailViewModel(
             val film = movie.value
             if (film != null) {
                 if (!allows(pid, film.categoryId)) return@launch
+                // See LibraryViewModel.download: a tvbox:// handle is not a downloadable address.
+                if (film.streamUrl.startsWith(tv.own.owntv.mobile.tvbox.index.TvboxIndexMapper.STREAM_PREFIX)) return@launch
                 downloadManager.enqueue(
                     profileId = pid,
                     mediaType = MediaType.MOVIE,

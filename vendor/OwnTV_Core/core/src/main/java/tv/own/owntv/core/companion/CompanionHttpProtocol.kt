@@ -113,6 +113,8 @@ internal object CompanionHttpProtocol {
             // One of the two is required, not both: a URL to fetch, or a file to save.
             SourceType.M3U -> if (server.isBlank() && playlistContent.isBlank()) return null
             SourceType.XTREAM, SourceType.LOCAL_BACKUP -> if (server.isBlank() || user.isBlank() || pass.isBlank()) return null
+            // A TVBOX source comes from the TVbox configuration; there is nothing to edit here.
+            SourceType.TVBOX -> return null
         }
 
         return CompanionPayload(

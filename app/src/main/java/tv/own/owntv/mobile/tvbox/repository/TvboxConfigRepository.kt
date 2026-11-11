@@ -147,6 +147,12 @@ class TvboxConfigRepository(
     /** 配置变更后的清理动作，由 TvboxModule 注入引擎池与网络层 */
     var onSwitchHook: suspend (Long) -> Unit = {}
 
+    /**
+     * 配置列表变化（导入 / 切换 / 删除 / 重命名）后触发，由 TvboxRuntime 挂上
+     * Core 源供给器：一个配置对应一个 TVBOX 源，只有激活配置参与点播内容读取。
+     */
+    var onConfigsChanged: suspend () -> Unit = {}
+
     // ---------------- 冷启动恢复 ----------------
 
     /**
@@ -420,6 +426,7 @@ class TvboxConfigRepository(
             prefs.activeConfigId = id
             applyConfig(config)
         }
+        onConfigsChanged()
         true
     }
 
@@ -531,6 +538,7 @@ class TvboxConfigRepository(
     suspend fun switchConfig(id: Long) = mutex.withLock {
         prefs.activeConfigId = id
         onConfigSwitched(id)
+        onConfigsChanged()
     }
 
     private suspend fun onConfigSwitched(id: Long) {
@@ -602,6 +610,7 @@ class TvboxConfigRepository(
         } else {
             persistIndexLocked(list)
         }
+        onConfigsChanged()
     }
 
     suspend fun renameConfig(id: Long, newName: String) {
@@ -613,6 +622,7 @@ class TvboxConfigRepository(
                 list[idx] = entity.copy(name = newName.trim().ifEmpty { entity.name })
                 persistIndexLocked(list)
             }
+            onConfigsChanged()
         }
     }
 

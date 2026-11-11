@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.flowOf
 import tv.own.owntv.core.database.dao.SourceDao
 import tv.own.owntv.core.database.entity.SourceEntity
 import tv.own.owntv.core.model.MediaType
+import tv.own.owntv.core.model.SourceType
 import tv.own.owntv.core.settings.SettingsRepository
 
 /**
@@ -50,8 +51,11 @@ fun activeProfileSources(
                 flowOf(ActiveProfileSources(pid, emptyList()))
             } else {
                 combine(sourceDao.observeForProfile(pid), settings.defaultSourceId) { srcs, defaultId ->
+                    // TVBOX is an always-present content layer, not a playlist the user switches to:
+                    // narrowing to settings.defaultSourceId must not hide indexed VOD content from
+                    // search/Library/Home when the user has an IPTV playlist selected.
                     val filtered = if (defaultId > 0 && srcs.any { it.id == defaultId }) {
-                        srcs.filter { it.id == defaultId }
+                        srcs.filter { it.id == defaultId || it.type == SourceType.TVBOX }
                     } else {
                         srcs
                     }
@@ -95,7 +99,9 @@ suspend fun activeSourceIds(
     val all = sourceDao.observeForProfile(profileId).first()
     val defaultId = settings.defaultSourceId.first()
     val filtered = if (defaultId > 0 && all.any { it.id == defaultId }) {
-        all.filter { it.id == defaultId }
+        // Same exemption as activeProfileSources(): HomeFeed / HomeViewModel call this one-shot
+        // path directly, and narrowing it would hide indexed TVBOX content from Home.
+        all.filter { it.id == defaultId || it.type == SourceType.TVBOX }
     } else {
         all
     }

@@ -282,6 +282,7 @@ private fun typeLine(source: SourceEntity, counts: String?): String {
             SourceType.STALKER -> R.string.setup_stalker_mac
             SourceType.M3U -> if (isJsonLocation(source.url)) R.string.setup_tvbox else R.string.setup_m3u
             SourceType.LOCAL_BACKUP -> R.string.settings_sources_backup
+            SourceType.TVBOX -> R.string.tvbox_source_type
         },
     )
     return listOfNotNull(type, counts?.takeIf { it.isNotBlank() }).joinToString(stringResource(R.string.content_epg_bits_separator))
@@ -467,4 +468,5 @@ internal fun SourceType.labelRes(): Int = when (this) {
     SourceType.XTREAM -> R.string.settings_sources_type_xtream
     SourceType.STALKER -> R.string.settings_sources_type_stalker
     SourceType.LOCAL_BACKUP -> R.string.settings_sources_backup
+    SourceType.TVBOX -> R.string.tvbox_source_type
 }

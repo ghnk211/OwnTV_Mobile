@@ -37,6 +37,8 @@
     <string name="mobile_vod_placeholder_body">隨選視訊頁面正在開發中，敬請期待。</string>
     <string name="settings_content_menus_description">重新排列或隱藏頻道和分集選單中的動作</string>
     <!-- TVbox 點播（VOD 頁）。 -->
+    <string name="tvbox_source_name">點播 · %1$s</string>
+    <string name="tvbox_source_type">點播源</string>
     <string name="tvbox_config_title">配置源</string>
     <string name="tvbox_config_url_title">配置地址</string>
     <string name="tvbox_config_url_hint">貼上 TVbox 配置地址（http / clan / 本機路徑）</string>

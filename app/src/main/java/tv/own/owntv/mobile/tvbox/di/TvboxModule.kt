@@ -47,6 +47,30 @@ val tvboxModule = module {
 
     single { TvboxPrefs(androidContext()) }
     single { TvboxStore(androidContext()) }
+    single {
+        tv.own.owntv.mobile.tvbox.repository.TvboxSourceProvisioner(
+            context = androidContext(),
+            sourceDao = get(),
+            profileDao = get(),
+            configRepository = get(),
+        )
+    }
+    single {
+        tv.own.owntv.mobile.tvbox.index.TvboxIndexer(
+            configRepository = get(),
+            writer = get(),
+            cursorDao = get(),
+            categoryDao = get(),
+        )
+    }
+    single {
+        tv.own.owntv.mobile.tvbox.index.TvboxUserData(
+            favoriteDao = get(),
+            progressDao = get(),
+            movieDao = get(),
+            userDataWriter = get(),
+        )
+    }
 
     // Network: fresh chains (main / download / jar) with the TVbox interceptors.
     //
@@ -99,6 +123,14 @@ val tvboxModule = module {
     }
     single { TvboxPlayResolver(get(), get(), get(), get(), get<ProfileDao>(), get(), get()) }
     single {
+        tv.own.owntv.mobile.tvbox.play.TvboxPlaybackRouter(
+            sourceDao = get(),
+            configRepository = get(),
+            sourceRepository = get(),
+            resolver = get(),
+        )
+    }
+    single {
         TvboxSealedPlaybackGuard(
             vodTuner = get<VodTuner>(),
             lock = get(),
@@ -112,7 +144,7 @@ val tvboxModule = module {
     single { CatvodHostInit(androidContext()) }
 
     // Config lifecycle hooks into engines/sniff/network; resolved eagerly on app start.
-    single { TvboxRuntime(get(), get(), get(), get(), get()) }
+    single { TvboxRuntime(get(), get(), get(), get(), get(), get(), get()) }
 
     viewModelOf(::TvboxConfigViewModel)
     viewModelOf(::TvboxHomeViewModel)

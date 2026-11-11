@@ -113,6 +113,10 @@ class SettingsViewModel(
         .flatMapLatest { profileId ->
             if (profileId < 0) sourceDao.observeAll() else sourceDao.observeForProfile(profileId)
         }
+        // A TVBOX source is provisioned from the TVbox configuration and must never be edited or
+        // deleted as if it were a playlist: deleting the row would CASCADE-delete its indexed movies
+        // and every favourite/resume position pointing at them.
+        .map { list -> list.filter { it.type != SourceType.TVBOX } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val profiles: StateFlow<List<ProfileEntity>> = profileDao.observeAll()

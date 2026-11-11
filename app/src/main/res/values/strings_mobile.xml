@@ -47,6 +47,8 @@
     <!-- Overrides core: this app's long-press menus cover channels and episodes. -->
     <string name="settings_content_menus_description">Rearrange or hide the actions in the channel and episode menus</string>
     <!-- TVbox on demand (VOD tab). -->
+    <string name="tvbox_source_name">VOD · %1$s</string>
+    <string name="tvbox_source_type">On demand</string>
     <string name="tvbox_config_title">Sources</string>
     <string name="tvbox_config_url_title">Config URL</string>
     <string name="tvbox_config_url_hint">Paste a TVbox config address (http, clan, or a local path)</string>

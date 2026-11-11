@@ -178,6 +178,8 @@ class TvboxHomeViewModel(
     private val lock: TvboxCategoryLock,
     private val settings: SettingsRepository,
     private val profileDao: ProfileDao,
+    private val provisioner: tv.own.owntv.mobile.tvbox.repository.TvboxSourceProvisioner,
+    private val indexer: tv.own.owntv.mobile.tvbox.index.TvboxIndexer,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TvboxHomeUiState())
@@ -186,6 +188,9 @@ class TvboxHomeViewModel(
     /** 当前分类（tid/name），详情/播放要带去当锁与儿童判定的身份（方案 §5.5.3 key 口径）。 */
     private var currentCategoryName: String = ""
     private var currentCategoryTid: String = ""
+
+    /** The active configuration's Core source id, refreshed on every openSite. */
+    private var tvboxSourceId: Long? = null
 
     /**
      * homeContent 返回的「分类 → 筛选树」。
@@ -241,6 +246,15 @@ class TvboxHomeViewModel(
             val profile = currentProfile()
             val result = sourceRepository.homeContent(site, filter = true)
             val classes = policy.visibleCategories(profile, site, result?.classes.orEmpty())
+            // Index what the remote showed, not the filtered view: content is shared between
+            // profiles, and the kids check runs when a profile reads it.
+            val sourceId = provisioner.activeSourceId()
+            tvboxSourceId = sourceId
+            if (sourceId != null) {
+                indexer.indexClasses(sourceId, site, result?.classes.orEmpty())
+                indexer.indexHome(sourceId, site, result?.list.orEmpty())
+                indexer.markSynced(sourceId)
+            }
             // 分类为空时兜底：homeVideoContent（纯推荐源）
             val movies = filterMovies(profile, site, result?.list.orEmpty())
             val lockPid = settings.activeProfileId.first()
@@ -304,6 +318,10 @@ class TvboxHomeViewModel(
         viewModelScope.launch {
             val profile = currentProfile()
             val result = sourceRepository.categoryContent(site, tid, page.toString(), filter = extend != null, extend = extend)
+            val sourceId = tvboxSourceId ?: provisioner.activeSourceId()
+            if (sourceId != null && result != null) {
+                indexer.indexCategoryPage(sourceId, site, tid, typeName, result.list, page)
+            }
             val incoming = filterMovies(profile, site, result?.list.orEmpty())
             val merged = if (replace || page <= 1) incoming else _state.value.movies + incoming
             _state.value = _state.value.copy(
@@ -373,6 +391,10 @@ class TvboxHomeViewModel(
                 .filter { it.movies.isNotEmpty() }
             collector.cancel()
             // 最终以返回列表为准（权威排序；也兜住订阅前丢掉的早期 emission）。
+            val sourceId = tvboxSourceId ?: provisioner.activeSourceId()
+            if (sourceId != null) {
+                results.forEach { indexer.indexSearchResults(sourceId, it.siteKey, it.movies) }
+            }
             _state.value = _state.value.copy(searching = false, searchResults = results)
         }
     }
@@ -455,6 +477,8 @@ data class TvboxDetailUiState(
     val typeName: String? = null,
     val year: String? = null,
     val content: String? = null,
+    /** The Core `movies.id` this detail indexed to; null when indexing failed. */
+    val movieId: Long? = null,
     val lines: List<PlayLine> = emptyList(),
     val currentLineIndex: Int = 0,
     val favorite: Boolean = false,
@@ -481,6 +505,9 @@ class TvboxDetailViewModel(
     private val profileDao: ProfileDao,
     private val store: TvboxStore,
     private val vodTuner: VodTuner,
+    private val provisioner: tv.own.owntv.mobile.tvbox.repository.TvboxSourceProvisioner,
+    private val indexer: tv.own.owntv.mobile.tvbox.index.TvboxIndexer,
+    private val userData: tv.own.owntv.mobile.tvbox.index.TvboxUserData,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TvboxDetailUiState())
@@ -520,6 +547,15 @@ class TvboxDetailViewModel(
                 return@launch
             }
             categoryKey = key
+            detailMovie = movie
+            // Index the detail payload: the plot/year/type name here are richer than the list's, and
+            // the resulting Core id is what a favourite and a resume position are keyed by.
+            val sourceId = provisioner.activeSourceId()
+            val movieId = sourceId?.let { id ->
+                // typeId as well as typeName: the category row is what gives this film its kids/lock
+                // attribution, and the writer keeps the first non-null one it was given.
+                indexer.ensureIndexed(id, site, movie, categoryTypeId = key.typeId, categoryTypeName = key.typeName)
+            }
             val sealedNow = lock.seals(pid, site.key, key.typeId, key.typeName)
             val lines = resolver.parseLines(movie.playUrl, movie.playFrom)
             val resume = store.latestProgressForVod(site.key, vodId)
@@ -531,8 +567,9 @@ class TvboxDetailViewModel(
                 typeName = movie.typeName,
                 year = movie.year,
                 content = movie.content?.takeIf { it.isNotBlank() },
+                movieId = movieId,
                 lines = lines,
-                favorite = store.isFavorite(site.key, vodId),
+                favorite = movieId?.let { userData.isFavorite(pid, it) } ?: store.isFavorite(site.key, vodId),
                 sealed = sealedNow,
                 resumeIndex = resume?.episodeIndex ?: -1,
                 resumePositionMs = resume?.positionMs ?: 0,
@@ -542,6 +579,9 @@ class TvboxDetailViewModel(
 
     private var categoryKey: TvboxCategoryKey? = null
 
+    /** The detail payload of the currently open film, kept so a later sighting can re-index it. */
+    private var detailMovie: Movie? = null
+
     fun selectLine(index: Int) {
         _state.value = _state.value.copy(currentLineIndex = index)
     }
@@ -550,6 +590,26 @@ class TvboxDetailViewModel(
         val s = _state.value
         val site = s.site ?: return
         viewModelScope.launch {
+            val pid = settings.activeProfileId.first()
+            // The Core id is the primary path: a favourite written there shows up in the Favourites
+            // page, the backup and every other profile-scoped surface. Indexing can fail (a donor
+            // site that has since been removed), and then the old app-private store is the fallback.
+            val movieId = s.movieId ?: detailMovie?.let { movie ->
+                provisioner.activeSourceId()?.let { sourceId ->
+                    indexer.ensureIndexed(
+                        sourceId,
+                        site,
+                        movie,
+                        categoryTypeId = categoryKey?.typeId,
+                        categoryTypeName = categoryKey?.typeName,
+                    )
+                }
+            }
+            if (movieId != null) {
+                val added = userData.toggleFavorite(pid, movieId)
+                _state.value = _state.value.copy(movieId = movieId, favorite = added)
+                return@launch
+            }
             val added = store.toggleFavorite(
                 TvboxStore.FavoriteEntry(
                     siteKey = site.key,
@@ -601,6 +661,16 @@ class TvboxDetailViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(resolving = true, error = null)
             val pid = settings.activeProfileId.first()
+            // Index right before playback too: opening the player is the last chance to give this
+            // stream a Core identity, so its favourite and resume position are written against a row.
+            val indexedId = s.movieId ?: detailMovie?.let { movie ->
+                provisioner.activeSourceId()?.let { sourceId ->
+                    indexer.ensureIndexed(sourceId, site, movie, categoryTypeId = key.typeId, categoryTypeName = key.typeName)
+                }
+            }
+            if (indexedId != null && indexedId != s.movieId) {
+                _state.value = _state.value.copy(movieId = indexedId)
+            }
             when (val outcome = resolver.resolve(
                 profileId = pid,
                 site = site,

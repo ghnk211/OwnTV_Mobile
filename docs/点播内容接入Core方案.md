@@ -2,7 +2,7 @@
 
 > 对象：`OwnTV_Mobile`（`app`）+ `OwnTV_Core`（`vendor/OwnTV_Core`，mobile 分支）
 > 前置约束：Core 允许增删字段与新增表，但**必须走显式 Migration**（Core 无破坏性回退，见 `di/DatabaseModule.kt:12-36`）
-> 状态：方案稿 v2（未实施；v2 已按当前代码逐项核对，修正了内容哈希、播放路由、备份兼容、锁 key 双轨等结论）
+> 状态：方案稿 v3；**P0 已实施（2026-11-11）**，P1–P5 未实施（见 §9 与 `docs/core-changes.md`）。v2 已按当前代码逐项核对，修正了内容哈希、播放路由、备份兼容、锁 key 双轨等结论；v3 落实 §12 的 6 项已确认决策：一配置一源、仅激活配置可见、按档案隔离、索引范围按 P0、儿童档案补条目级 `extJson.typeNames` 检查、不做存量数据迁移
 
 ---
 
@@ -50,7 +50,7 @@
 | 进度 | `files/tvbox/progress.json`（`siteKey\|vodId\|flag\|episodeId`，500 条上限） | 否 | 详情页可续播，但继续观看卡片看不到 |
 | 历史 | `files/tvbox/history.json`（200 条上限） | 否 | **只写不读**（`TvboxStore.history()` 无调用方），不进历史页 |
 | 分类 | 内存 `StateFlow` | — | 无法隐藏/改名/排序 |
-| 分类锁 | **已写 Core**（`lockedCats`），key 为 `tvbox:<siteKey>:<typeId>`，并额外写一条 `tvbox:<siteKey>:<typeName>` 别名（搜索来源只有 typeName） | 是 | key 口径与 Core 的 `sourceId:remoteId` 不一致，需迁移 |
+| 分类锁 | **已写 Core**（`lockedCats`），key 为 `tvbox:<siteKey>:<typeId>`，并额外写一条 `tvbox:<siteKey>:<typeName>` 别名（搜索来源只有 typeName） | 是 | key 口径与 Core 的 `sourceId:remoteId` 不一致；新方案直接改用新口径，旧 key 废弃不迁移（决策 6，§6） |
 | 播放入口 | `TVBOX_ITEM_ID = -2L` 哨兵；`PlayKind` 是 `VodTuner` 的私有枚举；`playingProfileId = -1L` 阻断 Core 写入 | — | `PlayerScreen` 用一个哨兵判断同时隐藏收藏与字幕；进度不落 Core |
 
 ### 2.3 三个硬约束（方案必须满足）
@@ -117,7 +117,7 @@ TVbox 引擎            │  Core Room                            │
 | `MovieEntity` | `remoteId` | `"<siteKey>/<vodId>"`（**必须非空**） |
 | | `streamUrl` | `"tvbox://<siteKey>/<vodId>"`（稳定句柄，不存真实 URL） |
 | | `extGroup` | `<siteKey>`（可索引，用于按站点清理） |
-| | `extJson` | `{"typeName":..,"remark":..,"donorSiteKey":..,"lineCount":..,"episodeCount":..}` |
+| | `extJson` | `{"typeNames":[..],"remark":..,"donorSiteKey":..,"adultSite":true,"lineCount":..,"episodeCount":..}`（`typeNames` 为累积并集，见 §4.5.2；`adultSite` 仅站点 ext 带 adult/nsfw 标记时写入） |
 | | `lastSeenAt` | 最近一次被远端看到的时间（TTL 依据） |
 
 `url` 只用于展示/排查，身份以 `externalKey` 为准：Provisioner 按 `type + externalKey` 查重，不能靠 `url` 字符串比较。
@@ -130,7 +130,9 @@ TVbox 引擎            │  Core Room                            │
 
 若产品要求"每个站点可单独显示/隐藏/上锁"，再升级为"一站一源"（代价：源列表与备份会膨胀）。
 
-**多配置策略（需拍板）**：按"一配置一源"，导入过的每个配置都会各自拥有一个 TVBOX 源。建议只让**当前激活配置**对应的源参与内容读取（`syncMovies = true`），其余配置的源置 `syncMovies = false`。这样切换配置只改两个布尔列，**不改写任何 `remoteId`**，旧配置的索引与用户态原样保留，切回即可用；代价是搜索/Library 一次只看到一个配置的内容。禁止的做法是复用一个源、切换时改写 `externalKey`——那会让该源下所有 `remoteId` 失效，收藏/进度集体变孤儿。
+**多配置策略（决策 2，已确认）**：按"一配置一源"，导入过的每个配置都会各自拥有一个 TVBOX 源。**只有当前激活配置**对应的源参与内容读取（`syncMovies = true`），其余配置的源置 `syncMovies = false`。这样切换配置只改两个布尔列，**不改写任何 `remoteId`**，旧配置的索引与用户态原样保留，切回即可用；代价是搜索/Library 一次只看到一个配置的内容。禁止的做法是复用一个源、切换时改写 `externalKey`——那会让该源下所有 `remoteId` 失效，收藏/进度集体变孤儿。
+
+**档案绑定（决策 3 的推论）**：TVBOX 源必须绑定**全部档案**，不是只绑当前档案。Core 的口径本来就是"内容目录共享、用户态按档案隔离"——`ProfileManager.create` 会把所有已有源链接给新档案（`profile/ProfileManager.kt:50`）。若只绑当前档案，儿童档案将完全看不到 TVBOX 内容，决策 5 的条目级过滤也就无从谈起。Provisioner 建源时遍历全部档案 `sourceDao.link(...)`；收藏/进度/历史/隐藏由各自的 `profileId` 列天然隔离。
 
 **remoteId 编码约定**：`"<siteKey>/<vodId>"`。`siteKey` 来自配置，Provisioner 必须校验它**不包含 `/`**（非法站点跳过并记日志）；`vodId` 可含任意字符，解析时只按**第一个** `/` 切分。`Movie.donorSiteKey != null`（首页兜底借源）时，`siteKey` 一律取 `donorSiteKey`——否则详情/播放在借主站点必然 404。
 
@@ -150,7 +152,7 @@ val extJson: String? = null              // {"siteKey":"...","typeName":"..."}
 
 // MovieEntity（新增 3 列 + 2 索引）
 val extGroup: String? = null             // siteKey（借源时是 donorSiteKey），供按站点清理/分组
-val extJson: String? = null              // {"typeName":...,"remark":...,"donorSiteKey":...,"lineCount":...,"episodeCount":...}
+val extJson: String? = null              // {"typeNames":[...],"remark":...,"donorSiteKey":...,"adultSite":true,"lineCount":...,"episodeCount":...}
 val lastSeenAt: Long? = null             // 最近一次远端命中；TTL 依据
 // @Index(value = ["sourceId", "extGroup", "lastSeenAt"])
 // @Index(value = ["lastSeenAt"])
@@ -191,15 +193,21 @@ class CatalogIndexWriter(
     private val syncSupport: SyncSupport,
 ) {
     suspend fun upsertCategories(sourceId: Long, type: MediaType, rows: List<CategoryEntity>): Map<String, Long>
-    suspend fun upsertMovies(sourceId: Long, rows: List<MovieEntity>)
+    suspend fun upsertMovies(
+        sourceId: Long,
+        rows: List<MovieEntity>,
+        // TVBOX 传 typeNames 并集合并（§4.5.2）；其它调用方默认覆盖
+        mergeExtJson: (old: String?, new: String?) -> String? = { _, new -> new },
+    )
     suspend fun markSeen(sourceId: Long, remoteIds: Collection<String>, at: Long = System.currentTimeMillis())
     suspend fun prune(sourceId: Long, cutoff: Long, maxRows: Int): Int
 }
 ```
 
-`upsertMovies` 的两条实现约束：
+`upsertMovies` 的实现约束：
 
 - **必须在一个事务里同时完成 `upsertStable` + `markSeen`**。`upsertStable` 会跳过内容未变的行，这些行不会带上新的 `lastSeenAt`；漏掉 `markSeen`，正在被反复浏览的内容也会在 30 天后被 TTL 清掉。
+- **`mergeExtJson` 必须在哈希比对之前执行**：先按 `remoteId` 读出现有行的 `extJson`（新增一个 DAO 查询，或复用现有行快照），合并后再算哈希。`typeNames` 并集增长会改变哈希、触发整行更新（id 不变），这是预期行为；若先比哈希再合并，累积的分类名会被"内容未变"跳过。
 - **`remoteId == null` 的行直接丢弃**：`(sourceId, remoteId)` 唯一索引对 NULL 不去重，写进去只会产生重复幽灵行。
 - 一轮索引成功后调用 `sourceDao.markSynced(sourceId, now)`，否则 `sources.lastSyncAt` 永远为 null，设置页会一直显示"未同步"。
 
@@ -238,7 +246,7 @@ syncSupport.upsertStable(
 映射示例：
 
 ```kotlin
-fun Movie.toEntity(sourceId: Long, categoryId: Long?, site: SiteConfig, donor: SiteConfig?, now: Long): MovieEntity {
+fun Movie.toEntity(sourceId: Long, categoryId: Long?, site: SiteConfig, donor: SiteConfig?, now: Long, categoryTypeName: String? = null): MovieEntity {
     // 首页兜底借来的条目，其 id/详情只在借主站点有效（见 Movie.donorSiteKey）；
     // 海报的相对路径也要按借主站点的 api 补全，不能用当前站点的。
     // donorSiteKey 存在但 donor 为 null（借主站点已从配置里删掉）时，调用方应跳过该条：
@@ -257,9 +265,14 @@ fun Movie.toEntity(sourceId: Long, categoryId: Long?, site: SiteConfig, donor: S
         remoteId = key,                       // 与 Core 的稳定身份口径一致
         extGroup = siteKey,
         extJson = buildJsonObject {
-            put("typeName", typeName.orEmpty())
+            // 本次见到的分类名（分类浏览来源用 ClassInfo.typeName 兜底）；
+            // 与旧值的并集合并由 CatalogIndexWriter.mergeExtJson 完成（§4.5.2）
+            val seen = typeName?.takeIf { it.isNotBlank() } ?: categoryTypeName?.takeIf { it.isNotBlank() }
+            put("typeNames", JsonArray(listOfNotNull(seen).map { JsonPrimitive(it) }))
             put("remark", remark.orEmpty())
             donorSiteKey?.let { put("donorSiteKey", it) }
+            // 站点 ext 的 adult/nsfw 标记：复用 TvboxCategoryPolicy 的同一判定，不另写正则
+            if (siteMarkedAdult(origin)) put("adultSite", true)
         }.toString(),
         lastSeenAt = now,
     )
@@ -277,14 +290,14 @@ fun Movie.toEntity(sourceId: Long, categoryId: Long?, site: SiteConfig, donor: S
 | `TvboxHomeViewModel.openSite` | `indexClasses` + `indexHome` |
 | `loadCategory(page)` | `indexCategoryPage`（含 `markSeen`）+ 更新 `catalog_index_cursor` |
 | `aggregateSearch` 任一站返回 | `indexSearchResults`（`categoryId = null`，`extGroup = donorSiteKey ?: siteKey`）；找不到对应 `SiteConfig` 时跳过，不覆盖旧索引 |
-| `detailContent` 返回 | `ensureIndexed`，并补 `plot/year/typeName`；借源条目用 `donorSiteKey` |
+| `detailContent` 返回 | `ensureIndexed`，并补 `plot/year`、累积 `typeNames`；借源条目用 `donorSiteKey` |
 | 起播前 | `ensureIndexed`（拿 `movieId` 写用户态）；索引失败保留 `TVBOX_ITEM_ID` 降级路径 |
 
 ### 4.5 读取路径
 
 | 场景 | 读取方式 | Core 改动 |
 |---|---|---|
-| 全局搜索/Library 搜索框 | `SearchReader.search(...)`（FTS 命中索引行） | 无（只要源在 `ActiveProfileSources` 内；两处 `active*` 必须豁免 `defaultSourceId`） |
+| 全局搜索/Library 搜索框 | `SearchReader.search(...)`（FTS 命中索引行） | kids 条目级过滤（§4.5.2）；源需在 `ActiveProfileSources` 内，两处 `active*` 必须豁免 `defaultSourceId` |
 | 收藏页 | `VodQueries` Favorites（`INNER JOIN favorites`） | 无 |
 | 继续观看 | `PlaybackProgressEntity(MOVIE, movieId)` | 无 |
 | 历史页 | `WatchHistoryEntity` | 无 |
@@ -320,6 +333,41 @@ TVBOX 源是否进入 `movieSourceIds` 仍取决于 `syncMovies`——这正是 
 反方向同样需要一条：TVbox 详情页起播时，索引成功则把真实 `movieId` 带进 `playTvbox`，让收藏/进度有 Core id；只有索引失败才退回 `TVBOX_ITEM_ID`。
 
 **下载必须排除 TVBOX**：`DownloadManager` 不认 `tvbox://`，列表/详情/播放页的"下载"入口要按源类型隐藏，否则会生成永远失败的下载任务。
+
+#### 4.5.2 儿童档案的条目级过滤（决策 5，已确认）
+
+**问题**：现有三处读取路径的 kids 过滤都是**分类级**，且 `categoryId == null` 一律放行——搜索/详情来源的 TVBOX 行恰好没有分类归属，会全部漏过：
+
+| 读取路径 | 现状代码 | 漏洞 |
+|---|---|---|
+| `SearchReader.search` 电影行 | `it.categoryId == null \|\| it.categoryId !in hiddenMovieCats`（`content/SearchReader.kt:131-134`） | null 分类行放行 |
+| `HomeFeed` 收藏/继续观看/Hero 等电影行 | 同构 null 放行（`home/HomeFeed.kt:246`，`hiddenState` 305-324） | 同上 |
+| `LibraryViewModel.customized` | `categoryOf(item) == null \|\| categoryOf(item) !in hidden`（`ui/screens/library/LibraryViewModel.kt:453-459`） | 同上 |
+
+**数据**：`MovieEntity.extJson.typeNames` 记录该条目**见过的所有分类名**，由 `CatalogIndexWriter.mergeExtJson` 做**并集合并、只增不减**（§4.4）。只增不减是必须的：条目可能先以"伦理片"被搜索索引、后以"电影"被浏览命中，若覆盖式写入，成人判定会被后来的良性分类名洗掉。站点 ext 带 adult/nsfw 标记时另写 `adultSite: true`（站点级标记没有分类名可查，只能落标记）。
+
+**判定**：Core `AdultCategoryClassifier` 新增条目级判定，各读取路径共用同一谓词：
+
+```kotlin
+// content/AdultCategoryClassifier.kt
+fun isAdultItem(extJson: String?): Boolean {
+    if (extJson.isNullOrBlank()) return false
+    val o = runCatching { JSONObject(extJson) }.getOrNull() ?: return false
+    if (o.optBoolean("adultSite")) return true
+    val names = o.optJSONArray("typeNames") ?: return false
+    return (0 until names.length()).any { isAdult(names.optString(it)) }
+}
+```
+
+**词表统一（本决策的行为变化点）**：TVbox 侧的中文补充词表（"伦理片/福利/午夜/写真/禁片/里番/无码/情色/三级/激情/偷拍/探花/18禁/限制级"，`TvboxCategoryPolicy.kt:28-31`）目前只在 app 侧生效，Core `isAdult` 中文只覆盖"成人/成年人"。若 Core 条目级检查只用 Core 词表，"伦理片"这类最主要的成人类目仍会漏过，决策 5 等于没做。因此**把中文补充词表并入 Core `isAdult`**，`TvboxCategoryPolicy` 删除私有词表、改为委托 Core。代价：IPTV 分类级的 kids 过滤同步收紧（同名 IPTV 分类也会被隐藏）——这是口径统一的预期结果，需在发布说明中写明；子串误伤风险（如"激情"）见 §10。
+
+**应用点**（仅 `isKids` 档案启用，非儿童档案零开销）：
+
+- `SearchReader.search` 电影行过滤追加 `!(isKids && isAdultItem(it.extJson))`；`curated` 的 CONTINUE/UNWATCHED 电影行一并覆盖（现状连分类级 kids 过滤都没有，属既有缺口，同一谓词顺带补上）；
+- `HomeFeed` 电影行（收藏/继续观看/Hero/trending）加同一谓词；
+- `LibraryViewModel.customized` 增加条目级判定参数，仅儿童档案传入。
+
+**留在 app 侧的部分**：`TvboxPlayResolver` 的播放前拦截保持不变，仍执行完整 `TvboxCategoryPolicy`（站点 ext 标记、站点名判定、`kidsStrict`）。`kidsStrict` 的"分类名缺失即隐藏"不进 Core——Core 读取层不 fail-closed（与现有分类级口径一致），`typeNames` 为空且 `categoryId = null` 的行在 Core 搜索放行，由播放前拦截兜底。这是已确认的残余口径，写入验收说明。
 
 ### 4.6 用户态写入
 
@@ -386,7 +434,7 @@ customize.renameCategory(profileId, MediaType.MOVIE, catKey, "我的电影")
 | `TVBOX_ITEM_ID = -2L` 作为"非 Core 条目"哨兵 | 索引成功时 `VodPlayback.itemId` 填真实 `movieId`；索引失败才用 `-2L` 降级播放 |
 | `PlayKind.TVBOX` + `playingProfileId = -1L` 阻断 Core 写入 | `playKind == TVBOX` 只用于**引擎/字幕**分支；`playingProfileId` 填真实档案，`saveProgress` 的 TVBOX 分支改写 Core 进度（带 `extKey`），不再写 `TvboxStore` |
 | `PlayerScreen` 用 `itemId == -2L` 同时隐藏收藏与字幕 | 拆成两个判断：收藏按 `itemId > 0` 正常显示（走 `ContentActions`）；字幕按 `playKind == TVBOX` 隐藏（TVbox 无字幕接口） |
-| TVbox 详情页只看 `TvboxStore` 续播 | 索引命中后读 `progressDao` + `extKey`；`TvboxStore` 仅作迁移前数据源 |
+| TVbox 详情页只看 `TvboxStore` 续播 | 索引命中后读 `progressDao` + `extKey`；`TvboxStore` 直接删除，不做存量迁移（决策 6，§6） |
 
 `VodPlayback` 建议直接加 `isExternal: Boolean = false`（或把 `PlayKind` 提升为公开枚举后放进 `VodPlayback`）。**不建议只加 `catalogId` 而保留 `itemId = -2`**：`PlayerScreen` 仍要为一个字段拆两种语义，且 `seriesId ?: itemId` 的字幕键逻辑会被负数污染。
 
@@ -446,7 +494,7 @@ class TvboxRemoteMediator(
 |---|---|
 | 首次写入 | `lastSeenAt = now` |
 | 重复命中 | `markSeen` 只更新 `lastSeenAt`（不触发哈希/整行更新）；**每次 `upsertMovies` 必须在同一事务里调用它**，否则"内容未变"的行不会刷新 `lastSeenAt`，正在浏览的内容也会在 30 天后被清掉 |
-| 内容变化 | `upsertStable` 比对 `computeContentHash()`（含 `extJson/extGroup`）；变了更新、不变跳过 |
+| 内容变化 | `upsertStable` 比对 `computeContentHash()`（含 `extJson/extGroup`）；变了更新、不变跳过。`typeNames` 并集合并必须先于哈希比对（§4.4），累积出新分类名即视为内容变化 |
 | TTL | 默认 30 天未命中 → 候选删除 |
 | 上限 | 单源默认 50,000 行；超出按 `lastSeenAt` LRU 删 |
 | 保护 | **永不删除**：在 `favorites` / `playback_progress` / `watch_history` / `custom_category_members` / `content_order` 里的 MOVIE 行 |
@@ -469,39 +517,17 @@ WHERE sourceId = :tvboxSourceId
 
 ---
 
-## 6. 存量数据迁移
+## 6. 存量数据：不迁移（决策 6，已确认）
 
-### 6.1 JSON → Core 表
+**不做任何存量数据迁移。** 升级后 TVbox 的收藏/进度/历史从空开始，产品已确认接受。具体口径：
 
-新增 `TvboxUserDataMigrator`（app 侧，启动时执行一次）：
-
-| 源 | 迁移 |
+| 存量 | 处理 |
 |---|---|
-| `favorites.json` | `ensureIndexed(siteKey, vodId, name, pic)` → `FavoriteEntity(profileId = activeProfileId, MOVIE, movieId, addedAt)` |
-| `progress.json` | `ensureIndexed(...)` → `PlaybackProgressEntity(..., extKey = JSON)` |
-| `history.json` | `ensureIndexed(...)` → `WatchHistoryEntity(..., watchedAt)` |
-| `favorites/history` 只有 name/pic | 建**最小行**：`name`、`posterUrl`（若有）、`streamUrl = "tvbox://<siteKey>/<vodId>"`、`extJson` 留空；等下次浏览/详情时补齐 |
+| `favorites.json` / `progress.json` / `history.json` | 不读、不迁。新版本用户态直接读写 Core 表；旧 JSON 文件留在磁盘无害，P5 随 `TvboxStore` 一并删除 |
+| 旧分类锁 key（`tvbox:<siteKey>:<typeId>` 及 `typeName` 别名） | 不迁移。新口径 `<sourceId>:<siteKey>/<typeId>` 与旧 key 不匹配，旧锁自然失效（不生效、不报错）；P5 可选清理 `cust_*_MOVIE.lockedCats` 里的 `tvbox:` 前缀死 key |
+| 迁移器 / 迁移标记 | 不存在。无 `TvboxUserDataMigrator`、无 `TvboxPrefs.coreIndexMigrated.*`、无"保留一个版本再删"的安排 |
 
-- JSON 里只有 `siteKey`，没有配置 id：只迁移**当前激活配置里仍存在**的站点；映射不到的条目原样保留在 JSON 里（可能属于另一个配置），下次切到那个配置再迁。
-- 现状 JSON 无 `profileId` → 统一归到当前 `activeProfileId`；多档案场景只迁一份，文档与 UI 需说明。
-- `history.json` 目前没有任何读取方；建议仍然迁入 Core 历史（成本低），避免升级后"历史少了一截"。
-- 迁移标记**按配置存**（`TvboxPrefs.coreIndexMigrated.<configId>`），不能用一个全局布尔：否则第二个配置永远不会被迁。
-- 迁移完成后 **保留原 JSON 一个版本**（回滚），下一版本删除。
-
-### 6.2 分类锁 key 迁移
-
-```text
-旧：tvbox:<siteKey>:<typeId>        主键（写入 Core 的 lockedCats）
-    tvbox:<siteKey>:<typeName>      别名（搜索来源播放只拿得到 typeName）
-新：<sourceId>:<siteKey>/<typeId>   CustomizeKeys.category（remoteId 用 typeId 形态）
-```
-
-迁移器：
-
-1. 读 `cust_<pid>_MOVIE.lockedCats`，筛出 `tvbox:` 前缀；
-2. 解析 `siteKey` + `typeId|typeName`；按 `siteKey/typeId` 找到已索引的 `CategoryEntity` → 新 key；`typeName` 别名映射到**同一个新 key**；
-3. `setCategoryLocked(pid, MOVIE, 新 key, true)`；
-4. 旧 key（含别名）先保留一个版本，避免迁移失败丢锁；下一版本清理。
+注意区分：**Room schema 迁移（§8 的 `MIGRATION_53_54`）仍然必须做**——决策 6 免除的是 TVbox 用户态数据的搬运，不是 Core 数据库的结构演进；已有安装的 DB 停在 v53，加列加表必须走显式 Migration。
 
 ---
 
@@ -518,7 +544,10 @@ WHERE sourceId = :tvboxSourceId
 | `database/OwnTVDatabase.kt` | `version = 54`、注册新实体、`ALL_MIGRATIONS` 加 `MIGRATION_53_54`；**把 2 个新索引登记进 `EXPECTED_NON_UNIQUE_INDEXES`**（`BulkInsertHelper` 会从 `sqlite_master` 删掉该表全部非唯一索引，只按这张表重建） |
 | `database/Migration53To54.kt` | 新增（只加列/加表/加索引，不重建表） |
 | `database/dao/SourceDao.kt` | 新增按 `type + externalKey` 查源（Provisioner 幂等用），避免每次启动重复建源 |
-| `catalog/CatalogIndexWriter.kt` | 新增：稳定 upsert + markSeen（同事务）/ prune |
+| `catalog/CatalogIndexWriter.kt` | 新增：稳定 upsert + markSeen（同事务）/ prune；`upsertMovies` 带 `mergeExtJson` 钩子（哈希前合并，§4.4） |
+| `content/AdultCategoryClassifier.kt` | 中文补充词表并入 `isAdult`（口径统一，IPTV kids 过滤同步收紧，§4.5.2）；新增 `isAdultItem(extJson)` 条目级判定 |
+| `content/SearchReader.kt` | `search` / `curated` 电影行追加 kids 条目级过滤（§4.5.2） |
+| `home/HomeFeed.kt` | 电影行（收藏/继续观看/Hero/trending）追加同一 kids 条目级过滤 |
 | `sync/SyncManager.kt`、`sync/SyncStatus.kt`、`sync/ImportFinalizer.kt` | `when` 增加 `SourceType.TVBOX -> Unit`（不参与常规同步/导入收尾） |
 | `repository/ActiveSources.kt` | `activeProfileSources` **和** `activeSourceIds` 都豁免 `defaultSourceId` 收窄（§4.5） |
 | `backup/BackupManager.kt` | `sourceTo` / `sourceFrom` 带上 `externalKey`；**索引不入备份**（与其它源一致：只备份源定义 + 用户态，内容靠 re-sync），恢复后 TVBOX 索引从空开始、按浏览重建。旧版本已能按"未知 type 跳过"处理（`sourceFrom` 返回 null + 计数） |
@@ -533,11 +562,11 @@ WHERE sourceId = :tvboxSourceId
 | 文件 | 改动 |
 |---|---|
 | `tvbox/index/TvboxIndexer.kt` | 新增：映射 + 索引编排 |
-| `tvbox/index/TvboxIndexMapper.kt` | 新增：`ClassInfo/Movie → Entity` 纯函数 |
+| `tvbox/index/TvboxIndexMapper.kt` | 新增：`ClassInfo/Movie → Entity` 纯函数（`typeNames` 单次快照 + `adultSite` 标记，§4.4） |
 | `tvbox/index/TvboxRemoteMediator.kt` | 新增（P4） |
-| `tvbox/index/TvboxUserDataMigrator.kt` | 新增：JSON/锁 key 迁移 |
-| `tvbox/repository/TvboxSourceProvisioner.kt` | 新增：配置 → `SourceEntity(TVBOX)` 的创建/更新；**必须 `sourceDao.link(ProfileSourceCrossRef)` 绑定当前档案**（`activeProfileSources` 走 `observeForProfile`，只建源不绑定等于没建）；只有激活配置 `syncMovies = true`。**删除配置时不删 `sources` 行**（会 CASCADE 删 `movies` 并连带清掉用户态），只置 `syncMovies = false`，索引走 TTL |
-| `tvbox/repository/TvboxStore.kt` | 标记 deprecated；迁移后只读 |
+| `tvbox/repository/TvboxSourceProvisioner.kt` | 新增：配置 → `SourceEntity(TVBOX)` 的创建/更新；**必须 `sourceDao.link(ProfileSourceCrossRef)` 绑定全部档案**（`activeProfileSources` 走 `observeForProfile`，只建源不绑定等于没建；只绑当前档案则儿童档案看不到内容，§4.2）；只有激活配置 `syncMovies = true`。**删除配置时不删 `sources` 行**（会 CASCADE 删 `movies` 并连带清掉用户态），只置 `syncMovies = false`，索引走 TTL |
+| `tvbox/repository/TvboxStore.kt` | **删除**（三个 JSON 文件的读写一并移除）；不迁移存量（决策 6，§6） |
+| `tvbox/category/TvboxCategoryPolicy.kt` | 删除私有中文词表，委托 Core `AdultCategoryClassifier.isAdult`（词表已上移，§4.5.2）；站点 ext 标记判定提为可复用纯函数，供 Mapper 写 `adultSite` |
 | `ui/screens/vod/TvboxViewModels.kt` | 分类改读 Core；收藏/进度改 Core；详情 `ensureIndexed`；续播读 `progressDao.extKey` |
 | `ui/screens/vod/TvboxPages.kt` | 分类条渲染用 Core 实体；增加"隐藏/改名/锁"菜单；TVBOX 条目隐藏"下载"入口 |
 | `ui/screens/vod/VodScreen.kt` | VOD 页没有路由参数，详情身份是内部 `pendingDetail`（`siteKey/vodId/typeId/typeName`）——补一个 `movieId` 即可，不需要改导航 |
@@ -545,9 +574,9 @@ WHERE sourceId = :tvboxSourceId
 | `tvbox/play/TvboxPlayResolver.kt` | 增加"从 Core 条目反查"入口（按 `sourceId/externalKey` 找配置、拉详情、校验），供 `playMovie` 路由使用 |
 | `ui/player/PlayerScreen.kt` | 收藏按 `itemId > 0` 开放；字幕按 `playKind == TVBOX` 关闭（拆成两个判断） |
 | `ui/screens/settings/SettingsPlaylistsPage.kt`、`SettingsViewModel.kt` | TVBOX 源不按 IPTV 播放列表展示/编辑；删除配置走 `TvboxConfigRepository.deleteConfig` |
-| `ui/screens/library/LibraryViewModel.kt` | Pager 增加 `remoteMediator`（P4） |
-| `di/TvboxModule.kt` | 注入 `CatalogIndexWriter`、`TvboxIndexer`、`TvboxUserDataMigrator` |
-| `res/values*/strings_mobile.xml` | 新增"点播索引/清理索引/迁移中"等文案 |
+| `ui/screens/library/LibraryViewModel.kt` | `customized` 增加 kids 条目级过滤（§4.5.2）；Pager 增加 `remoteMediator`（P4） |
+| `di/TvboxModule.kt` | 注入 `CatalogIndexWriter`、`TvboxIndexer` |
+| `res/values*/strings_mobile.xml` | 新增"点播索引/清理索引"等文案 |
 
 ### 7.3 文档
 
@@ -594,7 +623,7 @@ val MIGRATION_53_54 = object : Migration(53, 54) {
 ### P0：索引底座 + 收藏闭环
 
 - Core：`SourceType.TVBOX`、字段、`MIGRATION_53_54`、`CatalogIndexWriter`、`ActiveSources` 两处豁免、`SourceDao` 查询。
-- App：`TvboxSourceProvisioner`（配置 → 源，`sourceDao.link(ProfileSourceCrossRef)` 绑定当前档案，只有激活配置 `syncMovies = true`）、`TvboxIndexer`（分类/首页/详情）、`ensureIndexed`。
+- App：`TvboxSourceProvisioner`（配置 → 源，`sourceDao.link(ProfileSourceCrossRef)` 绑定**全部档案**，只有激活配置 `syncMovies = true`）、`TvboxIndexer`（分类/首页/详情）、`ensureIndexed`。
 - 播放：`VodTuner.playMovie` 的 TVBOX 路由（§4.5.1）必须一起做，否则收藏页/继续观看点进去播不了。
 - 收藏：`TvboxDetailViewModel.toggleFavorite` 改 Core；收藏页可见。
 - 验收：点播里收藏一部片 → Library 收藏页出现、**能直接播放**；重启后仍在；取消收藏后消失。
@@ -602,21 +631,20 @@ val MIGRATION_53_54 = object : Migration(53, 54) {
 ### P1：分类复用
 
 - VOD 分类条改读 `CategoryDao`；隐藏/改名/排序/锁全部走 `CustomizationStore`。
-- 锁 key 迁移（§6.2）。
+- 锁直接写新口径 key `<sourceId>:<siteKey>/<typeId>`；旧 `tvbox:` key 废弃不迁移（§6）。
 - 验收：VOD 分类隐藏后不再出现；改名在 VOD 与 Library 同步；锁定后点分类弹 PIN；儿童档案隐藏成人分类。
 
 ### P2：历史/进度/继续观看
 
 - `VodTuner` 写 Core 进度/历史；`VodPlayback.isExternal`；详情续播解析 `extKey`；`UserDataResolver` 备份带 `extKey`。
-- 存量 JSON 迁移（按配置分别标记）。
 - 验收：TVbox 片播一半 → Home 继续观看出现 → 点进去续播到原集原位置。
 
 ### P3：搜索复用
 
 - `SearchReader` 命中索引（源已豁免 `defaultSourceId`）。
 - 搜索页保留"在线结果"分区（上一轮方案），并与索引结果按 `siteKey/vodId` 去重。
-- 儿童档案：`SearchReader` 的 kids 过滤是**分类级**（`AdultCategoryClassifier.hiddenCategoryIds`），只认 `categoryId` + 分类名。搜索来源的 TVBOX 行没有分类归属，会在 Core 搜索里漏过——详见 §10 风险行，按拍板结果决定是否加条目级过滤。
-- 验收：搜一个浏览过/收藏过的点播片 → 与本地影片同页出现，分类/海报/年份正确；隐藏后搜不到。
+- 儿童档案：条目级 `extJson.typeNames` 检查落地（§4.5.2）——Core 词表统一、`SearchReader`/`curated`/`HomeFeed`/Library 列表四处接入；`typeNames` 并集随索引累积。
+- 验收：搜一个浏览过/收藏过的点播片 → 与本地影片同页出现，分类/海报/年份正确；隐藏后搜不到；**儿童档案下，搜索来源（无分类归属）的成人分类条目搜不到、Home 收藏/继续观看不出现**。
 
 ### P4：Library 全量复用（RemoteMediator）
 
@@ -625,8 +653,8 @@ val MIGRATION_53_54 = object : Migration(53, 54) {
 
 ### P5：清理与下线
 
-- 删除 `TvboxStore` JSON 读写（含只写不读的 `history.json`）、`TvboxSearchPage`、`TVBOX_ITEM_ID` 的旧路径（保留兜底）。
-- 清理孤儿锁 key（含 typeName 别名）、旧 JSON 文件。
+- 删除已无调用方的 `TvboxStore` 及旧 JSON 文件（含只写不读的 `history.json`；不迁移，决策 6）、`TvboxSearchPage`、`TVBOX_ITEM_ID` 的旧路径（保留兜底）。
+- 可选清理：`lockedCats` 里 `tvbox:` 前缀的失效旧 key（含 typeName 别名，§6）。
 
 ---
 
@@ -643,11 +671,13 @@ val MIGRATION_53_54 = object : Migration(53, 54) {
 | 索引膨胀 | DB 体积/启动变慢 | 50k 上限、30 天 TTL、`extGroup` 分站清理、批量事务（200 行/批） |
 | FTS 触发器写放大 | 大批量索引卡顿 | 分页小批写入；避免一次性拉全分类；必要时延后 FTS（评估后再定） |
 | 远端内容下架 | 收藏点进去 404 | 详情失败给"源已失效"提示；索引行保留（保护用户态），播放时 `TvboxPlayResolver` 给换源引导 |
-| 档案语义变化 | TVbox 现状全局共享 → 迁后按档案隔离 | 产品确认；迁移时归 active profile；文档写明 |
-| 儿童模式漏判 | 成人条目进入 Core 搜索 | `SearchReader` 只按分类过滤（不存在 `itemAllowed`）；搜索来源行 `categoryId = null` 会漏过。按 §12 决策补条目级检查，或接受"仅播放前由 `TvboxPlayResolver` 拦截" |
+| 档案语义变化 | TVbox 现状全局共享 → 新方案按档案隔离 | **已确认（决策 3）**：用户态按 `profileId` 隔离；不迁移存量（决策 6），升级后从空开始，发布说明写明 |
+| 儿童模式漏判 | 成人条目进入 Core 搜索/Home/Library | **已确认补条目级检查（决策 5，§4.5.2）**：`extJson.typeNames` 并集 + `adultSite` 标记，四处读取路径共用 `isAdultItem`；播放前 `TvboxPlayResolver` 拦截兜底（含 `kidsStrict`） |
+| `typeNames` 只增不减 | 远端分类改名/条目被误标后，成人判定无法自动解除 | 并集语义是防"洗白"的刻意设计；误标行随 30 天 TTL 自然过期，设置页"清理索引"可立即重建 |
+| 词表统一误伤 | 中文补充词表并入 Core 后，IPTV 同名分类对儿童档案同步隐藏（如"激情"子串） | 口径统一的预期行为变化（§4.5.2），发布说明写明；词表与 TVbox 现状完全一致，不新增词条；回归测试覆盖 IPTV 分类 |
 | 播放哨兵改造 | 索引失败时无法播放 | 保留 `TVBOX_ITEM_ID` 降级路径；索引失败只影响收藏/进度，不阻断播放 |
-| 多配置同时可见 | 搜索/收藏跨配置串内容 | 只有激活配置 `syncMovies = true`；切配置只翻转布尔列，不改 `remoteId` |
-| Core 上游合并冲突 | 下次吸收上游功能时冲突 | 改动集中在 6-8 个文件、按功能成组提交；`docs/Core源码集成方案.md` 流程 |
+| 多配置同时可见 | 搜索/收藏跨配置串内容 | **已确认（决策 2）**：只有激活配置 `syncMovies = true`；切配置只翻转布尔列，不改 `remoteId` |
+| Core 上游合并冲突 | 下次吸收上游功能时冲突 | 改动集中在 catalog/content/backup 等少数模块、按功能成组提交；`docs/Core源码集成方案.md` 流程 |
 | 备份兼容 | 恢复后源/进度不完整 | `externalKey` 进备份；`prog` 带 `extKey`；旧版本按未知 type 跳过（已有） |
 
 ---
@@ -661,6 +691,10 @@ val MIGRATION_53_54 = object : Migration(53, 54) {
 | `MIGRATION_53_54` | 53 库升级后旧数据完好、新列默认值正确、两个新索引存在且已登记进 `EXPECTED_NON_UNIQUE_INDEXES` |
 | `CatalogIndexWriter.upsertMovies` | 同内容二次写入 → 行数不变、`id` 不变、`markSeen` 后 `lastSeenAt` 更新 |
 | 内容变化 | `name/poster/extJson` 任一变化 → 同一 `id` 更新、`contentHash` 变化 |
+| `typeNames` 并集 | 先以"伦理片"索引、再以"电影"命中 → `typeNames` 含两者、行 id 不变；并集增长触发哈希更新（§4.4 合并先于哈希） |
+| `isAdultItem` | `typeNames` 任一命中（含中文补充词表）→ true；`adultSite=true` → true；空数组/缺字段/非法 JSON → false |
+| 词表统一回归 | IPTV 分类级 kids 过滤：补充词表分类被隐藏；正常分类不受影响（行为变化点，§4.5.2） |
+| kids 读取路径 | 儿童档案下 `categoryId=null` 且 `typeNames` 命中成人的行：`search`/`curated`/`HomeFeed` 均不出现；非儿童档案不受影响 |
 | 哈希兼容 | 未携带 `extGroup/extJson` 的存量 M3U/Xtream 行哈希不变（不触发全量重写） |
 | `prune` | 收藏/进度/历史/自定义分类/手动排序行都不被删除；过期未保护行被删除 |
 | `ActiveProfileSources` / `activeSourceIds` | `defaultSourceId` 选中 IPTV 源时，TVBOX 源仍在集合内 |
@@ -670,35 +704,28 @@ val MIGRATION_53_54 = object : Migration(53, 54) {
 
 | 用例 | 断言 |
 |---|---|
-| `TvboxIndexMapper` | `remoteId = siteKey/vodId`；借源条目用 `donorSiteKey` 且海报按借主站点 api 补全；`streamUrl = tvbox://...`；`siteKey`/`vodId` 为空的条目被拒绝 |
+| `TvboxIndexMapper` | `remoteId = siteKey/vodId`；借源条目用 `donorSiteKey` 且海报按借主站点 api 补全；`streamUrl = tvbox://...`；`siteKey`/`vodId` 为空的条目被拒绝；`typeNames` 取 `typeName` 或分类名兜底；站点 ext 标记 → `adultSite=true` |
 | `TvboxIndexMapper` 分类 | `remoteId = siteKey/typeId`；name 带站点前缀；sortOrder 单调 |
 | `extKey` 编解码 | JSON 形式的 `flag/episodeId/index` 往返一致；空值安全 |
-| 锁 key 迁移 | 旧 `tvbox:<siteKey>:<typeId>` 与 `typeName` 别名都映射到同一个新 key；映射不到时保留旧 key |
+| `TvboxCategoryPolicy` 委托 | 词表上移 Core 后判定矩阵与现状完全一致（站点 ext/站点名/`kidsStrict` 仍在 app 侧） |
 | `VodTuner.playMovie` 路由 | 源为 TVBOX 时走 `TvboxPlayResolver` + `playTvbox`；其它源走原路径 |
 
 ### 集成/回归
 
-- 模拟器：收藏 → 杀进程 → 重进仍在；继续观看 → 续播位置正确；隐藏分类 → 全局搜索搜不到。
+- 模拟器：收藏 → 杀进程 → 重进仍在；继续观看 → 续播位置正确；隐藏分类 → 全局搜索搜不到；儿童档案 → 搜索来源的成人条目在搜索/Home/Library 均不可见，播放前拦截仍生效。
 - `tools/regression/` 增加 `tvbox_index_test.py`：走收藏/续播/隐藏三条路径。
 - 构建：`:app:testStandardDebugUnitTest`、`:app:lintStandardDebug`、`:app:assembleStandardDebug`、`core-check`。
 
 ---
 
-## 12. 待确认决策
+## 12. 已确认决策（2026-11-11）
 
-1. **源粒度**：一个 TVbox 配置 = 一个 Core 源（推荐），还是一个站点 = 一个源？
-   - 影响：播放列表选择器条目数、备份体积、站点级隐藏能力。
-2. **多配置可见性**：只让激活配置的源参与读取（推荐，`syncMovies` 开关），还是所有导入过的配置同时进搜索/收藏？
-   - 前者切换配置不破坏身份；后者会跨配置串内容，但一次能搜到全部。
-3. **档案隔离**：收藏/进度从"全局"变为"按档案"是否可接受？
-   - 若必须保持全局，则需要额外做"所有档案共享"的查询层（成本高，不建议）。
-4. **索引范围**：只索引"浏览/搜索/详情见过的内容"（推荐，P0），还是后台预索引热门分类（流量/存储成本高）？
-5. **儿童档案**：搜索来源的 TVBOX 行没有分类归属，Core 搜索会漏过分类级过滤。是补条目级 `extJson.typeNames` 检查（成本中），还是接受"只靠播放前 `TvboxPlayResolver` 拦截"？
+| # | 决策 | 结论 | 落点 |
+|---|---|---|---|
+| 1 | 源粒度 | **一个 TVbox 配置 = 一个 Core 源**；站点身份编码进 `remoteId`，不做"一站一源" | §4.2 |
+| 2 | 多配置可见性 | **只让激活配置的源参与读取**（`syncMovies` 开关）；切配置只翻转布尔列，不改 `remoteId` | §4.2、§4.5 |
+| 3 | 档案隔离 | **按档案隔离**：收藏/进度/历史/隐藏按 `profileId` 分；内容目录共享，源绑定全部档案 | §4.2、§4.6 |
+| 4 | 索引范围 | **按 P0 处理**：只索引浏览/搜索/详情见过的内容，不做后台预索引 | §4.4、§5 |
+| 5 | 儿童档案 | **补条目级 `extJson.typeNames` 检查**：并集累积 + `adultSite` 标记，Core 词表统一，四处读取路径接入 | §4.5.2 |
+| 6 | 存量数据 | **不迁移**：旧 JSON 用户态与旧锁 key 直接废弃；Room schema 迁移（§8）不受影响 | §6 |
 
----
-
-## 13. 附：与上一版方案的关系
-
-- `docs/点播搜索并入全局搜索方案.md` 解决的是**入口与搜索 UI**；本方案解决的是**数据底座**。
-- 两者可并行：先做本方案 P0-P1，再做搜索入口合并，最终 P4 让 Library 直接承载点播分类。
-- 上一版"不把 TVbox 结果落库"的结论**在本方案下作废**（用户明确要求复用 Core 一整套逻辑，且允许增删字段）；但"播放仍走 TVbox 引擎、索引只是目录"这一边界保留。

@@ -37,6 +37,8 @@
     <string name="mobile_vod_placeholder_body">点播页面正在开发中，敬请期待。</string>
     <string name="settings_content_menus_description">重新排列或隐藏频道和分集菜单中的操作</string>
     <!-- TVbox 点播（VOD 页）。 -->
+    <string name="tvbox_source_name">点播 · %1$s</string>
+    <string name="tvbox_source_type">点播源</string>
     <string name="tvbox_config_title">配置源</string>
     <string name="tvbox_config_url_title">配置地址</string>
     <string name="tvbox_config_url_hint">粘贴 TVbox 配置地址（http / clan / 本地路径）</string>

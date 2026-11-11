@@ -29,6 +29,7 @@ import tv.own.owntv.core.database.entity.SourceEntity
 import tv.own.owntv.core.database.entity.WatchHistoryEntity
 import tv.own.owntv.core.metadata.MetadataRepository
 import tv.own.owntv.core.model.MediaType
+import tv.own.owntv.core.model.SourceType
 import tv.own.owntv.core.player.EnginePreference
 import tv.own.owntv.core.player.ExternalPlayerLauncher
 import tv.own.owntv.core.player.enginePinKey
@@ -127,6 +128,8 @@ class VodTuner(
     private val customize: CustomizationStore,
     /** TVbox-only progress/history/favourites storage — never the Core tables (plan §5.4). */
     private val tvboxStore: tv.own.owntv.mobile.tvbox.repository.TvboxStore,
+    /** A TVBOX Core row reached through a Core screen: resolves the real stream before playing. */
+    private val tvboxPlayback: tv.own.owntv.mobile.tvbox.play.TvboxPlaybackRouter,
 ) : CastHandoff {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -284,6 +287,29 @@ class VodTuner(
         val pid = currentProfileId() ?: return false
         if (!allows(pid, movie.categoryId)) return false
         val source = withContext(Dispatchers.IO) { sourceDao.getById(movie.sourceId) }
+
+        // An indexed VOD row's streamUrl is only a `tvbox://` handle. It must be resolved back to a
+        // real stream BEFORE the external-player check: handing the handle over would open a dead
+        // address in VLC instead of playing anything. This is the single route every Core screen
+        // (Favourites, Continue watching, search, detail) reaches playback through.
+        if (source?.type == SourceType.TVBOX) {
+            if (!dataSaver.allowsStreaming()) return false
+            val prepared = tvboxPlayback.prepare(movie, pid) ?: return false
+            saveProgress()
+            liveTuner.stop()
+            return playTvbox(
+                resolved = prepared.play,
+                queue = prepared.queue,
+                startPositionMs = startPositionMs,
+                progressCtx = TvboxProgressCtx(
+                    siteKey = prepared.siteKey,
+                    vodId = prepared.vodId,
+                    episodeFlag = prepared.episodeFlag,
+                    episodeId = prepared.episodeId,
+                    episodeIndex = prepared.episodeIndex,
+                ),
+            )
+        }
 
         // A protected item cannot go to an external player: no intent extra carries a licence
         // URL, so the other app would open it and fail on the first segment.
@@ -622,6 +648,11 @@ class VodTuner(
      *  where the other app stops cannot be read back. */
     suspend fun playExternal(movie: MovieEntity): Boolean {
         val pid = currentProfileId() ?: return false
+        // An indexed VOD row has no address another app could open: play it here instead of handing
+        // a tvbox:// handle to an external player that would only report a broken link.
+        if (movie.streamUrl.startsWith(tv.own.owntv.mobile.tvbox.index.TvboxIndexMapper.STREAM_PREFIX)) {
+            return playMovie(movie.id, withContext(Dispatchers.IO) { progressDao.get(pid, MediaType.MOVIE, movie.id)?.positionMs ?: 0L })
+        }
         if (!allows(pid, movie.categoryId)) return false
         val source = withContext(Dispatchers.IO) { sourceDao.getById(movie.sourceId) }
         return handOver(movie.name, source, movie.streamUrl, movie.httpHeaders, pid, MediaType.MOVIE, movie.id, savedPositionMs(pid, MediaType.MOVIE, movie.id))

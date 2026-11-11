@@ -141,6 +141,8 @@ class SyncManager(
                         SourceType.M3U -> m3uSyncer.sync(source, progress, stats)
                         SourceType.LOCAL_BACKUP -> Unit
                         SourceType.STALKER -> stalkerSyncer.sync(source, progress, stats, effective)
+                        // Indexed from the TVbox configuration on browse, never by a playlist sync.
+                        SourceType.TVBOX -> Unit
                     }
                     // Stamp lastSyncAt only when this pass covered every enabled+constrained section.
                     // A staged partial pass leaves it null; the background remainder worker stamps via

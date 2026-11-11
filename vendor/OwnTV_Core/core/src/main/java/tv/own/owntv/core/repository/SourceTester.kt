@@ -75,6 +75,8 @@ class SourceTester(
             SourceType.STALKER -> testStalker(source)
             // A restored backup has no host to reach — nothing to test, and nothing is wrong.
             SourceType.LOCAL_BACKUP -> SourceTestResult.Ok()
+            // Provisioned from the TVbox configuration; there is no IPTV host to reach.
+            SourceType.TVBOX -> SourceTestResult.Ok()
         }
         Log.i(TAG, "test sourceId=${source.id} type=${source.type} -> ${result::class.simpleName}")
         result

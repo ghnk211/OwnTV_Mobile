@@ -36,6 +36,8 @@ data class CategoryEntity(
     val name: String,
     val remoteId: String? = null,
     val sortOrder: Int = 0,
+    /** Provider-specific extras as JSON (v54). TVBOX writes `{"siteKey":"…","typeName":"…"}`. */
+    val extJson: String? = null,
 )
 
 @Entity(
@@ -171,6 +173,9 @@ fun resolveStreamUrl(url: String, source: SourceEntity?): String {
         Index(value = ["sourceId", "addedAt", "sortOrder"]),
         Index(value = ["categoryId", "addedAt", "sortOrder"]),
         Index(value = ["sourceId", "titleSignature", "parsedYear"]),
+        // Index lifecycle (v54): an indexed source is swept per site and by age, so both are indexed.
+        Index(value = ["sourceId", "extGroup", "lastSeenAt"]),
+        Index(value = ["lastSeenAt"]),
     ],
 )
 @Immutable
@@ -206,6 +211,20 @@ data class MovieEntity(
     val providerLanguage: String? = null,
     @ColumnInfo(defaultValue = "0") val qualityRank: Int = 0,
     val advertisedCapabilities: String? = null,
+    /**
+     * The provider group this row belongs to (v54): the TVbox site key. Indexed so a site's rows can
+     * be swept on their own, and so a configuration's content can be grouped without parsing JSON.
+     */
+    val extGroup: String? = null,
+    /**
+     * Provider extras as JSON (v54) — TVBOX writes `typeNames`, `remark`, `donorSiteKey`,
+     * `adultSite`, `lineCount`, `episodeCount` here. One JSON column rather than a real column per
+     * provider field keeps the next TVbox field from needing another schema version.
+     */
+    val extJson: String? = null,
+    /** When the remote last showed this row (v54), epoch ms; null for every playlist row. Drives the
+     *  index TTL. Deliberately outside [computeContentHash] — it is local bookkeeping, not content. */
+    val lastSeenAt: Long? = null,
 )
 
 @Entity(
@@ -363,16 +382,25 @@ fun ChannelEntity.computeContentHash(): Int {
 
 /** [httpHeaders], [MovieEntity.drmConfig] and [MovieEntity.manifestType] are folded in only when the
  *  movie actually carries them — same reasoning as [ChannelEntity.computeContentHash]: no full-catalog
- *  rewrite for the 99% that don't. */
+ *  rewrite for the 99% that don't.
+ *
+ *  The v54 [MovieEntity.extGroup] / [MovieEntity.extJson] follow the same rule. They must be folded
+ *  in: the indexed TVbox rows change content when an episode count or a line changes, and
+ *  `upsertStable` skips a row whose hash matches. [MovieEntity.lastSeenAt] is deliberately absent —
+ *  it is written on every hit and would turn every re-index into a full rewrite. */
 fun MovieEntity.computeContentHash(): Int {
     val base = Objects.hash(
         sourceId, categoryId, name, posterUrl, backdropUrl,
         year, rating, durationSecs, plot, streamUrl, containerExt, remoteId, addedAt,
     )
-    if (httpHeaders == null && drmConfig == null && manifestType == null) return base
-    val withHeaders = Objects.hash(base, httpHeaders)
-    val withDrm = if (drmConfig == null) withHeaders else Objects.hash(withHeaders, drmConfig)
-    return if (manifestType == null) withDrm else Objects.hash(withDrm, manifestType)
+    val withV28 = if (httpHeaders == null && drmConfig == null && manifestType == null) {
+        base
+    } else {
+        val withHeaders = Objects.hash(base, httpHeaders)
+        val withDrm = if (drmConfig == null) withHeaders else Objects.hash(withHeaders, drmConfig)
+        if (manifestType == null) withDrm else Objects.hash(withDrm, manifestType)
+    }
+    return if (extGroup == null && extJson == null) withV28 else Objects.hash(withV28, extGroup, extJson)
 }
 
 fun SeriesEntity.computeContentHash(): Int = Objects.hash(

@@ -754,6 +754,9 @@ class LibraryViewModel(
             if (mediaType.value == MediaType.MOVIE) {
                 val movie = movieDao.getById(itemId) ?: return@launch
                 if (!AdultCategoryClassifier.allows(pid, movie.categoryId, profileDao, categoryDao)) return@launch
+                // An indexed VOD row is a tvbox:// handle: a download of it can only fail, so the
+                // button must not queue one (the player resolves it; nothing else can).
+                if (movie.streamUrl.startsWith(tv.own.owntv.mobile.tvbox.index.TvboxIndexMapper.STREAM_PREFIX)) return@launch
                 downloadManager.enqueue(
                     profileId = pid,
                     mediaType = MediaType.MOVIE,

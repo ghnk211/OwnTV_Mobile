@@ -69,6 +69,33 @@ data class PlaybackProgressEntity(
     val positionMs: Long,
     val durationMs: Long,
     val updatedAt: Long = System.currentTimeMillis(),
+    /**
+     * Provider-specific resume identity as JSON (v54). TVBOX writes
+     * `{"flag":"…","episodeId":"…","index":N}` so opening a film again resumes the same line and
+     * episode; null for playlists. JSON rather than a NUL-joined string because a backup carries it
+     * verbatim through several serializers.
+     */
+    val extKey: String? = null,
+)
+
+/**
+ * How far a paged catalogue has been indexed (v54) — the TVbox crawler's page cursor, per category.
+ *
+ * [categoryRemoteId] is the same identity as [CategoryEntity.remoteId] (`<siteKey>/<typeId>`), not a
+ * bare type id: two sites routinely name a category the same, and a bare id would make them share a
+ * cursor. [generation] rises when the remote filter changes, which makes the old rows eligible for
+ * the TTL sweep.
+ */
+@Entity(
+    tableName = "catalog_index_cursor",
+    primaryKeys = ["sourceId", "categoryRemoteId"],
+)
+data class CatalogIndexCursorEntity(
+    val sourceId: Long,
+    val categoryRemoteId: String,
+    val lastPage: Int = 0,
+    val generation: Int = 0,
+    val syncedAt: Long = 0,
 )
 
 /**

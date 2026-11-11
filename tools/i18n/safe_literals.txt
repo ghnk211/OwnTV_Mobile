@@ -906,6 +906,18 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	var iframeHtml="";
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	var urlPs="$url";
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/TvBoxParity.kt	}
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	$STREAM_PREFIX$key
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	$siteKey/$typeId
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	${origin.key}/$vodId
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	adultSite
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	donorSiteKey
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	episodeCount
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	lineCount
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	remark
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	siteKey
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	tvbox://
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	typeName
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/index/TvboxIndexMapper.kt	typeNames
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/AddressFetcher.kt	AddressFetcher
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/net/AddressFetcher.kt	HTTP ${resp.code}
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/net/AddressFetcher.kt	下载失败：${resp.error ?: "HTTP ${resp.code}"}
@@ -977,6 +989,8 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	解析失败，可尝试切换线路或换源
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	解析结果为空地址
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlayResolver.kt	该源需要本机代理服务，服务未就绪，请重试或切换线路
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlaybackRouter.kt	http
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/play/TvboxPlaybackRouter.kt	tvbox:${site.key}:${item.id}:$index
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	BD
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	完整版
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/DetailFallback.kt	更新
@@ -1140,6 +1154,7 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置解密后仍非 JSON（前 80 字符：%s）
 2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置解析失败
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	重新拷贝本地 spider jar：%s（%d 字节）
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxSourceProvisioner.kt	tvbox://config/$externalKey
 2	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	\0
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	$siteKey|$vodId|$episodeFlag|$episodeId
 2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxStore.kt	addedAt
