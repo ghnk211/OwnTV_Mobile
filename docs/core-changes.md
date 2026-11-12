@@ -23,7 +23,7 @@
 
 ## 新增的 Mobile 专属能力
 
-（暂无）
+- **TVbox JS 源（drpy2）**：`tvbox/engine/js/**` 已落地，引擎来源 VOD `4c8d289`；**未改 Core**，也未改 `vendor/OwnTV_Core`（2026-11-12）。
 
 ## 与 Mobile 的同步约定
 

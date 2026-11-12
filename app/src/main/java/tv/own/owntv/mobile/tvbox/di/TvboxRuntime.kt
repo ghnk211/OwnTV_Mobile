@@ -2,7 +2,10 @@ package tv.own.owntv.mobile.tvbox.di
 
 import tv.own.owntv.mobile.tvbox.engine.cms.CmsEngine
 import tv.own.owntv.mobile.tvbox.engine.jar.JarEngine
+import tv.own.owntv.mobile.tvbox.engine.js.JsEngine
+import tv.own.owntv.mobile.tvbox.engine.js.JsWarmUp
 import tv.own.owntv.mobile.tvbox.engine.sniff.SniffEngine
+import tv.own.owntv.mobile.tvbox.config.parser.ConfigParser
 import tv.own.owntv.mobile.tvbox.net.OkHttpProvider
 import tv.own.owntv.mobile.tvbox.repository.SourceRepository
 import tv.own.owntv.mobile.tvbox.repository.TvboxConfigRepository
@@ -20,6 +23,8 @@ class TvboxRuntime(
     private val sourceRepository: SourceRepository,
     private val cmsEngine: CmsEngine,
     private val jarEngine: JarEngine,
+    private val jsEngine: JsEngine,
+    private val jsWarmUp: JsWarmUp,
     private val sniffEngine: SniffEngine,
     private val provisioner: tv.own.owntv.mobile.tvbox.repository.TvboxSourceProvisioner,
     private val indexer: tv.own.owntv.mobile.tvbox.index.TvboxIndexer,
@@ -38,10 +43,15 @@ class TvboxRuntime(
             sniffEngine.setGlobalRules(cfg.rules)
         }
         config.onSpiderWarmUp = { jarEngine.warmUp() }
+        config.onJsWarmUp = { sites, priorityKeys -> jsWarmUp.warmAll(sites, priorityKeys) }
+        // 站点可见性 / 首页绑定 / 导入警告共用同一谓词：native 不可用的 JS 源会被引擎剔除。
+        config.isPlayable = { sourceRepository.canServe(it) }
+        ConfigParser.isPlayable = { sourceRepository.canServe(it) }
         config.onSwitchHook = { _ ->
             OkHttpProvider.onConfigSwitched()
             cmsEngine.invalidateAll()
             jarEngine.invalidateAll()
+            jsEngine.invalidateAll()
             sourceRepository.invalidateAll()
             SourceHealth.clear()
         }

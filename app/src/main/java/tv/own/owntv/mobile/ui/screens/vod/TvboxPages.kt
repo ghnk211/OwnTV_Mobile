@@ -39,6 +39,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -203,7 +204,7 @@ internal fun TvboxConfigPage(
             Text(
                 text = when (banner) {
                     is TvboxBanner.Imported ->
-                        stringResource(R.string.tvbox_import_ok, banner.siteCount) +
+                        pluralStringResource(R.plurals.tvbox_import_ok, banner.siteCount, banner.siteCount) +
                             if (banner.spiderDownloading) stringResource(R.string.tvbox_import_downloading) else ""
                     is TvboxBanner.Failed -> banner.message
                 },
@@ -827,7 +828,7 @@ internal fun TvboxDetailPage(
                 } else {
                     val names = episodeDisplayNames(episodes)
                     Text(
-                        stringResource(R.string.tvbox_episodes, episodes.size),
+                        pluralStringResource(R.plurals.tvbox_episodes, episodes.size, episodes.size),
                         style = stageText(12f, 700),
                         color = palette.muted,
                         modifier = Modifier.padding(horizontal = PageSidePadding, vertical = 6.dp),

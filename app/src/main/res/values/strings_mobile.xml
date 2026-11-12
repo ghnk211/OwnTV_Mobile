@@ -61,7 +61,10 @@
     <string name="tvbox_config_source_local">Local import</string>
     <string name="tvbox_config_delete_confirm">Delete this source?</string>
     <string name="tvbox_config_delete">Delete</string>
-    <string name="tvbox_import_ok">Imported %1$d sites</string>
+    <plurals name="tvbox_import_ok">
+        <item quantity="one">Imported %1$d site</item>
+        <item quantity="other">Imported %1$d sites</item>
+    </plurals>
     <string name="tvbox_import_downloading"> · component downloading</string>
     <string name="tvbox_home_pick_site">Pick a site</string>
     <string name="tvbox_home_no_site">No usable site in this config. Import another one or check the source.</string>
@@ -75,7 +78,10 @@
     <string name="tvbox_error_load">Could not load this category. Try again later.</string>
     <string name="tvbox_error_detail">Could not load this title. Try again later.</string>
     <string name="tvbox_line_name">Line %1$d · %2$s</string>
-    <string name="tvbox_episodes">%1$d episodes</string>
+    <plurals name="tvbox_episodes">
+        <item quantity="one">%1$d episode</item>
+        <item quantity="other">%1$d episodes</item>
+    </plurals>
     <string name="tvbox_detail_blocked_kids">This content is not available for the current profile.</string>
     <string name="tvbox_detail_locked">This category is locked. Enter the PIN to open it.</string>
     <string name="tvbox_detail_no_episodes">No playable episodes on this line.</string>

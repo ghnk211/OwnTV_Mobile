@@ -34,4 +34,8 @@
 -keep class com.github.catvod.** { *; }
 -keep class tv.own.owntv.mobile.tvbox.engine.** { *; }
 -keep class tv.own.owntv.mobile.tvbox.config.model.** { *; }
+# --- TVbox JS (drpy) spider: the QuickJS wrapper reaches its native/reflective surface by name.
+#     The AAR ships its own consumer rules; this only silences the optional surface this app
+#     does not call (wrapper-java is test-only). Release still needs one on-device JS-source play. ---
+-dontwarn com.whl.quickjs.**
 -keepclassmembers class * implements android.webkit.WebViewClient { *; }

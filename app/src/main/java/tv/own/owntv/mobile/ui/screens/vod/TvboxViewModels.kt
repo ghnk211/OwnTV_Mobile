@@ -227,7 +227,7 @@ class TvboxHomeViewModel(
     private fun refreshSites() {
         viewModelScope.launch {
             val profile = currentProfile()
-            val visible = policy.visibleSites(profile, configRepository.sites.value.filter { it.isSupported })
+            val visible = policy.visibleSites(profile, configRepository.sites.value.filter { configRepository.isPlayable(it) })
             _state.value = _state.value.copy(sites = visible)
             val saved = configRepository.currentHomeSiteKey()
             val target = visible.firstOrNull { it.key == saved }

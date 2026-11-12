@@ -51,7 +51,9 @@
     <string name="tvbox_config_source_local">本機匯入</string>
     <string name="tvbox_config_delete_confirm">刪除這份配置？</string>
     <string name="tvbox_config_delete">刪除</string>
-    <string name="tvbox_import_ok">已匯入 %1$d 個站點</string>
+    <plurals name="tvbox_import_ok">
+        <item quantity="other">已匯入 %1$d 個站點</item>
+    </plurals>
     <string name="tvbox_import_downloading"> · 元件背景下載中</string>
     <string name="tvbox_home_pick_site">選擇站點</string>
     <string name="tvbox_home_no_site">目前配置沒有可用站點，請換一份配置或檢查源。</string>
@@ -65,7 +67,9 @@
     <string name="tvbox_error_load">分類載入失敗，請稍後再試。</string>
     <string name="tvbox_error_detail">詳情取得失敗，請稍後再試。</string>
     <string name="tvbox_line_name">線路 %1$d · %2$s</string>
-    <string name="tvbox_episodes">%1$d 集</string>
+    <plurals name="tvbox_episodes">
+        <item quantity="other">%1$d 集</item>
+    </plurals>
     <string name="tvbox_detail_blocked_kids">目前設定檔不可觀看此內容。</string>
     <string name="tvbox_detail_locked">該分類已上鎖，請輸入 PIN 解鎖。</string>
     <string name="tvbox_detail_no_episodes">該線路沒有可播放的分集。</string>
