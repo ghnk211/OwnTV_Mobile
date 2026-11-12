@@ -129,33 +129,50 @@ internal class JarProxyServer(
                 writeSimple(sock.getOutputStream(), 404, "Not Found")
                 return
             }
+            // do=js 是 JS 源的回环出口：会话级 token 校验，失败 403。
+            // jar 侧沿用现状（无 token），不扩大改动面。
+            if (query["do"] == "js" && !JarProxyHub.isJsTokenValid(query)) {
+                TbLog.tag(TAG).w("proxy 拒绝：do=js token 校验失败")
+                writeSimple(sock.getOutputStream(), 403, "Forbidden")
+                return
+            }
             // 对齐参考项目 `params.putAll(session.getHeaders())`：
             // 少数 spider 的 proxy 实现会读 Range / Referer 等请求头。
             val params = LinkedHashMap<String, String>(query)
             headers.forEach { (k, v) -> params.putIfAbsent(k, v) }
+            val rangeHeader = headers.entries.firstOrNull { it.key.equals("Range", true) }?.value
+                ?: query.entries.firstOrNull { it.key.equals("Range", true) }?.value
             val result = runCatching { dispatcher(params) }.onFailure {
                 TbLog.tag(TAG).w(it, "proxy 分发异常 do=%s", params["do"])
             }.getOrNull()
             if (result == null || result.size < 3) {
-                TbLog.tag(TAG).w("proxy 返回空：do=%s url=%s", params["do"], params["url"])
+                // 只记 host + path：do=js 的 URL 带 token，不能进日志。
+                TbLog.tag(TAG).w("proxy 返回空：do=%s url=%s", params["do"], redactUrl(params["url"]))
                 writeSimple(sock.getOutputStream(), 502, "proxy returned empty")
                 return
             }
-            writeProxy(sock.getOutputStream(), result, method == "HEAD")
+            writeProxy(sock.getOutputStream(), result, method == "HEAD", rangeHeader)
         }
     }
 
     /**
-     * 回写 jar 给的 `Object[]`：`[0]=code, [1]=mime, [2]=InputStream, [3]=headers(可选)`。
+     * 回写代理结果：`[0]=code, [1]=mime, [2]=body, [3]=headers(可选)`。
      *
-     * 用 `Connection: close` + 不写 Content-Length 来界定响应体（流式，
-     * 内存里不堆整段媒体）。3xx 且 body 为空时靠 headers 里的 Location 跳转。
+     * body 三种形态都要认：jar 侧给 `InputStream`，JS 侧给 `ByteArray`（整段分片）
+     * 或 `String`（m3u8 文本）。只认 `InputStream` 会把另两种静默当成 null body，
+     * 回一个 `Content-Length: 0` 的空响应。
+     *
+     * 完整缓冲的响应支持 `Range`：按请求切片并回 206 + `Content-Range`。
      */
-    private fun writeProxy(out: OutputStream, rs: Array<Any?>, headOnly: Boolean) {
-        val code = (rs[0] as? Number)?.toInt() ?: 200
+    private fun writeProxy(
+        out: OutputStream,
+        rs: Array<Any?>,
+        headOnly: Boolean,
+        rangeHeader: String?,
+    ) {
+        val code0 = (rs[0] as? Number)?.toInt() ?: 200
         val mime = (rs.getOrNull(1) as? String)?.takeIf { it.isNotBlank() }
             ?: "application/octet-stream"
-        val body = rs.getOrNull(2) as? InputStream
         @Suppress("UNCHECKED_CAST")
         val extra = (rs.getOrNull(3) as? Map<*, *>)
             ?.entries
@@ -167,30 +184,39 @@ internal class JarProxyServer(
             .orEmpty()
 
         // 小响应（m3u8 播放列表通常几百 KB）先缓冲，拿到完整长度后再写头。
-        //
-        // ## 为什么必须补 Content-Length（真机实证 2026-11-10，「糯米┃秒播」）
-        // 之前固定用 `Connection: close` 界定响应体、不写长度。mpv/ffmpeg 拿到
-        // 414257 字节的**完整** m3u8 后仍认为"还有后续"，带 `Range: bytes=414257-`
-        // 重连；而 jar 的 proxy 出口忽略 Range、恒返回 200 全量 → ffmpeg 报
-        // `Unexpected offset: expected 414257, got 0` 并不停重试，播放永远起不来。
-        // 有了准确长度，ffmpeg 读完即收尾，不会再发 Range。
-        //
-        // 大响应（ts/mp4 分片可能几十 MB）不整段进内存：只缓冲到上限，超限后
-        // 退回流式 + close 界定（此时客户端是边读边播，不会依赖总长度）。
-        val buffered = java.io.ByteArrayOutputStream()
+        // 大响应（ts/mp4 分片可能几十 MB）只缓冲到上限，超限后退回流式 + close 界定。
+        var stream: InputStream? = null
+        var buffered = ByteArray(0)
         var complete = true
-        if (body != null) {
-            val buf = ByteArray(8 * 1024)
-            while (true) {
-                val n = runCatching { body.read(buf) }.getOrDefault(-1)
-                if (n <= 0) break
-                if (buffered.size() + n > BUFFER_LIMIT) {
-                    buffered.write(buf, 0, n)
-                    complete = false
-                    break
+        when (val body = rs.getOrNull(2)) {
+            is ByteArray -> buffered = body
+            is String -> buffered = body.toByteArray(Charsets.UTF_8)
+            is InputStream -> {
+                stream = body
+                val sink = java.io.ByteArrayOutputStream()
+                val buf = ByteArray(8 * 1024)
+                while (true) {
+                    val n = runCatching { body.read(buf) }.getOrDefault(-1)
+                    if (n <= 0) break
+                    sink.write(buf, 0, n)
+                    if (sink.size() > BUFFER_LIMIT) {
+                        complete = false
+                        break
+                    }
                 }
-                buffered.write(buf, 0, n)
+                buffered = sink.toByteArray()
             }
+
+            else -> Unit
+        }
+
+        var code = code0
+        var contentRange: String? = null
+        if (complete && !rangeHeader.isNullOrBlank() && buffered.isNotEmpty()) {
+            val (start, end) = parseRange(rangeHeader, buffered.size)
+            if (code == 200) code = 206
+            contentRange = "bytes $start-$end/${buffered.size}"
+            buffered = buffered.copyOfRange(start, end + 1)
         }
 
         BufferedOutputStream(out).use { bos ->
@@ -198,22 +224,23 @@ internal class JarProxyServer(
             bos.write(("Content-Type: $mime\r\n".toByteArray()))
             bos.write("Accept-Ranges: bytes\r\n".toByteArray())
             extra.forEach { (k, v) ->
-                // 分块/连接头由本服务决定；Content-Length 由缓冲结果统一给出，
-                // Content-Range 等其余头原样透传。
+                // 分块/连接头由本服务决定；长度与切片范围由缓冲结果统一给出。
                 if (k.equals("Content-Length", true) ||
                     k.equals("Transfer-Encoding", true) ||
-                    k.equals("Connection", true)
+                    k.equals("Connection", true) ||
+                    k.equals("Content-Range", true)
                 ) return@forEach
                 runCatching { bos.write("$k: $v\r\n".toByteArray()) }
             }
-            if (complete) writeContentLength(bos, buffered.toByteArray())
+            if (complete) writeContentLength(bos, buffered)
+            contentRange?.let { bos.write("Content-Range: $it\r\n".toByteArray()) }
             bos.write("Connection: close\r\n\r\n".toByteArray())
             if (!headOnly) {
-                bos.write(buffered.toByteArray())
-                if (!complete && body != null) {
+                bos.write(buffered)
+                if (!complete && stream != null) {
                     val buf = ByteArray(8 * 1024)
                     while (true) {
-                        val n = runCatching { body.read(buf) }.getOrElse { -1 }
+                        val n = runCatching { stream.read(buf) }.getOrElse { -1 }
                         if (n <= 0) break
                         bos.write(buf, 0, n)
                     }
@@ -221,7 +248,7 @@ internal class JarProxyServer(
             }
             bos.flush()
         }
-        runCatching { body?.close() }
+        runCatching { stream?.close() }
     }
 
     private fun writeSimple(out: OutputStream, code: Int, text: String) {
@@ -296,7 +323,16 @@ internal class JarProxyServer(
         }
     }
 
-    private companion object {
+    /** 日志脱敏：只保留 scheme://host/path，去掉 query（do=js 的 query 里有 token）。 */
+    private fun redactUrl(url: String?): String {
+        if (url.isNullOrBlank()) return ""
+        return runCatching {
+            val u = java.net.URI(url)
+            "${u.scheme}://${u.host}${u.path.orEmpty()}"
+        }.getOrDefault(url.substringBefore('?'))
+    }
+
+    internal companion object {
         const val TAG = "JarProxy"
         const val PROXY_PATH = "/proxy"
 
@@ -308,5 +344,35 @@ internal class JarProxyServer(
          * 必须首选；被占用时顺延，实际端口由 [JarProxyHub] 注入 `Proxy.set()`。
          */
         val PORTS: List<Int> = listOf(9978) + (9979..9999).toList()
+
+        /**
+         * 解析 `Range: bytes=a-b` / `a-` / `-b`，返回闭区间。
+         * 无 Range、格式不合法或越界时钳回整体；空 body 返回 `0 to 0`。
+         */
+        internal fun parseRange(header: String?, total: Int): Pair<Int, Int> {
+            if (total <= 0) return 0 to 0
+            if (header.isNullOrBlank() || !header.trim().startsWith("bytes=", ignoreCase = true)) {
+                return 0 to (total - 1)
+            }
+            val spec = header.substringAfter('=').substringBefore(',').trim()
+            val dash = spec.indexOf('-')
+            if (dash < 0) return 0 to (total - 1)
+            val startRaw = spec.substring(0, dash).trim()
+            val endRaw = spec.substring(dash + 1).trim()
+            if (startRaw.isEmpty()) {
+                val suffix = endRaw.toIntOrNull()?.takeIf { it > 0 } ?: return 0 to (total - 1)
+                val length = suffix.coerceAtMost(total)
+                return (total - length) to (total - 1)
+            }
+            val start = startRaw.toIntOrNull() ?: return 0 to (total - 1)
+            if (start >= total) return 0 to (total - 1)
+            val end = if (endRaw.isEmpty()) {
+                total - 1
+            } else {
+                (endRaw.toIntOrNull() ?: (total - 1)).coerceAtMost(total - 1)
+            }
+            if (end < start) return 0 to (total - 1)
+            return start to end
+        }
     }
 }

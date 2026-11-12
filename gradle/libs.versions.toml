@@ -38,6 +38,12 @@ gson = "2.11.0"
 # Media3 — only the subtitle view. The player itself is core's; this app draws the image
 # subtitles (PGS/VOBSUB/DVB) the engine hands to ExoPlayer, and nothing else from media3.
 media3 = "1.11.1"
+# QuickJS for the TVbox JS (drpy2) spider. 2.1.0 is the version the VOD project runs and the one
+# already in the local Gradle cache; its .so files are 4 KB aligned, so a 16 KB-page device cannot
+# dlopen them — JsEngine probes that at runtime and degrades to "JS sources unavailable".
+quickjs = "2.1.0"
+# The drpy pdfh/pdfa/pd selector dialect, which jsoup cannot express directly.
+jsoup = "1.18.1"
 koin = "4.2.2"
 # Google Cast. Phone-only, and deliberately absent from the TV app's catalogue and from core: an
 # Android TV box IS the receiver, so a sender SDK there would be an app casting to itself.
@@ -132,6 +138,10 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 # TVbox jar spider result parsing
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+# TVbox JS (drpy) spider runtime and HTML selector dialect
+quickjs-android = { group = "wang.harlon.quickjs", name = "wrapper-android", version.ref = "quickjs" }
+quickjs-java = { group = "wang.harlon.quickjs", name = "wrapper-java", version.ref = "quickjs" }
+jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 # Tests for the ported CMS/jar chains spin up a local HTTP server.
 # (the okhttp3.mockwebserver package, which the ported tests import)
 mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttpTest" }

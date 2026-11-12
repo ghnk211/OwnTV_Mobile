@@ -255,7 +255,7 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	配置 AES-ECB 解密失败（key=%s）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	配置 Base64 解码失败，按原文继续
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/FindResult.kt	配置解密异常，回退原文：%s
-3	log	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/SecureKv.kt	${tag}.${'$'}${key}
+4	preference-key	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/SecureKv.kt	${tag}.${'$'}${key}
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/SecureKv.kt	catvod
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/SecureKv.kt	drpy_local
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	active_config_id
@@ -617,27 +617,231 @@
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	initApi
 3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	playerContent
 3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/jar/JarSpider.kt	searchContent
+4	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	\0
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	&&
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	,
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	--
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	:eq\\(\\s*(-?\\d+)\\s*\\)
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	Html
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	InnerHtml
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	OuterHtml
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	Text
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	[A-Za-z_:][A-Za-z0-9_.:-]*
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	html
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	innerhtml
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	outerhtml
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/DrpyHtmlParser.kt	text
+3	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	\0
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	$siteName($siteKey)
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	.local
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	.localhost
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	0.0.0.0
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	169.254.169.254
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	::1
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	GET
+6	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	JS
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	Location
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	[
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	[$siteKey] ${args.joinToString(" ")}
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	[$siteKey] 定时器回调失败: ${it.message}
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	[%s] 请求被拒绝：%s
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	]
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	__androidHtmlParser
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	__androidProxy
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	__androidReq
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	__androidTimers
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	__androidUrl
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	__clear
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	__set
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	body
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	buffer
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	code
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	console
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	content
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	data
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	debug
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	delete
+6	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	error
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	false
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	finalUrl
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	get
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	getProxy
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	globalThis.getProxy = function(isJs) { return __androidProxy.getProxy(isJs === undefined ? true : isJs); }; globalThis.js2Proxy = function(from, siteType, siteKey, header, url) { return __androidProxy.js2Proxy(from, siteType, siteKey, header, url); };
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	globalThis.pdfh = function(html, rule) { return __androidHtmlParser.pdfh(String(html == null ? '' : html), String(rule == null ? '' : rule)); }; globalThis.pdfa = function(html, rule) { return JSON.parse(__androidHtmlParser.pdfa(String(html == null ? '' : html), String(rule == null ? '' : rule))); }; globalThis.pd = function(html, rule, base) { return __androidHtmlParser.pd(String(html == null ? '' : html), String(rule == null ? '' : rule), String(base == null ? '' : base)); }; globalThis.joinUrl = function(base, path) { var b = String(base == null ? '' : base); var p = String(path == null ? '' : path); if (typeof __androidUrl !== 'undefined' && __androidUrl && typeof __androidUrl.join === 'function') { var r = __androidUrl.join(b, p); if (r !== null && r !== undefined) return String(r); } if (!p) return b; if (!b) return p; if (/^[a-zA-Z][a-zA-Z0-9+.\\-]*:/.test(p)) return p; if (p.indexOf('//') === 0) return b.indexOf('://') > 0 ? b.substring(0, b.indexOf('://') + 1) + p : 'https:' + p; if (p.charAt(0) === '/') { var m = b.match(/^([a-zA-Z][a-zA-Z0-9+.\\-]*:\\/\\/)?[^\\/]*/); return (m ? m[0] : '') + p; } var head = b.split('#')[0].split('?')[0]; head = head.replace(/\\/[^\\/]*$/, '/'); return head + p; };
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	globalThis.req = function(url, obj) { var json = (obj === undefined || obj === null) ? '{}' : JSON.stringify(obj); return __androidReq.req(String(url), json); }; globalThis._http = function(url, obj) { return globalThis.req(url, obj); }; globalThis.fetch = function(url, obj) { var r = globalThis.req(url, obj); return (r && typeof r.content === 'string') ? r.content : ''; };
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	globalThis.setTimeout = function(fn, delay) { return __androidTimers.__set(fn, delay || 0, 0); }; globalThis.setInterval = function(fn, delay) { return __androidTimers.__set(fn, delay || 0, delay || 0); }; globalThis.clearTimeout = function(id) { __androidTimers.__clear(id); }; globalThis.clearInterval = function(id) { __androidTimers.__clear(id); };
+4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	headers
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	http
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	https
+3	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	info
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	join
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	js-html-bridge.js
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	js-proxy-bridge.js
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	js-request-bridge.js
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	js-timer-bridge.js
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	js2Proxy
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	local
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	localhost
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	log
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	method
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	pd
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	pdfa
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	pdfh
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	redirect
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	req
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	set
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	timeout
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	true
+3	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	warn
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	withHeaders
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	不允许的协议：$scheme
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	内网地址已拦截（SSRF 防护）：$host
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	域名指向内网地址，已拦截：$host
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	域名解析失败：$host
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	空 URL
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	缺少主机
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	缺少协议
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	重定向次数过多
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsBridge.kt	非法 URL
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsEngine.kt	://
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsEngine.kt	JS context 数量达到上限 %d，销毁最久未用的 %s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsEngine.kt	JsEngine
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsEngine.kt	QuickJS native 不可用，JS 源判为不可用
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsEngine.kt	销毁 JS 源失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsEngine.kt	预下载脚本失败：%s
+2	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsLocalStore.kt	\0
+1	preference-key	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsLocalStore.kt	jsRuntime_${siteKey}_${ns}_$k
+1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsModuleCache.kt	\0
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsModuleCache.kt	${Md5Util.md5(name)}$BIN_EXT
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsModuleCache.kt	${Md5Util.md5(name)}$DEPS_EXT
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsModuleCache.kt	${Md5Util.md5(name)}$SRC_EXT
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsModuleCache.kt	.bin
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsModuleCache.kt	.deps
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsModuleCache.kt	.js
+1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	%02x
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	%20
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	+
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	JS 代理桥已挂载到 JarProxyHub
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	JsProxyBridge
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	UTF-8
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	do
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	from
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	header
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	http://127.0.0.1:$port/proxy?do=js&token=$token
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	proxy 找不到 JS 站点实例：siteKey=%s do=%s
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	siteKey
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	siteType
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	token
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyBridge.kt	url
+2	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyCodec.kt	application/octet-stream
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyCodec.kt	buffer
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyCodec.kt	code
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyCodec.kt	content
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyCodec.kt	contentType
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyCodec.kt	headers
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsProxyCodec.kt	true
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	(?m)^\\s*import\\s*(?:[\\w{*]|['"])
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	404
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	<
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	<!DOCTYPE
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	JS
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	JS runtime 已因超时/异常停用
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	JS runtime 已释放
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	JS runtime 未初始化
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	JS 调用桥未初始化
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	[$siteKey] 模块 $moduleName 加载失败：${it.message}
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	[$siteKey] 模块 $moduleName 缺失，返回空 stub
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	[$siteName] JS 调用超时（${timeoutMs}ms）
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	__vodInvoke
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	drpy-js-$siteKey
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	globalThis.__drpyModule = __drpy;
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	globalThis.__drpyModule.init($ext);
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	globalThis.__vodInvoke = function(name, argsJson) { var args = JSON.parse(argsJson); var api = globalThis.__drpyModule; var fn = (api && api[name]) || globalThis[name]; if (typeof fn !== 'function') return 'null'; var result = fn.apply(api || globalThis, args); if (result === undefined || result === null) return 'null'; return JSON.stringify(result); };
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	https://vod.invalid/__bootstrap__.mjs
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	if (globalThis.__drpyModule && typeof globalThis.__drpyModule.init === 'function')
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	import __drpy from ${Gson().toJson(runtimeUrl)};
+1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	proxy
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	var _empty = {}; export function inflate() { return null; } export function deflate() { return null; } export function gzip() { return null; } export function ungzip() { return null; } export function encrypt() { return ''; } export function decrypt() { return ''; } export function parse() { return null; } export function stringify() { return ''; } export function JSEncrypt() { return _empty; } export function NodeRSA() { return _empty; } export function JSON5() { return _empty; } export function pako() { return _empty; } export default { inflate: inflate, deflate: deflate, gzip: gzip, ungzip: ungzip, encrypt: encrypt, decrypt: decrypt, parse: parse, stringify: stringify, JSEncrypt: _empty, NodeRSA: _empty, JSON5: _empty, pako: _empty };
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	vod-bridge.js
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	vod-init.js
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	模块下载失败 ${response.code}: ${response.error}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsRuntime.kt	模块地址返回非 JS 内容：$moduleName
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	%s DRPY 初始化完成 runtime=%s rule=%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	%s JS %s 调用失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	%s JS %s 超时
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	%s proxy 调用失败
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	%s 代理地址重写：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	%s 代理服务未就绪，无法重写 proxy:// 地址
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	%s 的 JS context 已停用，重建后重试 %s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	%s 直链被标 parse=1，按直连起播：%s
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	&
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	,
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	/
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	1
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	127.0.0.1
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	://
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	<
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	CLAN://
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	Clan://
+2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	JS runtime 未初始化
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	JsSpider
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	[
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	category
+2	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	clan://
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	content://
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	detail
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	file://
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	home
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	homeVod
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	http://
+1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	https://
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	import[^;'"]*?from\\s*['"]([^'"]+)['"]
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	import\\s*['"]([^'"]+)['"]
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	localhost
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	play
+2	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	proxy://
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	search
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	value
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	{
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	脚本下载失败 ${response.code}: ${response.error}; $url
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	脚本地址无法解析：$target
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsSpider.kt	脚本地址返回 HTML: $target
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsUrl.kt	$scheme://${p.removePrefix("//")}
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsUrl.kt	//
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsUrl.kt	://
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsUrl.kt	^[a-zA-Z][a-zA-Z0-9+.\\-]*:
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsUrl.kt	https:$p
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsWarmUp.kt	/
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsWarmUp.kt	JS 预热启动：%d 个源（优先=%s）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsWarmUp.kt	JsWarmUp
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsWarmUp.kt	无
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/js/JsWarmUp.kt	预热 init 失败（静默）：%s
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	/proxy
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	JS 代理分发无结果：do=%s siteKey=%s
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	JarProxyHub
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	Proxy.set 失败
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	cat
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	com.github.catvod.spider.Proxy
-6	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	do
+9	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	do
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	do=
 1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	http://127.
 1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	http://localhost
 1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	https://127.
 1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	https://localhost
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	jar 无静态 Proxy 出口：%s
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	js
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	proxy
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	proxy 完成（jar 静态 Proxy）：siteKey=%s do=%s code=%s（%d ms）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	proxy 完成（spider）：siteKey=%s do=%s code=%s（%d ms）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	proxy 找不到站点实例：siteKey=%s do=%s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	proxy 请求没有 siteKey，且无当前播放源：do=%s
-2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	siteKey
+3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	siteKey
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	spider.proxy 异常：siteKey=%s do=%s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyHub.kt	spider.proxy 返回空：siteKey=%s do=%s（%d ms）
-2	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	\0
+3	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	\0
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	$k: $v
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	${u.scheme}://${u.host}${u.path.orEmpty()}
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	/proxy
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	127.0.0.1
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Accept-Ranges: bytes
@@ -646,9 +850,11 @@
 2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Connection: close
 1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Content-Length
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Content-Length: ${body.size}
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Content-Range
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Content-Range: $it
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Content-Type: $mime
 1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Content-Type: text/plain; charset=utf-8
-1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Forbidden
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Forbidden
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Found
 1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	GET
 2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	HEAD
@@ -661,20 +867,25 @@
 3	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Not Found
 2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	OK
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Partial Content
+2	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Range
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Temporary Redirect
 1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	Transfer-Encoding
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	UNCHECKED_CAST
 1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	UTF-8
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	accept 退出：%s
 1	mime	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	application/octet-stream
-3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	do
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	bytes $start-$end/${buffered.size}
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	bytes=
+4	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	do
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	jar 本地代理启动失败：候选端口全部被占用
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	jar 本地代理已停止，端口释放
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	jar 本地代理已启动：http://127.0.0.1:$candidate/proxy
 1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	jar-proxy-accept
 1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	jar-proxy-worker
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	js
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	proxy returned empty
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	proxy 分发异常 do=%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	proxy 拒绝：do=js token 校验失败
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	proxy 返回空：do=%s url=%s
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/proxy/JarProxyServer.kt	url
 4	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/sniff/SniffEngine.kt	\0
@@ -1164,6 +1375,7 @@
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	%.2f GB
 2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	.tmp
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	configs
+1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	js
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	spiders
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	tvbox
 2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	无法删除旧文件：${file.absolutePath}

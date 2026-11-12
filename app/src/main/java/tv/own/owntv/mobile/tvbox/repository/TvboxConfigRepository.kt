@@ -144,6 +144,18 @@ class TvboxConfigRepository(
     /** spider jar 就绪后的 ClassLoader 预热钩子（注入 JarEngine.warmUp），由 TvboxModule 赋值 */
     var onSpiderWarmUp: suspend () -> Unit = {}
 
+    /** JS 源预热钩子（sites, priorityKeys），由 TvboxRuntime 挂到 JsWarmUp */
+    var onJsWarmUp: (List<SiteConfig>, List<String>) -> Unit = { _, _ -> }
+
+    /**
+     * 站点是否可实际播放（可见性统一谓词）。
+     *
+     * 默认只看配置形态；TvboxRuntime 会把它换成
+     * `SourceRepository.canServe`，从而把"没有可用引擎 / QuickJS native 不可用"的
+     * JS 源从列表、首页绑定与导入警告里一起剔除。
+     */
+    var isPlayable: (SiteConfig) -> Boolean = { it.isSupported }
+
     /** 配置变更后的清理动作，由 TvboxModule 注入引擎池与网络层 */
     var onSwitchHook: suspend (Long) -> Unit = {}
 
@@ -443,7 +455,17 @@ class TvboxConfigRepository(
                 runCatching { onSpiderWarmUp() }
             }
         }
+
+        // 纯 JS 配置没有 spider 字段，必须独立按"存在 JS 站点"触发。
+        val jsSites = config.sites.filter { it.isJsSite }
+        if (jsSites.isNotEmpty()) {
+            val priority = listOfNotNull(prefs.homeSiteKey)
+            onJsWarmUp(jsSites, priority)
+        }
     }
+
+    /** 活跃配置的来源地址（相对脚本/jar 路径的使用点兜底）。 */
+    fun activeSourceUrl(): String? = prefs.sourceUrlOf(prefs.activeConfigId)
 
     // ---------------- 首页绑定源 ----------------
 
@@ -451,7 +473,7 @@ class TvboxConfigRepository(
      * 当前首页绑定的站点：用户显式选过的优先，否则按 jar 可用性排序取最优。
      */
     suspend fun resolveHomeSite(): SiteConfig? {
-        val usable = _sites.value.filter { it.isSupported }
+        val usable = _sites.value.filter { isPlayable(it) }
         if (usable.isEmpty()) return null
         val saved = prefs.homeSiteKey
         usable.firstOrNull { it.key == saved }?.let { return it }
@@ -468,7 +490,7 @@ class TvboxConfigRepository(
     /** 用户显式指定首页源（配置页「设为首页」用）。 */
     suspend fun setHomeSite(siteKey: String) {
         val site = _sites.value.firstOrNull { it.key == siteKey } ?: return
-        if (!site.isSupported) return
+        if (!isPlayable(site)) return
         prefs.homeSiteKey = siteKey
         SourceHealth.clearCooldown(siteKey)
         _homeSiteVersion.value++

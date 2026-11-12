@@ -21,6 +21,9 @@ object FileUtil {
     /** spider jar 缓存目录（按 md5 命名） */
     fun spiderDir(context: Context) = subDir(context, "spiders")
 
+    /** JS 模块与 QuickJS 字节码缓存目录（键 = 模块 URL 的 md5） */
+    fun jsDir(context: Context) = subDir(context, "js")
+
     fun readText(file: File): String? = runCatching {
         if (file.exists()) file.readText(Charsets.UTF_8) else null
     }.getOrNull()

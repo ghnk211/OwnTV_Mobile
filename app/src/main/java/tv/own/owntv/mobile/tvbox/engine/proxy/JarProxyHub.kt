@@ -37,6 +37,21 @@ object JarProxyHub {
     /** 最近一次 playerContent 的站点 key（参考项目 currentPlaySourceKey） */
     private val currentPlaySiteKey = AtomicReference<String?>(null)
 
+    /**
+     * JS 侧分发钩子（`do=js`）。由 [tv.own.owntv.mobile.tvbox.engine.js.JsProxyBridge]
+     * 在引擎构造时挂上。返回 `Object[]{code, mime, body, headers}`，body 可以是
+     * ByteArray / String / InputStream —— 三者 [JarProxyServer] 都认。
+     */
+    @Volatile
+    var jsDispatcher: ((Map<String, String>) -> Array<Any?>?)? = null
+
+    /** JS 侧 token 校验钩子；未挂载时一律拒绝（安全默认）。 */
+    @Volatile
+    var jsTokenValidator: ((Map<String, String>) -> Boolean)? = null
+
+    fun isJsTokenValid(params: Map<String, String>): Boolean =
+        jsTokenValidator?.invoke(params) ?: false
+
     /** 已成功启动的端口；0 表示未启动/启动失败 */
     @Volatile
     private var boundPort: Int = 0
@@ -105,6 +120,15 @@ object JarProxyHub {
      */
     private fun dispatch(input: Map<String, String>): Array<Any?>? {
         val params = LinkedHashMap(input)
+        // JS 分发必须在 siteKey 解析之前短路：纯 JS 配置没有 jar 实例，
+        // currentPlaySiteKey 只由 JarSpider.playerContent 写，走到下面第一个请求就 null。
+        if (params["do"] == "js" || params["do"] == "cat") {
+            val result = jsDispatcher?.invoke(params)
+            if (result == null) {
+                TbLog.tag(TAG).w("JS 代理分发无结果：do=%s siteKey=%s", params["do"], params["siteKey"])
+            }
+            return result
+        }
         val key = params["siteKey"]?.takeIf { it.isNotBlank() }
             ?: currentPlaySiteKey.get()
         if (key.isNullOrBlank()) {

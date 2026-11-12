@@ -124,6 +124,12 @@ private object DirtyJsonRepair {
  */
 object ConfigParser {
 
+    /**
+     * 可见性统一谓词：默认只看配置形态，由 TvboxRuntime 换成
+     * `SourceRepository.canServe`，使 QuickJS native 不可用的 JS 源也进导入警告。
+     */
+    var isPlayable: (SiteConfig) -> Boolean = { it.isSupported }
+
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
@@ -225,8 +231,8 @@ object ConfigParser {
                 unknown.take(5).joinToString("、") { "${it.name}(type=${it.type})" }
         }
 
-// 协议认识但当前构建没有引擎的源仍保留并提示；JS 源已由 QuickJS 引擎接管。
-        val noEngine = sites.filter { it.isKnownType && !it.isSupported }
+// 协议认识但当前构建没有引擎的源仍保留并提示；JS 源由统一谓词判断（native 不可用时会进这里）。
+        val noEngine = sites.filter { it.isKnownType && !isPlayable(it) }
         if (noEngine.isNotEmpty()) {
             val byReason = noEngine.groupBy { it.unsupportedReason ?: "暂不可用" }
             warnings += "${noEngine.size} 个站点当前版本无法播放（已保留，待引擎落地后可用）：" +

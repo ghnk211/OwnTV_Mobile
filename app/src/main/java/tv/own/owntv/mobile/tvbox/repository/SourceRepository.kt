@@ -45,6 +45,7 @@ data class SourceSearchResult(
 class SourceRepository(
     private val configRepository: TvboxConfigRepository,
     private val engines: List<Engine>,
+    private val jsWarmUp: tv.own.owntv.mobile.tvbox.engine.js.JsWarmUp? = null,
 ) {
 
     /** 全局并发上限 4，防止某源拖垮全局 */
@@ -83,9 +84,16 @@ class SourceRepository(
      * 详情/播放换源都走它；按 siteKey 直接访问（历史/收藏/详情）不走它。
      */
     fun supportedSites(): List<SiteConfig> =
-        configRepository.sites.value.filter {
-            it.isSupported && engineFor(it) != null
-        }
+        configRepository.sites.value.filter { canServe(it) }
+
+    /**
+     * 站点是否"既被配置标记为支持、又真有引擎能跑"。
+     *
+     * 这是站点可见性 / 首页绑定 / 聚合搜索 / 实际调用共用的唯一谓词；
+     * `isSupported` 只看配置形态，JS 源在 native 不可用时会被引擎剔除。
+     */
+    fun canServe(site: SiteConfig): Boolean =
+        site.isSupported && engineFor(site) != null
 
     private fun engineFor(site: SiteConfig): Engine? =
         engines.firstOrNull { it.supports(site) }
@@ -375,6 +383,7 @@ class SourceRepository(
         }
         warming.forEach { site ->
             TbLog.tag(TAG).i("搜索跳过未 init 的 JS 源（预热中）：%s", site.name)
+jsWarmUp?.warmSoon(site)
             onProgress(SourceSearchResult(site.key, site.name, emptyList(), "预热中，本轮暂不参与"))
         }
         if (ready.isEmpty()) return@coroutineScope emptyList()

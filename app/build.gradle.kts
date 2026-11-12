@@ -355,6 +355,10 @@ dependencies {
     // see libs.versions.toml) and jar-spider result parsing (Gson reflection in JarResultParser).
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.gson)
+    // TVbox JS (drpy2) spider: QuickJS runtime + the jQuery-flavoured html selector helpers.
+    implementation(libs.quickjs.android)
+    implementation(libs.jsoup)
+    testImplementation(libs.quickjs.java)
     // TVbox ported-chain tests: CMS header/URL behaviour against a local server.
     testImplementation(libs.mockwebserver)
     testImplementation(libs.kotlinx.coroutines.test)

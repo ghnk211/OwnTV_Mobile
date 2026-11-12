@@ -101,7 +101,7 @@ TVBox JSON 配置驱动的站点内容：
 3. **内容展示**：站点/分类/筛选、首页列表与分页、搜索、详情与线路分集（`$` / `#` / `$$$`）、海报加载。
 4. **播放**：把 `playerContent` 结果解析成「最终 URL + headers/UA + 剧集列表」，交给 Mobile 原播放器起播；进度/历史/收藏独立存储。
 5. **安全与家长控制**：分类锁（复用 Core `lockedCats`、Customize PIN、解锁会话与限速器）与儿童模式（复用 `profile.isKids` + `AdultCategoryClassifier.isAdult`，补 TVbox 中文词表）；见 §5.5。
-6. **可选阶段 P5**：type 3 的 JS/drpy 站点（`engine/js/**` + QuickJS AAR）。它属于 TVbox 源生态、不是「无关功能」，但引入新运行时，建议后置并单独评审。
+6. **阶段 P5（2026-11-12 已落地）**：type 3 的 JS/drpy 站点（`engine/js/**` + QuickJS AAR）。实施方案见 `docs/TVbox-JS源迁移方案.md`；采用 QuickJS 2.1.0，并在 `JsEngine` 构造时探测 native 可用性，16KB 页设备上 JS 源整体降级为不可用（不崩进程、不影响 CMS/jar）。
 
 ### 2.2 排除（明确不带）
 
@@ -259,7 +259,7 @@ VodScreen（配置/站点/分类/列表/详情，Stage 组件）
 | Room / DataStore | Room 2.6.1 + KSP；DataStore 1.1.1 | Room 2.8.5（Core，v53） | **不迁 Room**；偏好可用 DataStore（Core 已依赖） |
 | Media3 | 1.5.1 ExoPlayer/HLS/RTSP/UI + IJK/GSY | player-core 内 1.11.1（ExoPlayer/HLS/DASH/UI），app 仅 `media3-ui` | **整体不迁移、不新增** |
 | WebView / DexClassLoader | 平台 API，`engine/sniff/**`、`engine/jar/**` | 全仓无相关代码 | 平台能力，无需依赖；需补 Manifest（如用到外部存储）/ R8 keep |
-| QuickJS | `wang.harlon.quickjs:wrapper-android 2.1.0`（JS/drpy 源） | 无 | 仅 P5 可选；引入前单独评审 so 体积与 ABI |
+| QuickJS | `wang.harlon.quickjs:wrapper-android 2.1.0`（JS/drpy 源） | **已引入 2.1.0**（`wrapper-java` 仅测试） | P5 已落地；`.so` 为 4KB 对齐，`JsEngine` 构造时探测 `UnsatisfiedLinkError` 并降级，详见 `docs/TVbox-JS源迁移方案.md` §0.3 |
 | DI / 日志 | 手写 `ServiceLocator` + Timber 5.0.1 | Koin 4.2.2 + `android.util.Log` | 装配改 Koin；Timber 换成 `Log` 或写 20 行小包装（避免新增依赖） |
 | 构建开关 | `WITH_PY`、Chaquopy、`src/py|nopy` sourceSets、KSP | 无 | 全部去掉 |
 | i18n 门禁 | 无 | **`preBuild` 挂 `verifyI18nLiterals`**（`app/build.gradle.kts:283` 注册任务、`:302` 依赖），`hardcoded_baseline.txt` 仅 5 行、绝对 ratchet | 见 §9，最大工程约束 |
@@ -484,8 +484,8 @@ fun blockedByKids(profile: ProfileEntity?, site: SiteConfig, typeName: String?):
 20. `MobileNavHost.kt:153` 接 `onPlay`；`VodScreen` 选集 → resolver → tuner → `navigate(PLAYER_ROUTE)`；`PlayerScreen` 按 `TVBOX_ITEM_ID` 隐藏收藏与字幕入口。
 21. 回归原点播（Movies/Series）、直播、mini player、PlayerScreen HUD。
 
-**P5 — 可选增强与收尾**
-22. 若确需 type 3 JS/drpy 站点：引入 QuickJS AAR + `engine/js/**`（属 TVbox 源范围，非无关功能），单独评审 ABI/体积；不做 py 源。
+**P5 — JS/drpy 源（2026-11-12 已落地）**
+22. 引入 QuickJS 2.1.0 AAR + `tvbox/engine/js/**`（12 文件）；`JsEngine` 排在 CMS/Jar 之后，native 不可用时 `supports=false`；JS 与 jar 共用 `JarProxyHub`（字节/字符串响应、Range、会话 token）。
 23. 全量验收（§10）、release 包 R8 验证、按项目说明第 7 条清理测试构建产物（保留脚本与 `docs/backup`）、更新 `docs/core-changes.md`（本次 core 零改动）。
 
 ---
@@ -614,7 +614,7 @@ fun blockedByKids(profile: ProfileEntity?, site: SiteConfig, typeName: String?):
 | `ui/screens/vod/VodViewModel.kt`、`TvboxConfigViewModel.kt`、`TvboxHomeViewModel.kt`、`TvboxDetailViewModel.kt`、`TvboxConfigScreen.kt`、`TvboxHomeScreen.kt`、`TvboxDetailScreen.kt`、`TvboxComponents.kt` | 无（按 Stage 组件新写） | 替换占位 UI |
 | `app/src/main/java/com/github/catvod/**`（11 个桩文件） | `app/src/main/java/com/github/catvod/**` | **保持原包名**，jar ABI 契约 |
 | `app/src/test/java/.../tvbox/**` | VodPlayer TVbox 相关单测 | 排除 py 测试 |
-| （P5 可选）`engine/js/**` 12 文件 | `engine/js/*` | 需 QuickJS AAR，单独评审 |
+| `tvbox/engine/js/**`（12 文件，P5 已落地） | `engine/js/*` | QuickJS 2.1.0；native 不可用时降级；实施细节见 `TVbox-JS源迁移方案.md` |
 
 ### 12.2 新增（非源码）
 

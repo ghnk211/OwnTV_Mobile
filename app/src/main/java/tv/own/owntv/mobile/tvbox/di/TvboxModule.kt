@@ -22,6 +22,11 @@ import tv.own.owntv.mobile.tvbox.engine.ParseRepository
 import tv.own.owntv.mobile.tvbox.engine.sniff.SniffEngine
 import tv.own.owntv.mobile.tvbox.engine.cms.CmsEngine
 import tv.own.owntv.mobile.tvbox.engine.jar.JarEngine
+import tv.own.owntv.mobile.tvbox.engine.js.JsEngine
+import tv.own.owntv.mobile.tvbox.engine.js.JsLocalStore
+import tv.own.owntv.mobile.tvbox.engine.js.JsModuleCache
+import tv.own.owntv.mobile.tvbox.engine.js.JsWarmUp
+import tv.own.owntv.mobile.tvbox.util.FileUtil
 import tv.own.owntv.mobile.tvbox.net.AddressFetcher
 import tv.own.owntv.mobile.tvbox.net.NetApi
 import tv.own.owntv.mobile.tvbox.net.OkHttpProvider
@@ -116,10 +121,30 @@ val tvboxModule = module {
             siteJarProvider = { site: SiteConfig -> config.ensureSiteJar(site) },
         )
     }
+    // JS spider runtime: one local KV store, one module/bytecode cache under files/tvbox/js.
+    single { JsLocalStore(androidContext()) }
+    single { JsModuleCache(FileUtil.jsDir(androidContext())) }
+    single<JsEngine> {
+        val config = get<TvboxConfigRepository>()
+        JsEngine(
+            net = get(),
+            store = get(),
+            cache = get(),
+            addressFetcher = get(),
+            activeSourceUrl = { config.activeSourceUrl() },
+        )
+    }
+    single {
+        JsWarmUp(
+            engine = get<JsEngine>(),
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+        )
+    }
     single<SourceRepository> {
         SourceRepository(
             configRepository = get(),
-            engines = listOf<Engine>(get<CmsEngine>(), get<JarEngine>()),
+engines = listOf<Engine>(get<CmsEngine>(), get<JarEngine>(), get<JsEngine>()),
+            jsWarmUp = get(),
         )
     }
 
@@ -162,7 +187,7 @@ val tvboxModule = module {
     single { CatvodHostInit(androidContext()) }
 
     // Config lifecycle hooks into engines/sniff/network; resolved eagerly on app start.
-    single { TvboxRuntime(get(), get(), get(), get(), get(), get(), get()) }
+    single { TvboxRuntime(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     viewModelOf(::TvboxConfigViewModel)
     viewModelOf(::TvboxHomeViewModel)

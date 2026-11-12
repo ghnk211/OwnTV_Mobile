@@ -23,4 +23,8 @@ object SecureKv {
             if (value == null) remove("${tag}.${'$'}${key}") else putString("${tag}.${'$'}${key}", value)
         }.apply()
     }
+
+    fun remove(prefs: SharedPreferences, tag: String, key: String) {
+        prefs.edit().remove("${tag}.${'$'}${key}").apply()
+    }
 }
