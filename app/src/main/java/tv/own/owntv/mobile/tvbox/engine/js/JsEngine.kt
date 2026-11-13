@@ -1,5 +1,6 @@
 package tv.own.owntv.mobile.tvbox.engine.js
 
+import com.whl.quickjs.android.QuickJSLoader
 import com.whl.quickjs.wrapper.QuickJSContext
 import tv.own.owntv.mobile.tvbox.config.model.SiteConfig
 import tv.own.owntv.mobile.tvbox.engine.Engine
@@ -139,6 +140,7 @@ class JsEngine(
          * 必须按 Throwable 捕获 —— 只 catch Exception 会让进程直接崩在类加载上。
          */
         internal fun probeNative(): Boolean = try {
+            QuickJSLoader.init()
             val ctx = QuickJSContext.create()
             ctx.destroy()
             true

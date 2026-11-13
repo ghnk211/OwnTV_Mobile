@@ -164,6 +164,17 @@ class OwnTVMobileApp : Application(), androidx.work.Configuration.Provider {
                 downloadsModule, settingsModule, tvboxModule,
             )
         }
+        // TVbox restores at process start, not on the first visit to the VOD tab. Core screens
+        // (Favourites, Continue watching, search results) play an indexed row through the playback
+        // router, which needs the active config's site list; restored lazily it was still empty, so a
+        // film picked from Favourites right after a cold start silently refused to play.
+        appScope.launch {
+            runCatching {
+                GlobalContext.get().get<tv.own.owntv.mobile.tvbox.di.TvboxRuntime>().restore()
+            }.onFailure {
+                android.util.Log.w("Tvbox.core", "startup restore failed", it)
+            }
+        }
         // The language whitelist enforced on the stored value, not only on the read. An install upgraded
         // from a build that offered 26 languages still carries a tag this APK has no strings for, and a
         // restore or a companion write could put one back later; collapsing it here means no reader has

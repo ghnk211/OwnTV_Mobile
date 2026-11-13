@@ -62,8 +62,10 @@
 1	protocol	app/src/main/java/tv/own/owntv/mobile/MainActivity.kt	pip_action
 1	protocol	app/src/main/java/tv/own/owntv/mobile/MainActivity.kt	toggle
 1	protocol	app/src/main/java/tv/own/owntv/mobile/MainActivity.kt	tv.own.owntv.mobile.PIP
+1	log	app/src/main/java/tv/own/owntv/mobile/OwnTVMobileApp.kt	Tvbox.core
 1	technical	app/src/main/java/tv/own/owntv/mobile/OwnTVMobileApp.kt	ahXN00/OwnTV_Mobile
 1	technical	app/src/main/java/tv/own/owntv/mobile/OwnTVMobileApp.kt	image_cache
+1	log	app/src/main/java/tv/own/owntv/mobile/OwnTVMobileApp.kt	startup restore failed
 1	json	app/src/main/java/tv/own/owntv/mobile/backup/BackupProfiles.kt	name
 1	json	app/src/main/java/tv/own/owntv/mobile/backup/BackupProfiles.kt	profiles
 1	protocol	app/src/main/java/tv/own/owntv/mobile/cast/CastPlaybackEngine.kt	CAST

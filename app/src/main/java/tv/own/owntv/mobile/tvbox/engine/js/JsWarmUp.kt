@@ -31,7 +31,7 @@ class JsWarmUp(
         sites: List<SiteConfig>,
         priorityKeys: List<String> = emptyList(),
     ) {
-        val jsSites = sites.filter { JsEngine.supportsSite(it) }
+        val jsSites = sites.filter { engine.supports(it) }
         if (jsSites.isEmpty()) return
         val priorityIndex = priorityKeys.withIndex().associate { (i, k) -> k to i }
         val ordered = jsSites.sortedBy { priorityIndex[it.key] ?: Int.MAX_VALUE }
@@ -52,7 +52,7 @@ class JsWarmUp(
      * 用户马上就要搜它，只下载脚本不够 —— context 不就绪的话下一轮搜索仍会被跳过。
      */
     fun warmSoon(site: SiteConfig) {
-        if (!JsEngine.supportsSite(site)) return
+        if (!engine.supports(site)) return
         scope.launch { warmOne(site, forceInit = true) }
     }
 
