@@ -158,3 +158,9 @@ Core checkout 并提交为 Core `mobile` @`e0556f0f`（在 `c6f90356` 之上）�
 `50dcd42e`（与 P0 的 `b1aa2ee0`/`59ddf147` 同形）。校验：合并不改 vendor 内容，Core HEAD 与
 Mobile vendor HEAD 的 **1019 个文件 blob 哈希逐一致**。两仓 `origin` 仍停在推送前（Core
 `c6f90356`、Mobile `59ddf147`）；推送时按 `docs/Core源码集成方案.md` §4.6 先 Core 后 Mobile。
+
+推送状态（2026-11-13）：按 §4.6 先执行 `git push origin mobile`，Core `mobile` 由 `c6f90356` 前进到
+`e0556f0f`；Mobile 推送 `mobile-mini`（`e4cecb31..` 之上新增启动期恢复 TVbox 运行时修复
+`f15c18ed`、py 源方案文档 `7458c777`）。随后在 Mobile 执行
+`git subtree pull --prefix=vendor/OwnTV_Core https://github.com/ghnk211/OwnTV_Core.git mobile --squash`，
+输出 `Subtree is already at commit e0556f0f`，快照无需变更。
