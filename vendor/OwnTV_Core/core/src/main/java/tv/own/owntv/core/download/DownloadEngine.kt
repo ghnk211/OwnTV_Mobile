@@ -25,10 +25,12 @@ import tv.own.owntv.core.database.dao.SourceDao
 import tv.own.owntv.core.database.entity.DownloadEntity
 import tv.own.owntv.core.live.OpenStreamRegistry
 import tv.own.owntv.core.live.WatchSession
+import tv.own.owntv.core.model.DownloadManifest
 import tv.own.owntv.core.model.DownloadReason
 import tv.own.owntv.core.model.DownloadStatus
 import tv.own.owntv.core.model.MediaType
 import tv.own.owntv.core.network.HttpClient
+import tv.own.owntv.core.network.StreamHeaders
 import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.core.stalker.StalkerClient
 import tv.own.owntv.core.stalker.StreamUrlResolver
@@ -230,6 +232,11 @@ class DownloadEngine(
         // item's identity; only this attempt's HTTP request sees the minted URL. A resolve failure
         // (portal down / bad auth) is a retryable attempt like any HTTP failure.
         val resolved = resolveTarget(d)
+        // P0: HLS is not downloaded yet. Without this guard, streamWhole would save the playlist
+        // text as a video and mark the row COMPLETED — the worst kind of silent failure.
+        if (resolved.manifest == DownloadManifest.HLS) {
+            throw DownloadFailure(DownloadReason.UNSUPPORTED_MANIFEST)
+        }
         val busyKey = resolved.sourceId?.takeIf { resolved.maxConnections == 1 }
         busyKey?.let { _singleStreamBusy.value = _singleStreamBusy.value + it }
         try {
@@ -450,12 +457,24 @@ class DownloadEngine(
     private fun totalOf(resp: Response): Long? =
         resp.header("Content-Range")?.substringAfterLast('/')?.trim()?.toLongOrNull()?.takeIf { it > 0 }
 
-    private fun request(resolved: Resolved, from: Long, to: Long?): Request =
-        Request.Builder().url(resolved.url).header("User-Agent", resolved.userAgent)
-            .header("Range", "bytes=$from-${to ?: ""}")
-            .build()
+    private fun request(resolved: Resolved, from: Long, to: Long?): Request {
+        val builder = Request.Builder().url(resolved.url).header("User-Agent", resolved.userAgent)
+        resolved.headers.forEach { (key, value) ->
+            StreamHeaders.canonicalName(key)?.let {
+                if (!it.equals("Range", true)) builder.header(it, value)
+            }
+        }
+        return builder.header("Range", "bytes=$from-${to ?: ""}").build()
+    }
 
-    private class Resolved(val url: String, val userAgent: String, val sourceId: Long?, val maxConnections: Int)
+    private class Resolved(
+        val url: String,
+        val headers: Map<String, String>,
+        val userAgent: String,
+        val sourceId: Long?,
+        val maxConnections: Int,
+        val manifest: DownloadManifest,
+    )
 
     /**
      * The URL + User-Agent this download should fetch. Non-Stalker rows return their stored
@@ -466,6 +485,28 @@ class DownloadEngine(
      * cmd will then fail → FAILED, which is the honest outcome).
      */
     private suspend fun resolveTarget(d: DownloadEntity): Resolved {
+        DownloadSourceResolvers.forDownload(d)?.let { provider ->
+            val src = try {
+                provider.resolve(d)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // A resolver that cannot produce a fresh address is a retryable source failure,
+                // not a network error: the row's stored handle is an identity, not a URL.
+                throw DownloadFailure(DownloadReason.SOURCE_UNAVAILABLE)
+            }
+            val movieSourceId = movieDao.getById(d.itemId)?.sourceId
+            return Resolved(
+                url = src.url,
+                headers = src.headers,
+                userAgent = src.headers.entries
+                    .firstOrNull { it.key.equals("User-Agent", ignoreCase = true) }?.value
+                    ?: HttpClient.DEFAULT_USER_AGENT,
+                sourceId = movieSourceId,
+                maxConnections = src.maxConnections.coerceAtLeast(1),
+                manifest = src.manifest,
+            )
+        }
         val (sourceId, episode) = when (d.mediaType) {
             MediaType.EPISODE -> {
                 val ep = seriesDao.getEpisodeById(d.itemId)
@@ -477,11 +518,14 @@ class DownloadEngine(
         val source = sourceId?.let { sourceDao.getById(it) }
         val max = source?.maxConnections ?: 0
         if (source == null || !streamUrlResolver.needsResolve(source)) {
-            return Resolved(d.streamUrl, HttpClient.DEFAULT_USER_AGENT, sourceId, max)
+            return Resolved(
+                d.streamUrl, emptyMap(), HttpClient.DEFAULT_USER_AGENT, sourceId, max,
+                DownloadManifest.NONE,
+            )
         }
         val ua = source.userAgent?.takeIf { it.isNotBlank() } ?: StalkerClient.DEFAULT_MAG_USER_AGENT
         val url = withContext(Dispatchers.IO) { streamUrlResolver.resolve(source, d.streamUrl, vod = true, episode = episode) }
-        return Resolved(url, ua, sourceId, max)
+        return Resolved(url, emptyMap(), ua, sourceId, max, DownloadManifest.NONE)
     }
 
     /** Keep the real partial byte count — a 90%-then-failed download showing 0 bytes is misleading,

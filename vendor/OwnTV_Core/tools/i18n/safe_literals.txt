@@ -641,6 +641,22 @@
 3	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	movies
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	playback_progress
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration53To54.kt	sources
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	ALTER TABLE `downloads` ADD COLUMN `containerExt` TEXT
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	ALTER TABLE `downloads` ADD COLUMN `extJson` TEXT
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	ALTER TABLE `downloads` ADD COLUMN `httpHeaders` TEXT
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	ALTER TABLE `downloads` ADD COLUMN `identityKey` TEXT NOT NULL DEFAULT ''
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	ALTER TABLE `downloads` ADD COLUMN `manifest` TEXT NOT NULL DEFAULT 'NONE'
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	CREATE INDEX IF NOT EXISTS `index_downloads_mediaType_itemId`
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	CREATE UNIQUE INDEX IF NOT EXISTS `index_downloads_profileId_mediaType_itemId_identityKey`
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	DROP INDEX IF EXISTS `index_downloads_profileId_mediaType_itemId`
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	ON `downloads` (`mediaType`, `itemId`)
+1	sql	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	ON `downloads` (`profileId`, `mediaType`, `itemId`, `identityKey`)
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	containerExt
+5	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	downloads
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	extJson
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	httpHeaders
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	identityKey
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/Migration54To55.kt	manifest
 18	sql	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	)
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	,
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/OwnTVDatabase.kt	?
@@ -1216,7 +1232,10 @@
 2	sql	core/src/main/java/tv/own/owntv/core/database/dao/CustomCategoryDao.kt	WITH base AS (SELECT s.id AS id, s.sortOrder AS so, s.name AS nm, m.position AS mp, o.position AS pos
 1	sql	core/src/main/java/tv/own/owntv/core/database/dao/CustomCategoryDao.kt	m.contextKey AS contextKey, m.position AS position,
 6	sql	core/src/main/java/tv/own/owntv/core/database/dao/CustomCategoryDao.kt	slots AS (SELECT id, pos - (ROW_NUMBER() OVER (ORDER BY pos, id) - 1) AS slot, 0 AS grp, pos AS tie FROM base WHERE pos IS NOT NULL
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/DownloadDao.kt	AND itemId = :movieId AND identityKey = :key LIMIT 1
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/DownloadDao.kt	SELECT * FROM downloads WHERE id = :id
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/DownloadDao.kt	SELECT * FROM downloads WHERE profileId = :pid AND mediaType = 'MOVIE'
+1	sql	core/src/main/java/tv/own/owntv/core/database/dao/DownloadDao.kt	SELECT * FROM downloads WHERE profileId = :pid AND mediaType = 'MOVIE' AND itemId = :movieId
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/DownloadDao.kt	SELECT * FROM downloads WHERE profileId = :profileId ORDER BY createdAt DESC
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/DownloadDao.kt	SELECT * FROM downloads WHERE status = :status ORDER BY createdAt ASC
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/DownloadDao.kt	SELECT * FROM downloads WHERE status IN ('QUEUED', 'RUNNING') ORDER BY createdAt ASC
@@ -1345,6 +1364,7 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id IN (SELECT rowid FROM movies_fts WHERE movies_fts MATCH :query) ORDER BY name ASC
 2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id NOT IN (SELECT itemId FROM content_order WHERE mediaType = 'MOVIE')
 2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id NOT IN (SELECT itemId FROM custom_category_members WHERE mediaType = 'MOVIE')
+2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id NOT IN (SELECT itemId FROM downloads WHERE mediaType = 'MOVIE')
 2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id NOT IN (SELECT itemId FROM favorites WHERE mediaType = 'MOVIE')
 2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id NOT IN (SELECT itemId FROM playback_progress WHERE mediaType = 'MOVIE')
 2	sql	core/src/main/java/tv/own/owntv/core/database/dao/MovieDao.kt	AND id NOT IN (SELECT itemId FROM watch_history WHERE mediaType = 'MOVIE')
@@ -1807,6 +1827,9 @@
 3	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/TvProviderEntities.kt	profileId
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/TvProviderEntities.kt	surface
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/TvProviderEntities.kt	tv_provider_programs
+1	empty	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	\0
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	''
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	'NONE'
 1	sql	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	-1
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	__fav__
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	catalog_index_cursor
@@ -1819,9 +1842,10 @@
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	favorites
 9	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	id
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	identity
-5	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	itemId
+1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	identityKey
+7	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	itemId
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	kind
-6	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	mediaType
+9	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	mediaType
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	playback_prefs
 1	room-schema	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	playback_progress
 1	sql	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	playback_quirks
@@ -1854,12 +1878,13 @@
 2	empty	core/src/main/java/tv/own/owntv/core/download/DownloadEngine.kt	\0
 2	protocol	core/src/main/java/tv/own/owntv/core/download/DownloadEngine.kt	Content-Range
 1	log	core/src/main/java/tv/own/owntv/core/download/DownloadEngine.kt	DownloadManager
-1	log	core/src/main/java/tv/own/owntv/core/download/DownloadEngine.kt	Range
-1	log	core/src/main/java/tv/own/owntv/core/download/DownloadEngine.kt	User-Agent
+2	protocol	core/src/main/java/tv/own/owntv/core/download/DownloadEngine.kt	Range
+2	protocol	core/src/main/java/tv/own/owntv/core/download/DownloadEngine.kt	User-Agent
 1	protocol	core/src/main/java/tv/own/owntv/core/download/DownloadEngine.kt	bytes
 1	protocol	core/src/main/java/tv/own/owntv/core/download/DownloadEngine.kt	bytes=$from-${to ?: ""}
 2	log	core/src/main/java/tv/own/owntv/core/download/DownloadEngine.kt	download attempt $attempt/$MAX_ATTEMPTS failed id=$id: ${e.message}
 1	log	core/src/main/java/tv/own/owntv/core/download/DownloadEngine.kt	download target unavailable id=$id path=${d.filePath}
+2	empty	core/src/main/java/tv/own/owntv/core/download/DownloadManager.kt	\0
 1	log	core/src/main/java/tv/own/owntv/core/download/DownloadManager.kt	DownloadManager
 1	log	core/src/main/java/tv/own/owntv/core/download/DownloadManager.kt	cannot create download target in ${root.stored} for $fileName
 1	technical	core/src/main/java/tv/own/owntv/core/download/DownloadNotifications.kt	$effectiveLocale:${localized.getString(R.string.common_nav_downloads)}
@@ -1868,10 +1893,13 @@
 1	log	core/src/main/java/tv/own/owntv/core/download/DownloadReasons.kt	(HTTP $it)
 1	protocol	core/src/main/java/tv/own/owntv/core/download/DownloadReasons.kt	EFBIG
 1	protocol	core/src/main/java/tv/own/owntv/core/download/DownloadReasons.kt	ENOSPC
+1	protocol	core/src/main/java/tv/own/owntv/core/download/DownloadReasons.kt	Expected URL scheme
 1	protocol	core/src/main/java/tv/own/owntv/core/download/DownloadReasons.kt	File too large
 1	protocol	core/src/main/java/tv/own/owntv/core/download/DownloadReasons.kt	No space left
 1	log	core/src/main/java/tv/own/owntv/core/download/DownloadReasons.kt	download failed: $reason${httpCode?.let { " (HTTP $it)" } ?: ""}
 1	log	core/src/main/java/tv/own/owntv/core/download/DownloadWorker.kt	owntv-downloads
+1	protocol	core/src/main/java/tv/own/owntv/core/download/HlsUrls.kt	.m3u
+1	protocol	core/src/main/java/tv/own/owntv/core/download/HlsUrls.kt	.m3u8
 6	empty	core/src/main/java/tv/own/owntv/core/drm/DrmConfig.kt	\0
 1	technical	core/src/main/java/tv/own/owntv/core/drm/DrmConfig.kt	%02x
 1	technical	core/src/main/java/tv/own/owntv/core/drm/DrmConfig.kt	-

@@ -193,6 +193,9 @@
     <string name="content_downloads_reason_too_large">文件对此驱动器来说过大：它无法存储超过 4 GB 的文件。请选择其他下载文件夹，或将驱动器格式化为 exFAT</string>
     <string name="content_downloads_reason_waiting_watching">等待中：停止观看后开始</string>
     <string name="content_downloads_reason_paused_watching">观看期间已暂停</string>
+    <string name="content_downloads_reason_source_unavailable">源站解析失败，可稍后重试</string>
+    <string name="content_downloads_reason_unsupported_source">该片源不支持下载</string>
+    <string name="content_downloads_reason_unsupported_manifest">受保护片源不支持离线下载</string>
     <string name="content_downloads_reason_with_code"><xliff:g id="reason">%1$s</xliff:g> (HTTP <xliff:g id="code">%2$d</xliff:g>)</string>
     <string name="content_download_watch_title">此播放列表只允许一个串流</string>
     <string name="content_download_watch_body">来自 <xliff:g id="playlist">%1$s</xliff:g> 的下载正在使用它，因此已暂时暂停。要观看，还是关闭播放器继续下载？</string>

@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import tv.own.owntv.core.database.dao.DownloadDao
 import tv.own.owntv.core.database.entity.DownloadEntity
+import tv.own.owntv.core.model.DownloadManifest
 import tv.own.owntv.core.model.DownloadReason
 import tv.own.owntv.core.model.DownloadStatus
 import tv.own.owntv.core.model.MediaType
@@ -71,6 +72,13 @@ class DownloadManager(
 
     fun observe(profileId: Long): Flow<List<DownloadEntity>> = downloadDao.observeForProfile(profileId)
 
+    /**
+     * One download of a TVBOX film's episode, for the enqueue-dedup path. `mediaType` is fixed to
+     * MOVIE inside the DAO so an episode sharing the numeric id cannot be matched by accident.
+     */
+    suspend fun find(profileId: Long, itemId: Long, identityKey: String): DownloadEntity? =
+        downloadDao.find(profileId, itemId, identityKey)
+
     /** Episode downloads for one series (poster-panel aggregate status). */
     fun observeForSeries(seriesId: Long): Flow<List<DownloadEntity>> = downloadDao.observeForSeries(seriesId)
 
@@ -104,23 +112,50 @@ class DownloadManager(
     fun enqueue(
         profileId: Long, mediaType: MediaType, itemId: Long, title: String, posterUrl: String?,
         streamUrl: String, relativeDir: String, fileName: String,
+        identityKey: String = "", extJson: String? = null,
+        httpHeaders: String? = null, containerExt: String? = null,
+        manifest: DownloadManifest = DownloadManifest.NONE,
     ) {
         scope.launch {
-            if (!settings.downloadsAllowed(profileId).first()) return@launch
-            val root = MediaRoot.of(context, settings.downloadRoot.first())
-            val target = root.child(relativeDir, fileName)
-            if (target == null) {
-                android.util.Log.w(TAG, "cannot create download target in ${root.stored} for $fileName")
-            }
-            downloadDao.upsert(
-                DownloadEntity(
-                    profileId = profileId, mediaType = mediaType, itemId = itemId, title = title,
-                    posterUrl = posterUrl, streamUrl = streamUrl, filePath = target?.stored,
-                    status = DownloadStatus.QUEUED,
-                ),
+            enqueueNow(
+                profileId = profileId, mediaType = mediaType, itemId = itemId, title = title,
+                posterUrl = posterUrl, streamUrl = streamUrl, relativeDir = relativeDir,
+                fileName = fileName, identityKey = identityKey, extJson = extJson,
+                httpHeaders = httpHeaders, containerExt = containerExt, manifest = manifest,
             )
-            kick()
         }
+    }
+
+    /**
+     * The synchronous form used when many episodes are queued in one go: the caller's coroutine
+     * waits, so a "download this line" of 40 episodes creates 40 files one at a time instead of 40
+     * concurrent `scope.launch` bodies racing to make the same directories.
+     *
+     * Returns the row id, or null when the profile has downloads switched off.
+     */
+    suspend fun enqueueNow(
+        profileId: Long, mediaType: MediaType, itemId: Long, title: String, posterUrl: String?,
+        streamUrl: String, relativeDir: String, fileName: String,
+        identityKey: String = "", extJson: String? = null,
+        httpHeaders: String? = null, containerExt: String? = null,
+        manifest: DownloadManifest = DownloadManifest.NONE,
+    ): Long? = withContext(Dispatchers.IO) {
+        if (!settings.downloadsAllowed(profileId).first()) return@withContext null
+        val root = MediaRoot.of(context, settings.downloadRoot.first())
+        val target = root.child(relativeDir, fileName)
+        if (target == null) {
+            android.util.Log.w(TAG, "cannot create download target in ${root.stored} for $fileName")
+        }
+        val id = downloadDao.upsert(
+            DownloadEntity(
+                profileId = profileId, mediaType = mediaType, itemId = itemId, title = title,
+                posterUrl = posterUrl, streamUrl = streamUrl, filePath = target?.stored,
+                status = DownloadStatus.QUEUED, identityKey = identityKey, extJson = extJson,
+                httpHeaders = httpHeaders, containerExt = containerExt, manifest = manifest,
+            ),
+        )
+        kick()
+        id
     }
 
     fun retry(download: DownloadEntity) {

@@ -193,6 +193,9 @@
     <string name="content_downloads_reason_too_large">檔案對此磁碟機來說過大：它無法儲存超過 4 GB 的檔案。請選擇其他下載資料夾，或將磁碟機格式化為 exFAT</string>
     <string name="content_downloads_reason_waiting_watching">等待中：停止觀看後開始</string>
     <string name="content_downloads_reason_paused_watching">觀看期間已暫停</string>
+    <string name="content_downloads_reason_source_unavailable">來源解析失敗，可稍後重試</string>
+    <string name="content_downloads_reason_unsupported_source">該片源不支援下載</string>
+    <string name="content_downloads_reason_unsupported_manifest">受保護片源不支援離線下載</string>
     <string name="content_downloads_reason_with_code"><xliff:g id="reason">%1$s</xliff:g> (HTTP <xliff:g id="code">%2$d</xliff:g>)</string>
     <string name="content_download_watch_title">此播放清單只允許一個串流</string>
     <string name="content_download_watch_body">來自 <xliff:g id="playlist">%1$s</xliff:g> 的下載正在使用它，因此已暫時暫停。要觀看，還是關閉播放器繼續下載？</string>
