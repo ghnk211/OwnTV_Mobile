@@ -117,6 +117,10 @@ fun VodMenu(
 
     // What this item's Download action should now say and do — the row watches its own transfer.
     val downloadRows by vm.downloadsOf(item.id).collectAsStateWithLifecycle(emptyList())
+    // A TVBOX film has no downloadable address; its line/episode choice is on the VOD detail page.
+    val tvboxItem by produceState(false, item.id, movie) {
+        value = movie && vm.isTvboxItem(item.id)
+    }
     val downloadAction = downloadActionFor(downloadRows)
     val inHistory by produceState(selected == LiveKey.History, item.id) { value = vm.isInHistory(item.id) }
     // "Download all episodes 12" — the episodes stored for the show; nothing for one never opened.
@@ -174,26 +178,28 @@ fun VodMenu(
                     ),
                 )
             }
-            add(
-                SheetAction(
-                    key = "download",
-                    label = downloadAction.label(
-                        stringResource(
-                            if (movie) R.string.content_download else R.string.content_download_all_episodes,
+            if (!tvboxItem) {
+                add(
+                    SheetAction(
+                        key = "download",
+                        label = downloadAction.label(
+                            stringResource(
+                                if (movie) R.string.content_download else R.string.content_download_all_episodes,
+                            ),
+                        ),
+                        icon = downloadAction.icon(),
+                        destructive = downloadAction.deletes,
+                        group = GROUP_LIBRARY,
+                        value = episodes.takeIf { it > 0 && downloadRows.isEmpty() }?.let(::formatCount),
+                        onClick = downloadAction.onTap(
+                            // A show queues every episode, so it asks first with the count.
+                            onDownload = { if (movie || episodes == 0) vm.download(item.id) else dialog = VodDialog.DOWNLOAD_ALL },
+                            onRetry = { vm.retryDownloads(downloadRows) },
+                            onDelete = { vm.deleteDownloads(downloadRows) },
                         ),
                     ),
-                    icon = downloadAction.icon(),
-                    destructive = downloadAction.deletes,
-                    group = GROUP_LIBRARY,
-                    value = episodes.takeIf { it > 0 && downloadRows.isEmpty() }?.let(::formatCount),
-                    onClick = downloadAction.onTap(
-                        // A show queues every episode, so it asks first with the count.
-                        onDownload = { if (movie || episodes == 0) vm.download(item.id) else dialog = VodDialog.DOWNLOAD_ALL },
-                        onRetry = { vm.retryDownloads(downloadRows) },
-                        onDelete = { vm.deleteDownloads(downloadRows) },
-                    ),
-                ),
-            )
+                )
+            }
             add(
                 SheetAction(
                     key = "remove_history",

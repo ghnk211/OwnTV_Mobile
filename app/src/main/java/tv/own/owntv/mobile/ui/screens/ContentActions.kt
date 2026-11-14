@@ -82,6 +82,9 @@ class ContentActions(
         val pid = profileId() ?: return
         if (type == MediaType.MOVIE) {
             val movie = movieDao.getById(itemId) ?: return
+            // A tvbox:// row is an identity handle, not a downloadable address. The detail page owns
+            // the line/episode choice; this menu must never queue a task that can only fail.
+            if (movie.streamUrl.startsWith(tv.own.owntv.mobile.tvbox.index.TvboxIndexMapper.STREAM_PREFIX)) return
             if (!AdultCategoryClassifier.allows(pid, movie.categoryId, profileDao, categoryDao)) return
             downloadManager.enqueue(
                 profileId = pid,

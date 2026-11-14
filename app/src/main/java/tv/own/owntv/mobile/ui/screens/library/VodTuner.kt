@@ -21,6 +21,7 @@ import tv.own.owntv.core.database.dao.ProfileDao
 import tv.own.owntv.core.database.dao.ProgressDao
 import tv.own.owntv.core.database.dao.SeriesDao
 import tv.own.owntv.core.database.dao.SourceDao
+import tv.own.owntv.core.database.entity.DownloadEntity
 import tv.own.owntv.core.database.entity.EpisodeEntity
 import tv.own.owntv.core.database.entity.MovieEntity
 import tv.own.owntv.core.database.entity.PlaybackProgressEntity
@@ -44,6 +45,8 @@ import tv.own.owntv.mobile.cast.CastController
 import tv.own.owntv.mobile.cast.CastHandoff
 import tv.own.owntv.mobile.cast.CastRequest
 import tv.own.owntv.mobile.playback.DataSaverGate
+import tv.own.owntv.mobile.tvbox.download.TvboxDownloadKey
+import tv.own.owntv.mobile.tvbox.play.TvboxExtKey
 import tv.own.owntv.mobile.playback.PlaybackService
 import tv.own.owntv.mobile.ui.screens.live.LiveTuner
 import tv.own.owntv.player.MediaMeta
@@ -481,6 +484,74 @@ class VodTuner(
     }
 
     /**
+     * Play a finished TVBOX download from this phone.
+     *
+     * Shares [playDownload]'s category/lock gate and external-player route, but keeps the TVBOX
+     * progress identity (`extKey`) so the next online play resumes on the same line/episode. The
+     * resume position is used only when it belongs to this episode: one `(profile, MOVIE, movieId)`
+     * row serves every episode of the film.
+     *
+     * A local file is not an "external" TVBOX stream: `isExternal = true` would close the subtitle
+     * entry (`PlayerScreen.kt:268`), and a downloaded file does have a subtitle interface.
+     */
+    suspend fun playTvboxDownload(download: DownloadEntity): Boolean {
+        val pid = currentProfileId() ?: return false
+        val path = download.filePath ?: return false
+        val ref = TvboxDownloadKey.decode(download.extJson) ?: return false
+        val category = downloadCategory(MediaType.MOVIE, download.itemId)
+        if (!downloadAllowed(category, pid)) return false
+        if (settings.externalPlayerFor(MediaType.MOVIE).first()) {
+            externalPlayerLauncher.launch(path, download.title)
+            return false
+        }
+        saveProgress()
+        liveTuner.stop()
+        cast.release(this)
+        val saved = withContext(Dispatchers.IO) {
+            progressDao.get(pid, MediaType.MOVIE, download.itemId)
+        }
+        val sameEpisode = saved != null && TvboxExtKey.decode(saved.extKey)?.let {
+            it.flag == ref.flag && it.episodeId == ref.episodeId && it.index == ref.index
+        } == true
+        val startMs = if (sameEpisode && saved != null) saved.positionMs else 0L
+
+        beginPlay(PlayKind.TVBOX)
+        tvboxSiteKey = ref.siteKey
+        // An offline file has no site/type context to re-lock mid-play; the category gate above is
+        // the profile-level check, and the in-app detail page already enforced the lock.
+        tvboxCategoryKey = null
+        tvboxProgressCtx = TvboxProgressCtx(
+            episodeFlag = ref.flag,
+            episodeId = ref.episodeId,
+            episodeIndex = ref.index,
+        )
+        player.play(
+            url = path,
+            title = download.title,
+            subtitle = ref.episodeName.takeIf { it.isNotBlank() },
+            isLive = false,
+            startPositionMs = startMs,
+            contentKey = "tvbox:${ref.siteKey}:${ref.vodId}:${ref.index}",
+        )
+        player.exitAudioOnly()
+        session.attach(engine)
+        PlaybackService.start(context)
+        playingProfileId = pid
+        _playing.value = VodPlayback(
+            mediaType = MediaType.MOVIE,
+            itemId = download.itemId,
+            title = download.title,
+            subtitle = ref.episodeName.takeIf { it.isNotBlank() },
+            posterUrl = download.posterUrl,
+            isExternal = false,
+        )
+        playingQueue = null
+        recordHistory(pid, MediaType.MOVIE, download.itemId)
+        setDownloadSubtitleContext(pid, MediaType.MOVIE, download.itemId, path)
+        return true
+    }
+
+    /**
      * Play a finished live recording from the file on disk.
      *
      * Close to [playDownload] but deliberately thinner in three ways, all because a recording is not
@@ -586,11 +657,14 @@ class VodTuner(
         // Only the unindexed fallback keeps -1, which short-circuits the Core write.
         playingProfileId = if (coreId != null) pid ?: -1L else -1L
         _playing.value = VodPlayback(
-            MediaType.MOVIE,
-            coreId ?: TVBOX_ITEM_ID,
-            resolved.title,
-            resolved.subtitle,
-            resolved.posterUrl,
+            mediaType = MediaType.MOVIE,
+            itemId = coreId ?: TVBOX_ITEM_ID,
+            title = resolved.title,
+            subtitle = resolved.subtitle,
+            posterUrl = resolved.posterUrl,
+            // The one-stream guard and DownloadWatchGuard read WatchSession, which is keyed by
+            // VodPlayback.sourceId. Without this a TVBOX stream held no "source" at all.
+            sourceId = coreId?.let { withContext(Dispatchers.IO) { movieDao.getById(it)?.sourceId } },
             isExternal = true,
         )
         playingQueue = null

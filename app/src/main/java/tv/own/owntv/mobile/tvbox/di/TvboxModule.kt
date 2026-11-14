@@ -178,6 +178,15 @@ val tvboxModule = module {
     }
     single { TvboxPlayResolver(get(), get(), get(), get(), get<ProfileDao>(), get(), get(), get()) }
     single {
+        // Core's DownloadSourceResolver SPI: the App registers the TVBOX one at process start.
+        tv.own.owntv.mobile.tvbox.download.TvboxDownloadSourceResolver(
+            configRepository = get(),
+            resolver = get(),
+            runtime = get(),
+            movieDao = get(),
+        )
+    }
+    single {
         tv.own.owntv.mobile.tvbox.play.TvboxPlaybackRouter(
             sourceDao = get(),
             configRepository = get(),

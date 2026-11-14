@@ -1,5 +1,7 @@
 package tv.own.owntv.mobile.tvbox.di
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import tv.own.owntv.mobile.tvbox.engine.cms.CmsEngine
 import tv.own.owntv.mobile.tvbox.engine.jar.JarEngine
 import tv.own.owntv.mobile.tvbox.engine.js.JsEngine
@@ -38,6 +40,12 @@ class TvboxRuntime(
     @Volatile
     private var indexMaintained = false
 
+    /** Download-side readiness: config + engines only; never the catalogue sweep. */
+    private val readyLock = Mutex()
+
+    @Volatile
+    private var ready = false
+
     init {
         config.onConfigApplied = { cfg ->
             sniffEngine.setGlobalRules(cfg.rules)
@@ -66,6 +74,26 @@ class TvboxRuntime(
         config.purgeInvalidJars()
         config.restoreActive()
         maintainIndex(provisioner.syncAll())
+    }
+
+    /**
+     * Config + engines only, for the download resolver.
+     *
+     * [restore] also runs `provisioner.syncAll()` and the catalogue sweep; in a headless WorkManager
+     * process whose config list is not loaded yet, `syncAll()` would turn every TVBOX source's
+     * `syncMovies` off. A download only needs the active config and the engines it parses with.
+     *
+     * Idempotent: the first successful restore sets [ready]; a failed one leaves it false so the
+     * next attempt tries again.
+     */
+    suspend fun ensureReady() {
+        if (ready && config.activeConfig.value != null) return
+        readyLock.withLock {
+            if (ready && config.activeConfig.value != null) return
+            config.purgeInvalidJars()
+            config.restoreActive()
+            ready = config.activeConfig.value != null
+        }
     }
 
     /**

@@ -50,13 +50,18 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import tv.own.owntv.core.categorylock.PinAttempt
 import tv.own.owntv.core.customize.MoveKind
+import tv.own.owntv.core.database.entity.DownloadEntity
+import tv.own.owntv.core.model.DownloadStatus
 import androidx.compose.runtime.rememberCoroutineScope
 import tv.own.owntv.mobile.R
 import tv.own.owntv.mobile.tvbox.config.model.SiteConfig
+import tv.own.owntv.mobile.tvbox.download.TvboxDownloadKey
 import tv.own.owntv.mobile.tvbox.engine.Movie
 import tv.own.owntv.mobile.tvbox.engine.episodeDisplayNames
 import tv.own.owntv.mobile.tvbox.repository.SourceRepository
 import tv.own.owntv.mobile.tvbox.repository.TvboxConfigRepository
+import tv.own.owntv.mobile.ui.components.BulkDownloadAsk
+import tv.own.owntv.mobile.ui.components.BulkDownloadConfirm
 import tv.own.owntv.mobile.ui.components.MobileBottomSheet
 import tv.own.owntv.mobile.ui.components.MobileIcons
 import tv.own.owntv.mobile.ui.categorylock.PinEntrySheet
@@ -697,15 +702,23 @@ private fun PosterGrid(
 @Composable
 internal fun TvboxDetailPage(
     state: TvboxDetailUiState,
+    downloads: Map<String, DownloadEntity>,
+    downloadsAllowed: Boolean,
     onBack: () -> Unit,
     onSelectLine: (Int) -> Unit,
     onPlay: (Int) -> Unit,
+    onDownload: (Int) -> Unit,
+    onDownloadLine: () -> Unit,
+    onPauseDownload: (DownloadEntity) -> Unit,
+    onResumeDownload: (DownloadEntity) -> Unit,
+    onDeleteDownload: (DownloadEntity) -> Unit,
     onToggleFavorite: () -> Unit,
     onUnlockPin: suspend (String) -> PinAttempt,
     onUnlocked: () -> Unit,
 ) {
     val palette = LocalStagePalette.current
     var pinSheet by remember { mutableStateOf(false) }
+    var bulkDownload by remember { mutableStateOf<BulkDownloadAsk?>(null) }
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(horizontal = PageSidePadding, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -772,17 +785,37 @@ internal fun TvboxDetailPage(
                     Spacer(Modifier.height(8.dp))
                 }
 
-                val episodes = state.lines.getOrNull(state.currentLineIndex)?.episodes.orEmpty()
+                val line = state.lines.getOrNull(state.currentLineIndex)
+                val episodes = line?.episodes.orEmpty()
                 if (episodes.isEmpty()) {
                     EmptyHint(stringResource(R.string.tvbox_detail_no_episodes))
                 } else {
+                    val currentLine = line ?: return@Column
                     val names = episodeDisplayNames(episodes)
-                    Text(
-                        pluralStringResource(R.plurals.tvbox_episodes, episodes.size, episodes.size),
-                        style = stageText(12f, 700),
-                        color = palette.muted,
-                        modifier = Modifier.padding(horizontal = PageSidePadding, vertical = 6.dp),
-                    )
+                    Row(
+                        Modifier.padding(horizontal = PageSidePadding, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            pluralStringResource(R.plurals.tvbox_episodes, episodes.size, episodes.size),
+                            style = stageText(12f, 700),
+                            color = palette.muted,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (downloadsAllowed) {
+                            StageButton(
+                                onClick = {
+                                    bulkDownload = BulkDownloadAsk(episodes.size) {
+                                        bulkDownload = null
+                                        onDownloadLine()
+                                    }
+                                },
+                                text = stringResource(R.string.tvbox_download_line),
+                                icon = MobileIcons.Download,
+                                small = true,
+                            )
+                        }
+                    }
                     val resumeIndex = state.resumeIndex
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(4),
@@ -791,7 +824,20 @@ internal fun TvboxDetailPage(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(count = episodes.size) { i ->
-                            val label = names.getOrNull(i) ?: episodes[i].name
+                            val episode = episodes[i]
+                            val label = names.getOrNull(i) ?: episode.name
+                            val identity = TvboxDownloadKey.identity(
+                                TvboxDownloadKey.Ref(
+                                    siteKey = state.site?.key.orEmpty(),
+                                    vodId = state.vodId,
+                                    flag = episode.flag,
+                                    episodeId = episode.id,
+                                    episodeName = episode.name,
+                                    index = episode.index,
+                                    lineName = currentLine.name,
+                                ),
+                            )
+                            val download = downloads[identity]
                             Box(
                                 Modifier
                                     .clip(RoundedCornerShape(10.dp))
@@ -808,6 +854,18 @@ internal fun TvboxDetailPage(
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
+                                if (downloadsAllowed) {
+                                    DownloadBadge(
+                                        download = download,
+                                        onDownload = { onDownload(i) },
+                                        onPause = { download?.let(onPauseDownload) },
+                                        onResume = { download?.let(onResumeDownload) },
+                                        onDelete = { download?.let(onDeleteDownload) },
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(4.dp),
+                                    )
+                                }
                             }
                         }
                     }
@@ -841,9 +899,57 @@ internal fun TvboxDetailPage(
             onDismiss = { pinSheet = false },
         )
     }
+
+    bulkDownload?.let { ask ->
+        BulkDownloadConfirm(ask = ask, onDismiss = { bulkDownload = null })
+    }
 }
 
 // ---------------------------------------------------------------------------
+
+/**
+ * The one-tap state badge on an episode cell. Tapping it follows the row's lifecycle: not queued
+ * starts a download, running pauses it, paused resumes it, completed/failed deletes or retries.
+ */
+@Composable
+private fun DownloadBadge(
+    download: DownloadEntity?,
+    onDownload: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = LocalStagePalette.current
+    val status = download?.status
+    val text = when (status) {
+        null -> "↓"
+        DownloadStatus.QUEUED, DownloadStatus.RUNNING -> {
+            val total = download.totalBytes
+            if (total > 0) "${download.downloadedBytes * 100 / total}%" else "…"
+        }
+        DownloadStatus.PAUSED -> "⏸"
+        DownloadStatus.COMPLETED -> "✓"
+        DownloadStatus.FAILED -> "!"
+    }
+    val onClick = when (status) {
+        null -> onDownload
+        DownloadStatus.QUEUED, DownloadStatus.RUNNING -> onPause
+        DownloadStatus.PAUSED -> onResume
+        DownloadStatus.COMPLETED -> onDelete
+        DownloadStatus.FAILED -> onDownload
+    }
+    Text(
+        text,
+        style = stageText(9.5f, 800),
+        color = if (status == DownloadStatus.FAILED) palette.danger else palette.text,
+        modifier = modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(palette.cardSolid)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 5.dp, vertical = 2.dp),
+    )
+}
 
 @Composable
 private fun EmptyHint(text: String) {

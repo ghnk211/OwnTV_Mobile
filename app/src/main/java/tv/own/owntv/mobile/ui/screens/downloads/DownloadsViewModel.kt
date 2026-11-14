@@ -170,14 +170,20 @@ class DownloadsViewModel(
     }
 
     private suspend fun lookUp(d: DownloadEntity): DownloadDetails? = when (d.mediaType) {
-        MediaType.MOVIE -> movieDao.getById(d.itemId)?.let { m ->
-            DownloadDetails(
-                title = m.name,
-                artUrl = m.backdropUrl ?: m.posterUrl,
-                year = m.year ?: m.parsedYear,
-                runtimeSecs = m.durationSecs,
-                quality = ProviderVariantParser.displaySignals(m.name).quality.label,
-            )
+        MediaType.MOVIE -> if (d.isTvbox()) {
+            // A TVBOX row's title already carries "film · episode"; the film row would overwrite
+            // that with the bare film name.
+            DownloadDetails(title = d.title, artUrl = d.posterUrl, quality = null)
+        } else {
+            movieDao.getById(d.itemId)?.let { m ->
+                DownloadDetails(
+                    title = m.name,
+                    artUrl = m.backdropUrl ?: m.posterUrl,
+                    year = m.year ?: m.parsedYear,
+                    runtimeSecs = m.durationSecs,
+                    quality = ProviderVariantParser.displaySignals(m.name).quality.label,
+                )
+            }
         }
         MediaType.EPISODE -> seriesDao.getEpisodeById(d.itemId)?.let { ep ->
             val show = seriesDao.getSeriesById(ep.seriesId)
@@ -291,13 +297,17 @@ class DownloadsViewModel(
     fun play(download: DownloadEntity) {
         val path = download.filePath ?: return
         viewModelScope.launch {
-            _playing.value = vodTuner.playDownload(
-                mediaType = download.mediaType,
-                itemId = download.itemId,
-                filePath = path,
-                title = download.title,
-                posterUrl = download.posterUrl,
-            )
+            _playing.value = if (download.isTvbox()) {
+                vodTuner.playTvboxDownload(download)
+            } else {
+                vodTuner.playDownload(
+                    mediaType = download.mediaType,
+                    itemId = download.itemId,
+                    filePath = path,
+                    title = download.title,
+                    posterUrl = download.posterUrl,
+                )
+            }
         }
     }
 
@@ -342,6 +352,13 @@ class DownloadsViewModel(
     fun delete(download: DownloadEntity) = downloadManager.delete(download)
 
 }
+
+/**
+ * A TVBOX row stores a `tvbox://` identity handle, not a URL. The App owns this classification;
+ * Core deliberately does not know what TVBOX is.
+ */
+private fun DownloadEntity.isTvbox(): Boolean =
+    streamUrl.startsWith(tv.own.owntv.mobile.tvbox.index.TvboxIndexMapper.STREAM_PREFIX)
 
 /** See [DownloadsViewModel.details]. */
 data class DownloadDetails(

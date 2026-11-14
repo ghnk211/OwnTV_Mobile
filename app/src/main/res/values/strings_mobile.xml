@@ -87,6 +87,12 @@
     <string name="tvbox_detail_blocked_kids">This content is not available for the current profile.</string>
     <string name="tvbox_detail_locked">This category is locked. Enter the PIN to open it.</string>
     <string name="tvbox_detail_no_episodes">No playable episodes on this line.</string>
+    <!-- Translators: Button on a TVbox title's episode list that downloads every episode of the selected line. -->
+    <string name="tvbox_download_line">Download this line</string>
+    <!-- Translators: Shown when a TVbox title has no Core row yet, so a download cannot be attached to it. -->
+    <string name="tvbox_download_no_index">Can\'t download this title yet</string>
+    <!-- Translators: Shown when an episode's stream is an HLS playlist, which this version cannot save offline yet. -->
+    <string name="tvbox_download_hls_soon">This source can\'t be downloaded offline yet</string>
     <string name="tvbox_pin_unlock_desc">Enter your Customize PIN to open this category.</string>
     <string name="tvbox_lock_action_lock">Lock this category</string>
     <string name="tvbox_lock_action_unlock">Unlock this category</string>

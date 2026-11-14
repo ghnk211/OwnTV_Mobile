@@ -820,6 +820,15 @@ class LibraryViewModel(
         downloadManager.observeForSeries(itemId)
     }
 
+    /**
+     * True when this film is an indexed TVBOX row: its `streamUrl` is a `tvbox://` identity, not a
+     * downloadable address. The long-press menu uses this to leave the Download action out instead
+     * of rendering one that can only refuse.
+     */
+    suspend fun isTvboxItem(itemId: Long): Boolean =
+        movieDao.getById(itemId)?.streamUrl
+            ?.startsWith(tv.own.owntv.mobile.tvbox.index.TvboxIndexMapper.STREAM_PREFIX) == true
+
     /** Start the failed rows over. */
     fun retryDownloads(rows: List<DownloadEntity>) {
         rows.filter { it.status == DownloadStatus.FAILED }.forEach { downloadManager.retry(it) }

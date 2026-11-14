@@ -112,6 +112,9 @@ internal fun MoviePage(
         titleChrome?.backdropAlignment = BiasAlignment(0.4f, -0.4f)
     }
     film ?: return
+    // A TVBOX row is a catalogue identity, not a downloadable address; its line/episode choice
+    // lives on the VOD detail page, so this page must not render a dead Download button.
+    val isTvbox = film.streamUrl.startsWith(tv.own.owntv.mobile.tvbox.index.TvboxIndexMapper.STREAM_PREFIX)
 
     // The title art is placed from the top of the screen, as drawn, whatever the status bar and header take.
     val estimatedTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 48.dp
@@ -218,7 +221,7 @@ internal fun MoviePage(
                 modifier = Modifier.weight(1f),
             )
             val download = downloadActionFor(itemDownloads)
-            if (downloadsAllowed) StageButton(
+            if (downloadsAllowed && !isTvbox) StageButton(
                 onClick = download.onTap(
                     onDownload = vm::download,
                     onRetry = { vm.retryDownloads(itemDownloads) },

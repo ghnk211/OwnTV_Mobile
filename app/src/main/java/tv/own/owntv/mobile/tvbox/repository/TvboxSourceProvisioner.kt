@@ -61,6 +61,9 @@ class TvboxSourceProvisioner(
                         syncLive = false,
                         syncMovies = meta.id == activeConfigId,
                         syncSeries = false,
+                        // A TVBOX site is not a multi-connection CDN; one stream also makes
+                        // DownloadEngine.waitsForWatching meaningful for these rows.
+                        maxConnections = 1,
                     ),
                 )
             } else {
@@ -71,6 +74,8 @@ class TvboxSourceProvisioner(
                         syncLive = false,
                         syncMovies = meta.id == activeConfigId,
                         syncSeries = false,
+                        // copy() keeps unlisted columns, so an existing 0 must be overwritten here.
+                        maxConnections = 1,
                     ),
                 )
                 existing.id

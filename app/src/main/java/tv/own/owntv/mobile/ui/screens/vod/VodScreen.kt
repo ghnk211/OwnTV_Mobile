@@ -32,6 +32,9 @@ fun VodScreen(
     val configState by configVm.state.collectAsStateWithLifecycle()
     val homeState by homeVm.state.collectAsStateWithLifecycle()
     val detailState by detailVm.state.collectAsStateWithLifecycle()
+    val detailDownloads by detailVm.downloads.collectAsStateWithLifecycle()
+    val downloadsAllowed by org.koin.compose.koinInject<tv.own.owntv.core.settings.SettingsRepository>()
+        .activeDownloadsAllowed.collectAsStateWithLifecycle(initialValue = true)
 
     detailVm.onPlayStarted = onPlay
 
@@ -90,9 +93,16 @@ fun VodScreen(
             } else {
                 TvboxDetailPage(
                     state = detailState,
+                    downloads = detailDownloads,
+                    downloadsAllowed = downloadsAllowed,
                     onBack = { page = VodPage.HOME },
                     onSelectLine = detailVm::selectLine,
                     onPlay = detailVm::play,
+                    onDownload = { detailVm.downloadEpisode(it) },
+                    onDownloadLine = { detailVm.downloadEpisode(0, all = true) },
+                    onPauseDownload = detailVm::pauseDownload,
+                    onResumeDownload = detailVm::resumeDownload,
+                    onDeleteDownload = detailVm::deleteDownload,
                     onToggleFavorite = detailVm::toggleFavorite,
                     onUnlockPin = detailVm::unlockWithPin,
                     onUnlocked = detailVm::markUnlocked,

@@ -272,6 +272,22 @@
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	source_kind_
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	source_url_
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/data/prefs/TvboxPrefs.kt	tvbox_prefs
+1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadKey.kt	\0
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadKey.kt	episodeId
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadKey.kt	episodeName
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadKey.kt	flag
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadKey.kt	index
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadKey.kt	kind
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadKey.kt	lineName
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadKey.kt	siteKey
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadKey.kt	tvbox
+2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadKey.kt	vodId
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadPaths.kt	$stem.${containerExt ?: StorageAccess.extOf(episode.url)}
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadPaths.kt	Movies/$film/${lineIndex + 1}-$line
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadPaths.kt	ep-${episode.index + 1}
+1	assertion	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadSourceResolver.kt	bad tvbox download identity
+1	assertion	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadSourceResolver.kt	playerContent failed for ${site.key}
+1	assertion	app/src/main/java/tv/own/owntv/mobile/tvbox/download/TvboxDownloadSourceResolver.kt	site $siteKey is gone
 1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Base64Compat.kt	\0
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Base64Compat.kt	==
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/engine/Base64Compat.kt	ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/
@@ -1765,6 +1781,7 @@
 1	protocol	app/src/main/java/tv/own/owntv/mobile/ui/screens/library/VodTuner.kt	EPISODE
 1	protocol	app/src/main/java/tv/own/owntv/mobile/ui/screens/library/VodTuner.kt	MOVIE
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/library/VodTuner.kt	SERIES
+1	protocol	app/src/main/java/tv/own/owntv/mobile/ui/screens/library/VodTuner.kt	tvbox:${ref.siteKey}:${ref.vodId}:${ref.index}
 1	preference-key	app/src/main/java/tv/own/owntv/mobile/ui/screens/library/VodTuner.kt	tvbox:${resolved.siteKey}:${resolved.vodId}
 1	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/live/ChannelActions.kt	\0
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/live/ChannelActions.kt	+
@@ -2176,16 +2193,27 @@
 3	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/settings/customize/CustomizeSpanUi.kt	\0
 1	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/settings/customize/CustomizeViewModel.kt	\0
 5	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	!
+1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	${download.downloadedBytes * 100 / total}%
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	${site.key}#$index
 1	mime	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	*/*
 1	mime	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	application/json
 1	mime	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	text/plain
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	·
+1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	…
+1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	↓
+1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	⏸
+1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	✓
 7	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	${s.name} · ${ep.name.ifBlank { "ep-${ep.index + 1}" }}
 1	protocol	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	${site.key}/
+1	protocol	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	Authorization
+1	protocol	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	Cookie
 1	json	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	all
+1	file-path	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	ep-${ep.index + 1}
 1	json	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	http
 2	preference-key	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	tvbox:${site.key}:${s.vodId}:$i
+1	url	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	tvbox://${site.key}/${s.vodId}
 1	log	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxViewModels.kt	全部
 14	empty	app/src/main/java/tv/own/owntv/mobile/ui/setup/AddSourceForm.kt	\0
 1	technical	app/src/main/java/tv/own/owntv/mobile/ui/setup/AddSourceForm.kt	.json

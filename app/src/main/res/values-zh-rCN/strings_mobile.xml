@@ -74,6 +74,9 @@
     <string name="tvbox_detail_blocked_kids">当前档案不可观看此内容。</string>
     <string name="tvbox_detail_locked">该分类已上锁，请输入 PIN 解锁。</string>
     <string name="tvbox_detail_no_episodes">该线路没有可播放的分集。</string>
+    <string name="tvbox_download_line">下载本线路</string>
+    <string name="tvbox_download_no_index">暂不能下载该片</string>
+    <string name="tvbox_download_hls_soon">该片源暂不支持离线下载</string>
     <string name="tvbox_pin_unlock_desc">输入 Customize PIN 以打开该分类。</string>
     <string name="tvbox_lock_action_lock">上锁该分类</string>
     <string name="tvbox_lock_action_unlock">解锁该分类</string>

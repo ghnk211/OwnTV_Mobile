@@ -164,6 +164,12 @@ class OwnTVMobileApp : Application(), androidx.work.Configuration.Provider {
                 downloadsModule, settingsModule, tvboxModule,
             )
         }
+        // Core's download engine asks the installed resolver for a fresh URL on every attempt.
+        // WorkManager runs in this process, so a headless transfer sees this instance too.
+        tv.own.owntv.core.download.DownloadSourceResolvers.install(
+            org.koin.core.context.GlobalContext.get()
+                .get<tv.own.owntv.mobile.tvbox.download.TvboxDownloadSourceResolver>(),
+        )
         // TVbox restores at process start, not on the first visit to the VOD tab. Core screens
         // (Favourites, Continue watching, search results) play an indexed row through the playback
         // router, which needs the active config's site list; restored lazily it was still empty, so a

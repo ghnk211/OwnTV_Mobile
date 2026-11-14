@@ -1,7 +1,9 @@
 package tv.own.owntv.mobile.ui.screens.vod
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,6 +12,9 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -20,21 +25,30 @@ import tv.own.owntv.core.customize.MoveKind
 import tv.own.owntv.core.customize.railCategories
 import tv.own.owntv.core.database.dao.CategoryDao
 import tv.own.owntv.core.database.dao.ProfileDao
+import tv.own.owntv.core.database.entity.DownloadEntity
 import tv.own.owntv.core.database.entity.ProfileEntity
+import tv.own.owntv.core.download.DownloadManager
+import tv.own.owntv.core.download.HlsUrls
 import tv.own.owntv.core.live.LiveKey
+import tv.own.owntv.core.model.DownloadStatus
 import tv.own.owntv.core.model.MediaType
+import tv.own.owntv.core.network.StreamHeaders
 import tv.own.owntv.core.settings.SettingsRepository
 import tv.own.owntv.core.categorylock.PinAttempt
+import tv.own.owntv.mobile.R
 import tv.own.owntv.mobile.tvbox.category.TvboxCategoryLock
 import tv.own.owntv.mobile.tvbox.category.TvboxCategoryPolicy
 import tv.own.owntv.mobile.tvbox.config.model.SiteConfig
 import tv.own.owntv.mobile.tvbox.data.prefs.TvboxPrefs
 import tv.own.owntv.mobile.tvbox.di.TvboxRuntime
+import tv.own.owntv.mobile.tvbox.download.TvboxDownloadKey
+import tv.own.owntv.mobile.tvbox.download.TvboxDownloadPaths
 import tv.own.owntv.mobile.tvbox.engine.FilterDef
 import tv.own.owntv.mobile.tvbox.engine.Movie
 import tv.own.owntv.mobile.tvbox.engine.PlayLine
 import tv.own.owntv.mobile.tvbox.engine.PlayUrlCodec
 import tv.own.owntv.mobile.tvbox.engine.SpiderResult
+import tv.own.owntv.mobile.tvbox.index.TvboxIndexMapper
 import tv.own.owntv.mobile.tvbox.play.ResolvedPlay
 import tv.own.owntv.mobile.tvbox.play.TvboxCategoryKey
 import tv.own.owntv.mobile.tvbox.play.TvboxExtKey
@@ -562,10 +576,36 @@ class TvboxDetailViewModel(
     private val provisioner: tv.own.owntv.mobile.tvbox.repository.TvboxSourceProvisioner,
     private val indexer: tv.own.owntv.mobile.tvbox.index.TvboxIndexer,
     private val userData: tv.own.owntv.mobile.tvbox.index.TvboxUserData,
+    private val appContext: Context,
+    private val downloadManager: DownloadManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TvboxDetailUiState())
     val state: StateFlow<TvboxDetailUiState> = _state.asStateFlow()
+
+    /**
+     * This film's TVBOX download rows, keyed by download identity (§4.3).
+     *
+     * Rebuilt when the indexed movie id arrives: the detail page can open before `ensureIndexed`
+     * has produced a row, and without the movieId the observe key would stay null forever.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val downloads: StateFlow<Map<String, DownloadEntity>> =
+        combine(settings.activeProfileId, _state.map { it.movieId }) { pid, movieId -> pid to movieId }
+            .flatMapLatest { (pid, movieId) ->
+                if (pid < 0 || movieId == null) {
+                    flowOf(emptyMap())
+                } else {
+                    downloadManager.observe(pid).map { rows ->
+                        rows.filter {
+                            it.mediaType == MediaType.MOVIE &&
+                                it.itemId == movieId &&
+                                it.streamUrl.startsWith(TvboxIndexMapper.STREAM_PREFIX)
+                        }.associateBy { it.identityKey }
+                    }
+                }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** 起播成功后由 UI 触发导航（PLAY_ROUTE）。 */
     var onPlayStarted: () -> Unit = {}
@@ -797,4 +837,118 @@ class TvboxDetailViewModel(
             }
         }
     }
+
+    /**
+     * Queue one episode, or every episode of the current line.
+     *
+     * The row is resolved once before anything is queued: the user gets an immediate explanation
+     * when the source cannot be resolved, and the transfer starts with fresh headers/container.
+     * P0 refuses HLS here — letting it queue would download the playlist text and mark the row
+     * COMPLETED (the engine has its own guard for rows that slip through).
+     */
+    fun downloadEpisode(index: Int, all: Boolean = false) {
+        val s = _state.value
+        val site = s.site ?: return
+        val key = categoryKey ?: return
+        if (s.blockedByKids || s.sealed) return
+        viewModelScope.launch {
+            val pid = settings.activeProfileId.first()
+            val movieId = s.movieId ?: detailMovie?.let { movie ->
+                provisioner.activeSourceId()?.let { sourceId ->
+                    indexer.ensureIndexed(
+                        sourceId, site, movie,
+                        categoryTypeId = key.typeId, categoryTypeName = key.typeName,
+                    )
+                }
+            }
+            if (movieId == null) {
+                _state.value = _state.value.copy(
+                    resolveError = appContext.getString(R.string.tvbox_download_no_index),
+                )
+                return@launch
+            }
+            if (s.movieId == null) _state.value = _state.value.copy(movieId = movieId)
+
+            val line = s.lines.getOrNull(s.currentLineIndex) ?: return@launch
+            val targets = if (all) line.episodes else listOfNotNull(line.episodes.getOrNull(index))
+            if (targets.isEmpty()) return@launch
+
+            val first = targets.first()
+            val play = when (val outcome = resolver.resolve(
+                profileId = pid, site = site, vodId = s.vodId,
+                flag = first.flag, episodeId = first.id, episodeIndex = first.index,
+                categoryKey = key, detailLines = s.lines, title = s.name,
+                subtitle = first.name, posterUrl = s.pic,
+            )) {
+                is TvboxPlayResolver.Outcome.Blocked -> {
+                    _state.value = _state.value.copy(
+                        sealed = !outcome.byKids, blockedByKids = outcome.byKids,
+                    )
+                    return@launch
+                }
+                is TvboxPlayResolver.Outcome.Error -> {
+                    _state.value = _state.value.copy(resolveError = outcome.message)
+                    return@launch
+                }
+                is TvboxPlayResolver.Outcome.Ready -> outcome.play
+            }
+
+            if (HlsUrls.isM3u8(play.url)) {
+                _state.value = _state.value.copy(
+                    resolveError = appContext.getString(R.string.tvbox_download_hls_soon),
+                )
+                return@launch
+            }
+            val containerExt = TvboxDownloadPaths.probeContainer(play.url)
+            // This column is diagnostic only; never persist the session token it may carry.
+            val headers = StreamHeaders.encode(
+                play.headers.filterKeys {
+                    !it.equals("Cookie", true) && !it.equals("Authorization", true)
+                },
+            )
+
+            for (ep in targets) {
+                val ref = TvboxDownloadKey.Ref(
+                    siteKey = site.key,
+                    vodId = s.vodId,
+                    flag = ep.flag,
+                    episodeId = ep.id,
+                    episodeName = ep.name,
+                    index = ep.index,
+                    lineName = line.name,
+                )
+                val identity = TvboxDownloadKey.identity(ref)
+                // REPLACE would change the row id; a second job on a running row would write the
+                // same SAF document concurrently. Check first, then resume/retry instead.
+                val existing = downloadManager.find(pid, movieId, identity)
+                if (existing != null) {
+                    when (existing.status) {
+                        DownloadStatus.QUEUED, DownloadStatus.RUNNING, DownloadStatus.COMPLETED -> Unit
+                        DownloadStatus.PAUSED -> downloadManager.resume(existing)
+                        DownloadStatus.FAILED -> downloadManager.retry(existing)
+                    }
+                    continue
+                }
+                downloadManager.enqueueNow(
+                    profileId = pid,
+                    mediaType = MediaType.MOVIE,
+                    itemId = movieId,
+                    title = "${s.name} · ${ep.name.ifBlank { "ep-${ep.index + 1}" }}",
+                    posterUrl = s.pic,
+                    streamUrl = "tvbox://${site.key}/${s.vodId}",
+                    relativeDir = TvboxDownloadPaths.dir(s.name, line.index, line.name),
+                    fileName = TvboxDownloadPaths.fileName(ep, containerExt),
+                    identityKey = identity,
+                    extJson = TvboxDownloadKey.encode(ref),
+                    httpHeaders = headers,
+                    containerExt = containerExt,
+                )
+            }
+        }
+    }
+
+    fun pauseDownload(download: DownloadEntity) = downloadManager.pause(download)
+    fun resumeDownload(download: DownloadEntity) = downloadManager.resume(download)
+    fun retryDownload(download: DownloadEntity) = downloadManager.retry(download)
+    fun deleteDownload(download: DownloadEntity) = downloadManager.delete(download)
 }
