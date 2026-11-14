@@ -50,6 +50,14 @@ enum class HlsSupport(val code: Int) {
 enum class DownloadStatus { QUEUED, RUNNING, PAUSED, COMPLETED, FAILED }
 
 /**
+ * How a download is transferred (v55): an ordinary file, or an HLS playlist's segments.
+ *
+ * Stored by name in `downloads.manifest`, so adding a value later is additive; [NONE] is every
+ * row that predates v55 and every ordinary direct-URL transfer.
+ */
+enum class DownloadManifest { NONE, HLS }
+
+/**
  * Why a download failed, waits or was paused — the sentence on its row instead of a bare "Failed".
  * Null on a row with nothing to explain. Stored by name, like [RecordingFailure].
  */
@@ -86,6 +94,18 @@ enum class DownloadReason {
 
     /** Paused because the user chose to watch on a one-stream playlist. */
     PAUSED_FOR_WATCHING,
+
+    /**
+     * The source could not resolve a playable address for this row: the remote parser failed, the
+     * site/configuration is gone, or the direct URL has expired. Retrying later may succeed.
+     */
+    SOURCE_UNAVAILABLE,
+
+    /** There is no resolver for this row and its stored address is not http(s). */
+    UNSUPPORTED_SOURCE,
+
+    /** The stream's manifest is encrypted/protected, or a manifest type this build cannot save. */
+    UNSUPPORTED_MANIFEST,
 }
 
 /**

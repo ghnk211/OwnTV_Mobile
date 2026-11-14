@@ -131,8 +131,6 @@
 1	core/src/main/java/tv/own/owntv/core/database/entity/ContentEntities.kt	.ts
 2	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	contextKey
 1	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	custom_category_members
-1	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	itemId
-2	core/src/main/java/tv/own/owntv/core/database/entity/UserDataEntities.kt	mediaType
 1	core/src/main/java/tv/own/owntv/core/live/ChannelFacets.kt	\0
 1	core/src/main/java/tv/own/owntv/core/live/ChannelFacets.kt	AE
 8	core/src/main/java/tv/own/owntv/core/live/ChannelFacets.kt	AR

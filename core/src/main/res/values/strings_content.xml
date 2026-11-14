@@ -380,6 +380,12 @@
     <string name="content_downloads_reason_waiting_watching">Waiting: starts when you stop watching</string>
     <!-- Translators: A download paused because the user chose to watch on a playlist that allows only one stream. The user resumes it. -->
     <string name="content_downloads_reason_paused_watching">Paused while you watch</string>
+    <!-- Translators: Why a download failed: the source could not resolve a playable address (parser failed, site/configuration removed, or the direct URL expired). Retrying later may help. -->
+    <string name="content_downloads_reason_source_unavailable">Source unavailable — try again later</string>
+    <!-- Translators: Why a download failed: this source cannot be downloaded at all (no resolver and the stored address is not http(s)). -->
+    <string name="content_downloads_reason_unsupported_source">This source can\'t be downloaded</string>
+    <!-- Translators: Why a download failed: the stream is protected (DRM) or in a manifest type this version cannot save offline. -->
+    <string name="content_downloads_reason_unsupported_manifest">This stream can\'t be saved for offline playback</string>
     <!-- Translators: A download failure reason followed by the server's HTTP status number, e.g. "Server error (HTTP 503)". Keep "HTTP" as is. -->
     <string name="content_downloads_reason_with_code"><xliff:g id="reason">%1$s</xliff:g> (HTTP <xliff:g id="code">%2$d</xliff:g>)</string>
     <!-- Translators: Dialog title when the user starts playing from a playlist that allows only one stream while a download from it is running. -->

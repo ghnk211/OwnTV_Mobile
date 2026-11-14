@@ -83,7 +83,8 @@ interface MovieDao {
             "AND id NOT IN (SELECT itemId FROM playback_progress WHERE mediaType = 'MOVIE') " +
             "AND id NOT IN (SELECT itemId FROM watch_history WHERE mediaType = 'MOVIE') " +
             "AND id NOT IN (SELECT itemId FROM custom_category_members WHERE mediaType = 'MOVIE') " +
-            "AND id NOT IN (SELECT itemId FROM content_order WHERE mediaType = 'MOVIE')",
+            "AND id NOT IN (SELECT itemId FROM content_order WHERE mediaType = 'MOVIE') " +
+            "AND id NOT IN (SELECT itemId FROM downloads WHERE mediaType = 'MOVIE')",
     )
     suspend fun pruneIndexedBefore(sourceId: Long, cutoff: Long): Int
 
@@ -95,6 +96,7 @@ interface MovieDao {
             "AND id NOT IN (SELECT itemId FROM watch_history WHERE mediaType = 'MOVIE') " +
             "AND id NOT IN (SELECT itemId FROM custom_category_members WHERE mediaType = 'MOVIE') " +
             "AND id NOT IN (SELECT itemId FROM content_order WHERE mediaType = 'MOVIE') " +
+            "AND id NOT IN (SELECT itemId FROM downloads WHERE mediaType = 'MOVIE') " +
             "ORDER BY IFNULL(lastSeenAt, 0) ASC, id ASC LIMIT :limit",
     )
     suspend fun leastRecentlySeenCandidates(sourceId: Long, limit: Int): List<Long>

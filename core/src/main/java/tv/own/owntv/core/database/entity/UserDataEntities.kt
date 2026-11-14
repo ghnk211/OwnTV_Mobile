@@ -1,9 +1,11 @@
 package tv.own.owntv.core.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import tv.own.owntv.core.model.DownloadManifest
 import tv.own.owntv.core.model.DownloadReason
 import tv.own.owntv.core.model.DownloadStatus
 import tv.own.owntv.core.model.MediaType
@@ -299,7 +301,12 @@ data class UserDataTombstoneEntity(
     indices = [
         Index("profileId"),
         Index("status"),
-        Index(value = ["profileId", "mediaType", "itemId"], unique = true),
+        // v55: the (profileId, mediaType, itemId) unique key cannot tell a TVBOX film's episodes
+        // apart. identityKey is "" for every ordinary source, so their uniqueness is unchanged.
+        Index(value = ["profileId", "mediaType", "itemId", "identityKey"], unique = true),
+        // The index-TTL guard queries downloads by (mediaType, itemId); the unique index above
+        // starts with profileId and cannot serve it.
+        Index(value = ["mediaType", "itemId"]),
     ],
 )
 data class DownloadEntity(
@@ -321,6 +328,42 @@ data class DownloadEntity(
     val reason: DownloadReason? = null,
     /** The HTTP status behind a failure, shown beside the reason (v48); null when there was none. */
     val httpCode: Int? = null,
+
+    /**
+     * v55: what distinguishes two downloads of the same [itemId].
+     *
+     * Ordinary sources keep "" (the old unique semantics). A TVBOX row uses
+     * `TvboxDownloadKey.identity` — NUL-separated, never a bare `|`, because a CMS `flag` is a URL
+     * that may itself contain one. NOT NULL is required: SQLite treats NULLs as distinct in a
+     * unique index, so a nullable column would let an ordinary source queue the same film twice.
+     *
+     * Room's defaultValue is a SQL literal, so the empty string is `"''"`.
+     */
+    @ColumnInfo(defaultValue = "''") val identityKey: String = "",
+
+    /**
+     * TVBOX-only detail, e.g.
+     * `{"kind":"tvbox","siteKey":…,"vodId":…,"flag":…,"episodeId":…,"episodeName":…,"index":N,"lineName":…}`.
+     */
+    val extJson: String? = null,
+
+    /**
+     * The headers the first resolve produced, for diagnostics only. Transfers use the fresh headers
+     * returned by DownloadSourceResolver on every attempt; this column is never read for a request.
+     * Sensitive headers (Cookie/Authorization) must be filtered before writing.
+     */
+    val httpHeaders: String? = null,
+
+    /** Container detected at enqueue time: mp4 / ts / flv. Null when it could not be detected. */
+    val containerExt: String? = null,
+
+    /**
+     * v55 transport shape. HLS rows need segment download and per-segment progress; ordinary rows
+     * are always NONE. Stored instead of inferred from containerExt: ts/mp4 may be either.
+     *
+     * The default must be a SQL literal too (`"'NONE'"`).
+     */
+    @ColumnInfo(defaultValue = "'NONE'") val manifest: DownloadManifest = DownloadManifest.NONE,
 )
 
 /**

@@ -45,6 +45,21 @@ interface DownloadDao {
     @Query("SELECT COUNT(*) FROM downloads WHERE profileId = :profileId")
     fun count(profileId: Long): Flow<Int>
 
+    /** Every TVBOX episode of one film (v55), for the detail page's badge states. */
+    @Query("SELECT * FROM downloads WHERE profileId = :pid AND mediaType = 'MOVIE' AND itemId = :movieId")
+    fun observeForMovie(pid: Long, movieId: Long): Flow<List<DownloadEntity>>
+
+    /**
+     * One TVBOX episode's row, used to decide whether enqueueing it again would replace a running
+     * transfer. `mediaType` is not optional: `movies.id` and `episodes.id` come from different
+     * autoincrement counters, so an episode can share the numeric id with an ordinary film row.
+     */
+    @Query(
+        "SELECT * FROM downloads WHERE profileId = :pid AND mediaType = 'MOVIE' " +
+            "AND itemId = :movieId AND identityKey = :key LIMIT 1",
+    )
+    suspend fun find(pid: Long, movieId: Long, key: String): DownloadEntity?
+
     /** Every status change also sets the row's reason, so an old failure never outlives a retry. */
     @Query(
         "UPDATE downloads SET status = :status, downloadedBytes = :downloaded, totalBytes = :total, " +

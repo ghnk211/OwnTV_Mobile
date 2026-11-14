@@ -27,6 +27,9 @@ object DownloadReasons {
         return when {
             "ENOSPC" in text || "No space left" in text -> DownloadReason.NO_SPACE
             "EFBIG" in text || "File too large" in text -> DownloadReason.FILE_TOO_LARGE
+            // OkHttp rejects a non-http(s) address before any request is made. An old TVBOX row
+            // that reached the engine without a resolver used to surface as "connection lost".
+            "Expected URL scheme" in text -> DownloadReason.UNSUPPORTED_SOURCE
             else -> DownloadReason.CONNECTION_LOST
         }
     }
@@ -45,6 +48,9 @@ object DownloadReasons {
             DownloadReason.FILE_TOO_LARGE -> res.getString(R.string.content_downloads_reason_too_large)
             DownloadReason.WAITING_FOR_WATCHING -> res.getString(R.string.content_downloads_reason_waiting_watching)
             DownloadReason.PAUSED_FOR_WATCHING -> res.getString(R.string.content_downloads_reason_paused_watching)
+            DownloadReason.SOURCE_UNAVAILABLE -> res.getString(R.string.content_downloads_reason_source_unavailable)
+            DownloadReason.UNSUPPORTED_SOURCE -> res.getString(R.string.content_downloads_reason_unsupported_source)
+            DownloadReason.UNSUPPORTED_MANIFEST -> res.getString(R.string.content_downloads_reason_unsupported_manifest)
         }
         return d.httpCode?.let { res.getString(R.string.content_downloads_reason_with_code, text, it) } ?: text
     }
