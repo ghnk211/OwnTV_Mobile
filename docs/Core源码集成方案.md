@@ -3,7 +3,7 @@
 > 集成对象：`E:\develop\ideaPoject\git\Own\OwnTV_Core`（来自第三方仓库；本地 clone 关联自己的 GitHub fork，下称 **Core**）
 > 集成目标：`E:\develop\ideaPoject\git\Own\OwnTV_Mobile`（下称 **Mobile**）
 > 采用方式：**Core 源码入仓（`vendor/OwnTV_Core`）+ 无条件 `includeBuild`；Core 的改造分支推送到自己的 fork，按需吸收上游功能**
-> 状态：**P0–P5 已落地并推送 fork（2026-11-13）**。Core fork：https://github.com/ghnk211/OwnTV_Core，`mobile` @`e0556f0f`（`origin/mobile` 已同步 `c6f90356..e0556f0f`）；Mobile `mobile-mini` 已推送（启动期恢复 TVbox 运行时 `f15c18ed`、py 源方案文档 `7458c777`）；`vendor/OwnTV_Core` 快照 = Core `mobile` @`e0556f0f`（squash `db380e0e`），`subtree pull --squash` 报 already at `e0556f0f`，无需再同步。两仓 1019 个文件 blob 哈希逐一致。
+> 状态：**P0–P5 已落地并推送 fork（2026-11-13）；TVBOX 下载接入 Core P0 已推送（2026-11-14）**。Core fork：https://github.com/ghnk211/OwnTV_Core，`mobile` @`b3549819`（下载 SPI + schema 55，`origin/mobile` 已同步 `e0556f0f..b3549819`）；Mobile `mobile-mini` 已推送（启动期恢复 TVbox 运行时 `f15c18ed`、py 源方案文档 `7458c777`、Py 采集引擎 `0805cf5b`、TVBOX 下载接入 `412daab`）；`vendor/OwnTV_Core` 快照随 `build: sync vendored core (b3549819)` 同步。两仓 vendor 文件 blob 哈希逐一致。
 > 日期：2026-11-07（初版）；2026-11-08 按本地实际状态修订；2026-11-11 P0–P5 实施并本地同步
 
 ---

@@ -164,3 +164,43 @@ Mobile vendor HEAD 的 **1019 个文件 blob 哈希逐一致**。两仓 `origin`
 `f15c18ed`、py 源方案文档 `7458c777`）。随后在 Mobile 执行
 `git subtree pull --prefix=vendor/OwnTV_Core https://github.com/ghnk211/OwnTV_Core.git mobile --squash`，
 输出 `Subtree is already at commit e0556f0f`，快照无需变更。
+
+## TVBOX 下载接入 Core（P0，2026-11-14）
+
+按 `docs/TVBOX下载接入Core方案.md` 的 P0 落地，vendor 快照共 14 个文件：
+
+| 文件 | 改动 |
+|---|---|
+| `model/Enums.kt` | 新增 `DownloadManifest`、`DownloadReason.SOURCE_UNAVAILABLE/UNSUPPORTED_SOURCE/UNSUPPORTED_MANIFEST` |
+| `database/entity/UserDataEntities.kt` | `DownloadEntity` 增 `identityKey/extJson/httpHeaders/containerExt/manifest`；唯一索引改 4 列；补 `(mediaType,itemId)` 索引；默认值用 SQL 字面量 `"''"` / `"'NONE'"` |
+| `database/Migration54To55.kt` | 新增 54→55 迁移；显式建新唯一索引与 `(mediaType,itemId)` 索引；末尾 `healSchema` |
+| `database/OwnTVDatabase.kt` | `version = 55`；注册 `MIGRATION_54_55`；Room schema 导出 `schemas/.../55.json` |
+| `database/dao/DownloadDao.kt` | 新增 `observeForMovie`、`find`（带 `mediaType='MOVIE'`） |
+| `database/dao/MovieDao.kt` | `pruneIndexedBefore` 与 `leastRecentlySeenCandidates` 加 `downloads` 保护 |
+| `download/DownloadSourceResolver.kt` | 新增 SPI（`interface`）+ 注册表（含 `clear()` 测试钩子） |
+| `download/DownloadManager.kt` | `enqueue` 扩展；新增 `enqueueNow`（suspend、串行）与 `find` 转发 |
+| `download/DownloadEngine.kt` | `Resolved` 增 headers/manifest；解析优先级；请求头注入；P0 对 HLS 抛 `UNSUPPORTED_MANIFEST` |
+| `download/HlsUrls.kt` | 新增 `isM3u8`（忽略 query） |
+| `download/DownloadReasons.kt` | `ofError` 加 `Expected URL scheme` 映射；`displayTextOf` 补 3 个分支 |
+| `res/values{,-zh-rCN,-zh-rTW}/strings_content.xml` | 3 个失败原因文案 |
+
+App 侧新增 `tvbox/download/TvboxDownloadKey.kt`、`TvboxDownloadPaths.kt`、
+`TvboxDownloadSourceResolver.kt`、`tvbox/play/ResolvedStream.kt`；改 `TvboxPlayResolver`（拆出
+`resolveUrl`、`countHealth`、嗅探分支切 Main）、`TvboxRuntime`（`ensureReady`，不触发 `syncAll`）、
+`TvboxDetailViewModel`（`downloads` + 查重/串行入队）、`TvboxPages`（每集徽标、线路下载）、
+`VodScreen`/`MobileNavHost` 接线、`VodTuner`（`playTvboxDownload`、`playTvbox` 登记 `sourceId`）、
+`DownloadsViewModel`（TVBOX 行分流/`lookUp`）、`ContentActions`/`MoviePage` 隐藏入口、
+`TvboxSourceProvisioner`（insert/update 都写 `maxConnections=1`）、`OwnTVMobileApp` 注册 SPI、
+`TvboxModule` 注册 resolver；三套 `strings_mobile.xml` 加 3 条文案。
+
+验证：Core `:core:test` 通过、`schemas/55.json` 已生成；App `:app:compileStandardDebugKotlin`、
+`:app:testStandardDebugUnitTest`（含新增 `TvboxDownloadKeyTest`/`TvboxDownloadPathsTest` 8 例）、
+`:app:assembleStandardDebug` 通过，产物 `app-standard-debug.apk`（约 119 MB）。i18n 门禁已通过
+（新增技术字面量登记到 `tools/i18n/safe_literals.txt`，App 侧 NUL 分隔符按 `empty` 类登记）。
+未做真机安装/回归；真机安装需设备侧人工放行并输入锁屏密码 `0000`。
+
+推送状态（2026-11-14）：Core 侧改动已回填并提交为 Core `mobile` @`b3549819`，已推送到 fork
+（`e0556f0f..b3549819`，`git hash-object` 逐文件校验与 vendor 工作区 17 个文件一致）；Core `:core:test`
+与 i18n 门禁再次通过（358 baseline + 5858 safe）。Mobile 侧代码提交后，按 §4.6 丢弃 vendor 工作区
+改动并以 `git subtree pull --prefix=vendor/OwnTV_Core … mobile --squash` 正式引入快照，提交信息
+`build: sync vendored core (b3549819)`。方案文档见 `docs/TVBOX下载接入Core方案.md`（方案稿 v2）。
