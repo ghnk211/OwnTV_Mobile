@@ -39,3 +39,9 @@
 #     does not call (wrapper-java is test-only). Release still needs one on-device JS-source play. ---
 -dontwarn com.whl.quickjs.**
 -keepclassmembers class * implements android.webkit.WebViewClient { *; }
+
+# --- TVbox Python (Chaquopy) spiders: Python imports PyHost by fully-qualified name, so the
+#     bridge may never be renamed or stripped. The broader engine.** rule above already covers
+#     it; this is the explicit second line of defence the py migration plan calls for. ---
+-keep class tv.own.owntv.mobile.tvbox.engine.py.** { *; }
+-dontwarn com.chaquo.python.**

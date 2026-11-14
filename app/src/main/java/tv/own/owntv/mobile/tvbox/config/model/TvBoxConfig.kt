@@ -1,6 +1,7 @@
 package tv.own.owntv.mobile.tvbox.config.model
 
 import kotlinx.serialization.json.JsonObject
+import tv.own.owntv.mobile.BuildConfig
 
 /**
  * Java 二进制类名校验（`com.foo.Bar`、`com.foo.Bar$Inner`）：
@@ -106,6 +107,14 @@ data class SiteConfig(
     val apiIsJs: Boolean
         get() = api.substringBefore('?').substringBefore('#').endsWith(".js", true)
 
+    /** 只按 api 判断 Python 脚本后缀，兼容 `.py?token=...` 与 `#fragment`。 */
+    val apiIsPy: Boolean
+        get() = type == 3 && api.substringBefore('?').substringBefore('#').endsWith(".py", true)
+
+    /** 是否为 Python 采集源；与 `PyEngine.supportsSite` 必须逐字一致。 */
+    val isPySite: Boolean
+        get() = apiIsPy
+
     /** 是否为脚本型源；type=3 的 drpy runtime 也按兼容标记识别。 */
     val isJsSite: Boolean
         get() = apiIsJs || (type == 3 && api.contains("drpy", true))
@@ -126,7 +135,7 @@ data class SiteConfig(
         get() {
             if (type != 3) return null
             if (api.startsWith("csp_")) return api.removePrefix("csp_")
-            if (isJsSite || api.contains('/')) return null
+            if (isJsSite || isPySite || api.contains('/')) return null
             // 全限定实现类名（含点号、各段为合法 Java 标识符）：直接按类名解析。
             // 顶层 spider jar 即默认 jar，不要求站点带 jar 字段
             if (FQCN_REGEX.matches(api)) return api
@@ -166,12 +175,12 @@ data class SiteConfig(
      * 两层判定不一致的后果是叠加的：UI 显示可用 → 点开必失败；
      * 聚合搜索还会把这些假可用源算进并发目标，白打一路。
      * - type 0/1/4：CMS 引擎或 api 后缀识别出的 JS 引擎（要求 api 非空）
-     * - type 3：Jar 引擎（实现类形态）；py 源已按方案排除，不参与判定
+     * - type 3：Jar 引擎（实现类形态）、JS 引擎或 Python 引擎（后者还要求 WITH_PY）
      */
     val isSupported: Boolean
         get() = when (type) {
             0, 1, 4 -> api.isNotBlank()
-            3 -> spiderClassName != null || isJsSite
+            3 -> spiderClassName != null || isJsSite || (BuildConfig.WITH_PY && isPySite)
             else -> false
         }
 
@@ -179,6 +188,9 @@ data class SiteConfig(
     val unsupportedReason: String?
         get() = when {
             isSupported -> null
+            // WITH_PY=true 时 py 站点必 isSupported（上面的与门已挡在前），走不进本分支，
+            // 故这里直接判 isPySite 即等价于 !WITH_PY，无需再 if 分叉
+            type == 3 && isPySite -> "本版本不含 Python 引擎，py 采集源不可用"
             type == 3 && api.isBlank() -> "api 为空"
             type == 3 -> "Jar 源 api 应为 csp_XXX 或实现类名，当前为：$api"
             else -> "type=$type 不在已实现的引擎路由内"

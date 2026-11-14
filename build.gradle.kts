@@ -12,4 +12,8 @@ plugins {
     // and fails with "already on the classpath with an unknown version".
     alias(libs.plugins.android.test) apply false
     alias(libs.plugins.baselineprofile) apply false
+    // Python collection sources (TVbox .py spiders). Declared here so the app module can apply
+    // it conditionally behind the WITH_PY switch, and so the plugin is on the build classpath
+    // when the app asks for it by id.
+    alias(libs.plugins.chaquopy.python) apply false
 }

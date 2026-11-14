@@ -44,6 +44,9 @@ media3 = "1.11.1"
 quickjs = "2.1.0"
 # The drpy pdfh/pdfa/pd selector dialect, which jsoup cannot express directly.
 jsoup = "1.18.1"
+# Python collection sources (TVbox type 3, api ends with .py). Chaquopy has been free and
+# open-source since 12.0.1; 17.2.0 is the release that carries AGP 9 support.
+chaquopy = "17.2.0"
 koin = "4.2.2"
 # Google Cast. Phone-only, and deliberately absent from the TV app's catalogue and from core: an
 # Android TV box IS the receiver, so a sender SDK there would be an app casting to itself.
@@ -182,3 +185,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-test = { id = "com.android.test", version.ref = "agp" }
 baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmark" }
+chaquopy-python = { id = "com.chaquo.python", version.ref = "chaquopy" }

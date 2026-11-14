@@ -24,6 +24,9 @@ object FileUtil {
     /** JS 模块与 QuickJS 字节码缓存目录（键 = 模块 URL 的 md5） */
     fun jsDir(context: Context) = subDir(context, "js")
 
+    /** Python 采集脚本缓存目录（按 md5 命名，见 TvboxConfigRepository.ensurePyFile） */
+    fun pyDir(context: Context) = subDir(context, "py")
+
     fun readText(file: File): String? = runCatching {
         if (file.exists()) file.readText(Charsets.UTF_8) else null
     }.getOrNull()

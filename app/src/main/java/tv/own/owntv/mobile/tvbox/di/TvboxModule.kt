@@ -144,9 +144,21 @@ val tvboxModule = module {
         )
     }
     single<SourceRepository> {
+        val config = get<TvboxConfigRepository>()
+        // Python collection sources: PyEngineHolder is compiled per source set — the real engine
+        // in the full build, a null-returning stub in the slim build. `main` never names PyEngine,
+        // so the slim build has no Chaquopy classes to resolve.
+        val pyEngine = PyEngineHolder.create(androidContext()) { site: SiteConfig ->
+            config.ensurePyFile(site)
+        }
         SourceRepository(
-            configRepository = get(),
-engines = listOf<Engine>(get<CmsEngine>(), get<JarEngine>(), get<JsEngine>()),
+            configRepository = config,
+            engines = listOfNotNull<Engine>(
+                get<CmsEngine>(),
+                get<JarEngine>(),
+                get<JsEngine>(),
+                pyEngine,
+            ),
             jsWarmUp = get(),
         )
     }

@@ -624,7 +624,7 @@ private fun SitePickerSheet(
             }
             Spacer(Modifier.height(12.dp))
             LazyColumn(contentPadding = PaddingValues(horizontal = PageSidePadding, vertical = 8.dp)) {
-                items(sites, key = { it.key }) { site ->
+                itemsIndexed(sites, key = { index, site -> "${site.key}#$index" }) { _, site ->
                     StageRow(onClick = { onPick(site); dismissed = true }, current = site.key == currentKey) {
                         Column(Modifier.padding(vertical = 8.dp)) {
                             Text(

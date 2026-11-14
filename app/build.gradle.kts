@@ -10,7 +10,23 @@ plugins {
     alias(libs.plugins.compose.compiler)
     // Consumes :baselineprofile's recording and packages it as baseline.prof.
     alias(libs.plugins.baselineprofile)
+    // Python collection sources. Declared apply-false so the Gradle script can reference the
+    // ChaquopyExtension type; whether it is actually applied is decided by the WITH_PY switch
+    // below, exactly like VodPlayer's module.
+    id("com.chaquo.python") apply false
 }
+
+// ---------------- Python collection sources (TVbox .py spiders) ----------------
+// Full build (default): ships Chaquopy/CPython and can run .py spiders.
+// Slim build: no runtime, .py sites are greyed out as unsupported.
+//   gradlew -PWITH_PY=false :app:assembleStandardRelease
+val withPy = (project.findProperty("WITH_PY") ?: "true").toString().toBoolean()
+
+// Emulator-only switch. Chaquopy generates its runtime for the ABI filters it sees in
+// defaultConfig, not for a product flavor's own filter, so assembling the x86_64 flavor without
+// this flag produces an APK whose libpython/libcrypto are ARM-only and fail to dlopen on an AVD:
+//   gradlew -PPY_X86_64=true :app:assembleX86_64Debug
+val withPyX86 = (project.findProperty("PY_X86_64") ?: "false").toString().toBoolean()
 
 android {
     // Distinct from the TV app's tv.own.owntv, so both install side by side on one device and each
@@ -65,6 +81,18 @@ android {
             ?: ""
         buildConfigField("String", "TMDB_EDGE_KEY", "\"${edgeKey.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
 
+        // Availability of the Python collection engine (SiteConfig.isSupported flips with it).
+        buildConfigField("boolean", "WITH_PY", if (withPy) "true" else "false")
+
+        // Chaquopy only reads the ABI filters declared here, never a product flavor's own list.
+        // The flavors below narrow the final APK; this list is what the Python runtime is built for.
+        if (withPy) {
+            ndk {
+                abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+                if (withPyX86) abiFilters.add("x86_64")
+            }
+        }
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -80,6 +108,27 @@ android {
         create("x86_64") {
             dimension = "abi"
             ndk { abiFilters += listOf("x86_64") }
+        }
+    }
+
+    // Mutually exclusive source sets, exactly like VodPlayer: the full build compiles the real
+    // Python engine from src/py, the slim build compiles the null-returning holder from src/nopy.
+    // Merged into the existing source sets rather than created as new ones, so the test source
+    // sets still see main's classes.
+    sourceSets {
+        // AGP 9 compiles Kotlin through its own KotlinSourceSet rather than the old
+        // Kotlin-Android plugin's bridge, so a `java.srcDirs` addition alone does not reach
+        // kotlinc. Both extensions are populated on purpose.
+        val engineSrc = if (withPy) "src/py" else "src/nopy"
+        getByName("main") {
+            java.srcDirs("$engineSrc/java")
+            kotlin.srcDirs("$engineSrc/java")
+        }
+        if (withPy) {
+            getByName("test").java.srcDirs("src/py/test")
+            getByName("test").kotlin.srcDirs("src/py/test")
+            getByName("androidTest").java.srcDirs("src/py/androidTest")
+            getByName("androidTest").kotlin.srcDirs("src/py/androidTest")
         }
     }
 
@@ -139,6 +188,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // Python calls its host bridge by class name, so R8 must keep the bridge. The rule is
+            // only needed in the full build; the slim build has no such classes at all.
+            if (withPy) proguardFile("proguard-chaquopy.pro")
             if (releaseKeystore != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -301,6 +353,53 @@ val verifyI18nLiterals = tasks.register<VerifyI18nLiterals>("verifyI18nLiterals"
 // Inputs are declared above, so an unchanged source tree makes this UP-TO-DATE and free.
 tasks.named("preBuild") { dependsOn(verifyI18nLiterals) }
 
+// --- Python collection runtime (Chaquopy) --------------------------------------------------
+//
+// Applied only in the full build. Kotlin DSL detail: the typed `chaquopy { }` accessor is
+// generated only when the plugin is applied directly in the plugins block; pluginManager.apply()
+// does not generate it, so the extension must be looked up by name and typed explicitly.
+// Its defaultConfig / productFlavors closures are PythonExtension.
+if (withPy) {
+    pluginManager.apply("com.chaquo.python")
+    extensions.configure<com.chaquo.python.ChaquopyExtension>("chaquopy") {
+        defaultConfig {
+            // Python 3.11 deliberately: 3.12+ only ships 64-bit runtimes, and the standard flavor
+            // keeps armeabi-v7a for 32-bit phones/boxes.
+            version = "3.11"
+            // Chaquopy's pip resolution requires the build machine's Python to share the same
+            // major.minor version, so prefer a real 3.11 interpreter when one is present.
+            findBuildPython()?.let { buildPython(it) }
+            pip {
+                // The de-facto dependency set of ecosystem .py spiders. getDependence() can only
+                // be warned about at runtime; pip runs at build time.
+                install("requests")
+                install("lxml")
+                install("pycryptodome")
+            }
+        }
+    }
+}
+
+/**
+ * Locate a CPython 3.11 on the build machine (Chaquopy's pip resolution requires the build
+ * interpreter to match the app's Python major.minor).
+ *
+ * Order: an explicit CHAQUOPY_BUILD_PYTHON override, then uv-managed CPython 3.11 interpreters
+ * (Windows' `py` launcher does not see uv installs), then null so Chaquopy falls back to its own
+ * discovery (`py -3.11` / `python`).
+ */
+fun findBuildPython(): String? {
+    System.getenv("CHAQUOPY_BUILD_PYTHON")?.let { return it }
+    val uvRoots = listOfNotNull(System.getenv("APPDATA"), System.getenv("LOCALAPPDATA"))
+        .map { File(it, "uv/python") }
+    return uvRoots.asSequence()
+        .flatMap { it.listFiles()?.asSequence().orEmpty() }
+        .filter { it.isDirectory && it.name.startsWith("cpython-3.11") }
+        .map { File(it, "python.exe") }
+        .firstOrNull { it.isFile }
+        ?.absolutePath
+}
+
 dependencies {
     // The shared engine, built from vendor/OwnTV_Core (see settings.gradle.kts). Gradle substitutes
     // these coordinates with that build's modules; the version in the catalog is only a placeholder.
@@ -394,6 +493,8 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // PyHostInstrumentedTest drives the Python host bridge against a local server.
+    androidTestImplementation(libs.mockwebserver)
 
     // Records the profile this module then packages. Recording needs a real device, so this is
     // never exercised by CI; see baselineprofile/BaselineProfileGenerator.kt.

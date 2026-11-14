@@ -51,6 +51,14 @@ object OkHttpProvider {
      */
     private val downloadCookieStore: MemoryCookieStore by lazy { MemoryCookieStore() }
 
+    /**
+     * Python 采集源独立 CookieStore（R8 / §2.4 第 3 点）。
+     *
+     * py 脚本是不可信第三方代码，且自带 `requests.Session` 生态 ——
+     * 与主链共享 Cookie 会把用户在别的源上的登录态暴露给它。
+     */
+    private val pyCookieStore: MemoryCookieStore by lazy { MemoryCookieStore() }
+
     @Volatile
     var debug: Boolean = false
 
@@ -163,10 +171,13 @@ object OkHttpProvider {
         runCatching { jarClientInstance?.connectionPool?.evictAll() }
         runCatching { jarStubClientInstance?.dispatcher?.cancelAll() }
         runCatching { jarStubClientInstance?.connectionPool?.evictAll() }
+        runCatching { pyClientInstance?.dispatcher?.cancelAll() }
+        runCatching { pyClientInstance?.connectionPool?.evictAll() }
         client = null
         downloadClient = null
         jarClientInstance = null
         jarStubClientInstance = null
+        pyClientInstance = null
         TbLog.tag(TAG).i("OkHttp client 已重建")
     }
 
@@ -229,6 +240,29 @@ object OkHttpProvider {
     private fun buildJarStubClient(cacheRoot: File?): OkHttpClient =
         get(cacheRoot).newBuilder()
             .addInterceptor(LoopbackFastFailInterceptor(blockPrivateNet = true))
+            .build()
+
+    /**
+     * Python 采集脚本专用客户端（方案 §2.4 第 3 点，相对 VOD 唯一有意加强的部分）。
+     *
+     * 与 [jarStubClient] 同形：派生自主 client，保留 UA/Referer/连接池，
+     * 但补上私网字面量拦截与 DNS 私网防护，并换成独立 CookieStore。
+     * py 脚本的 `exec_module` 会执行顶层任意代码，这条出口不能保留
+     * `clan://<host>` 的局域网访问面（主链刻意不拦，见 [build] 注释）。
+     */
+    fun pyClient(cacheRoot: File? = null): OkHttpClient =
+        pyClientInstance ?: synchronized(this) {
+            pyClientInstance ?: buildPyClient(cacheRoot).also { pyClientInstance = it }
+        }
+
+    @Volatile
+    private var pyClientInstance: OkHttpClient? = null
+
+    private fun buildPyClient(cacheRoot: File?): OkHttpClient =
+        get(cacheRoot).newBuilder()
+            .cookieJar(pyCookieStore)
+            .addInterceptor(LoopbackFastFailInterceptor(blockPrivateNet = true))
+            .dns(PrivateNetGuardDns(currentDns()))
             .build()
 
     private fun buildJarClient(): OkHttpClient {

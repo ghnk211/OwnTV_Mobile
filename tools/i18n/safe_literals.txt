@@ -152,6 +152,7 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	,
 2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	.js
 1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	.m3u
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	.py
 1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	.txt
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	CMS XML
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	CMS接口
@@ -166,11 +167,14 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	type=$type 不在已实现的引擎路由内
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	不支持
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	搜
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	本版本不含 Python 引擎，py 采集源不可用
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/model/TvBoxConfig.kt	静态JSON
 7	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	\0
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	$renamed 个站点 key 与前面的站点重复，已在本地重命名（key#2、key#3…）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	${it.name}(type=${it.type})
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	${noEngine.size} 个站点当前版本无法播放（已保留，待引擎落地后可用）：
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	${reason} × ${list.size}
+2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	${site.key}#$n
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	${unknown.size} 个站点类型不在已知路由表内（已保留但 UI 灰显）：
 4	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	*
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/config/parser/ConfigParser.kt	,
@@ -1236,7 +1240,7 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	超时或无结果
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	超时（${effectiveTimeout}ms）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/SourceRepository.kt	预热中，本轮暂不参与
-1	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	\0
+2	empty	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	\0
 1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	"_cacheVersion"\\s*:\\s*(\\d+)
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	"sites":[
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	"spider":
@@ -1245,10 +1249,15 @@
 2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	$id.json
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	$m.
 2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	$m.jar
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	$md5.py
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	$name.jar
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	${Md5Util.md5(a.url)}.jar
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	${Md5Util.md5(raw)}.py
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	${Md5Util.md5(url)}.py
 2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	${entity.id}.json
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	${meta.id}.json
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	${m}_
+1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	(^|\\n)\\s*class\\s+Spider\\b
 2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"ads":[
 2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"api":
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"catchup":{"type":
@@ -1281,8 +1290,10 @@
 2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"url":
 2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	,"userAgent":
 6	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	.jar
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	.py
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	ConfigRepo
 2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	HTTP ${resp.code}
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	Python 源 ${md5.take(6)}
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	UA 门控兜底成功，拿到合法 jar：%d 字节
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	UA 门控兜底成功，拿到配置正文：%d 字节
 1	regex	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	\\"
@@ -1296,6 +1307,8 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	]}
 2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	addedAt
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	file
+2	uri	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	file://
+1	uri	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	file://${target.absolutePath}
 1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	http://
 1	url	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	https://
 2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	id
@@ -1303,9 +1316,16 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	img+ 图片藏 jar 解析失败：%s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	img+ 形态已解出 jar：%d 字节
 1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	index.json
-4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	local
+7	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	local
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	local/${Md5Util.md5(spiderField.orEmpty())}
 2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	name
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	py
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	py 脚本下载内容不是 Python 源码（%d 字节，疑似 HTML 落地页），已丢弃：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	py 脚本下载失败 %s（%s）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	py 脚本已缓存：%s（%d 字节）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	py 脚本缓存命中：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	py 脚本落盘失败：%s
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	py_
 3	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	site
 2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	siteCount
 2	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	source
@@ -1321,18 +1341,26 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	spider 摘要校验失败，仍按声明名落盘（jar 可能已热更新）：%s 期望 %s
 4	json	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	url
 2	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	www.
+1	technical	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	{
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	{"_cacheVersion":
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	{"key":
 4	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	{"name":
 2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	下载配置失败：${resp.error ?: "HTTP ${resp.code}"}
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	切换配置后刷新失败：%s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	地址为空
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	导入 py 采集源：%s → %s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	局域网配置
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	已从缓存恢复配置：%s（%d 站点）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	恢复期间 active 配置已变更（%d），跳过回写
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	所选文件不是 Python 源码（空文件或网页落地页）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	无可用配置，等待用户导入
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	无标记
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	无法读取所选文件（权限不足或文件已移动）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 py 脚本内容非法（%d 字节）：%s —— 请确认选的是 .py 文件
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 py 脚本已就位：%s（%d 字节）
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 py 脚本已缓存：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 py 脚本落盘失败：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 py 脚本读取失败（%s）：%s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 spider jar 不可用，回退到网络候选
 2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 spider jar 已缓存：%s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 spider jar 沿用缓存：%s
@@ -1340,13 +1368,16 @@
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 spider 不是 jar/dex（%d 字节）：%s —— 请确认选的是 .jar 文件
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地 spider 摘要校验失败：%s
 3	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本地配置
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	本版本为精简包，不含 Python 引擎；请安装完整包后再导入 .py 采集源
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	此配置已存在：${exist.name}
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	清理非法 jar 缓存：%s（%d 字节）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	缓存内容不是合法 jar，已删除重下：%s
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	脚本落盘失败：${target.name}
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	远程 md5 取回失败：%s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	远程 md5 返回 HTML 页面，以 okhttp UA 重试：%s
 2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置 %s 无缓存且无 URL，无法恢复
+1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置入库失败
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置内容是网页而非配置数据（请检查地址或文件是否正确）
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置刷新失败：%s
 1	log	app/src/main/java/tv/own/owntv/mobile/tvbox/repository/TvboxConfigRepository.kt	配置刷新失败：无可用缓存且原地址已失效
@@ -1378,6 +1409,7 @@
 2	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	.tmp
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	configs
 1	protocol	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	js
+1	file-path	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	py
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	spiders
 1	json	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	tvbox
 2	log	app/src/main/java/tv/own/owntv/mobile/tvbox/util/FileUtil.kt	无法删除旧文件：${file.absolutePath}
@@ -2144,6 +2176,7 @@
 3	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/settings/customize/CustomizeSpanUi.kt	\0
 1	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/settings/customize/CustomizeViewModel.kt	\0
 5	empty	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	\0
+1	technical	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	${site.key}#$index
 1	mime	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	*/*
 1	mime	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	application/json
 1	mime	app/src/main/java/tv/own/owntv/mobile/ui/screens/vod/TvboxPages.kt	text/plain

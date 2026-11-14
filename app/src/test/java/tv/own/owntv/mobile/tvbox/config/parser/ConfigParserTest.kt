@@ -175,4 +175,25 @@ class ConfigParserTest {
         val r = ConfigParser.parse(json)
         assertTrue(r.isSuccess)
     }
+
+    @Test
+    fun `重复站点 key 本地唯一化且不丢源`() {
+        // 回归：clun.top 的 fun.json 自带重复 key，滚动站点列表时 Compose Lazy 抛
+        // "Key \"py_Youavhub\" was already used"。重复项保留源，只把 key 改为 key#2/#3。
+        val json = """
+        { "sites": [
+            { "key": "py_Youavhub", "name": "Youavhub[py]", "type": 3, "api": "https://a.com/a.py" },
+            { "key": "py_Youavhub", "name": "Youavhub[py]", "type": 3, "api": "https://a.com/a.py" },
+            { "key": "美少女", "name": "少女 | 采集", "type": 0, "api": "https://b.com/1" },
+            { "key": "美少女", "name": "美少女", "type": 0, "api": "https://b.com/2" }
+        ] }
+        """.trimIndent()
+        val r = ConfigParser.parse(json)
+        assertTrue(r.isSuccess)
+        val sites = r.config!!.sites
+        assertEquals(4, sites.size)
+        assertEquals(listOf("py_Youavhub", "py_Youavhub#2", "美少女", "美少女#2"), sites.map { it.key })
+        assertEquals(sites.size, sites.map { it.key }.toSet().size)
+        assertTrue(r.warnings.any { it.contains("重复") })
+    }
 }

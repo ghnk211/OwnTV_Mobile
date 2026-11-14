@@ -1,5 +1,6 @@
 package tv.own.owntv.mobile.tvbox.config.parser
 
+import tv.own.owntv.mobile.BuildConfig
 import tv.own.owntv.mobile.tvbox.util.LocalSourceResolver
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -109,8 +110,18 @@ class ConfigParserFunJsonTest {
         assertTrue("csp_ 源应可用", byKey["s2"]!!.isSupported)
         assertTrue("裸类名 + 私有 jar 源应可用", byKey["s3"]!!.isSupported)
         assertTrue("CMS 源应可用", byKey["s1"]!!.isSupported)
-        // py 源按 TVbox 迁移方案排除：isSupported 为 false（方案 §2.2 附录 B）
-        assertFalse(".py 源不应支持（本移植无 Python 引擎）", byKey["s4"]!!.isSupported)
+        // .py 源的可见性随 WITH_PY 开关翻转，必须与 PyEngine.supportsSite 同口径：
+        // 完整包（WITH_PY=true）可用，精简包（src/nopy，无 CPython 运行时）灰显。
+        assertEquals(
+            ".py 源可用性应随 WITH_PY 开关翻转",
+            BuildConfig.WITH_PY,
+            byKey["s4"]!!.isSupported,
+        )
+        if (BuildConfig.WITH_PY) {
+            assertEquals(null, byKey["s4"]!!.unsupportedReason)
+        } else {
+            assertFalse(".py 源在精简包中应给出不可用原因", byKey["s4"]!!.unsupportedReason.isNullOrBlank())
+        }
         assertTrue(".js 源应由 QuickJS 支持", byKey["s5"]!!.isSupported)
         assertEquals(null, byKey["s5"]!!.unsupportedReason)
         // 不可用源仍被保留（不丢弃）
@@ -120,8 +131,8 @@ class ConfigParserFunJsonTest {
     @Test
     fun `supportedSites 包含全部脚本源`() {
         val r = ConfigParser.parse(sample())
-        // py 源剔除后 4 个有引擎路由（CMS/Jar/JS 模型层）；JS 引擎为 P5，由 SourceRepository 层再过滤
-        assertEquals(4, r.config!!.supportedSites().size)
+        // 完整包含 CMS/Jar/JS/Python 四类引擎路由；精简包剔除 .py 源。
+        assertEquals(if (BuildConfig.WITH_PY) 5 else 4, r.config!!.supportedSites().size)
     }
 
     @Test

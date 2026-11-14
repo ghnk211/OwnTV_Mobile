@@ -163,7 +163,7 @@ object ConfigParser {
         val spider = obj.str("spider")
         val wallpaper = obj.str("wallpaper")
 
-        val sites = obj.arr("sites").mapIndexedNotNull { i, el ->
+        val parsedSites = obj.arr("sites").mapIndexedNotNull { i, el ->
             val o = el as? JsonObject
             if (o == null) {
                 warnings += "sites[$i] 不是对象，已跳过"
@@ -174,6 +174,7 @@ object ConfigParser {
                 null
             }
         }
+        val sites = uniqueSiteKeys(parsedSites, warnings)
 
         val parses = obj.arr("parses").mapNotNull { el -> parseParseConfig(el) }
 
@@ -261,6 +262,31 @@ object ConfigParser {
         )
 
         return ConfigParseResult(config, warnings)
+    }
+
+    /**
+     * 站点 key 唯一化：上游自制配置常带重复 key（同 key 同 api，或同 key 不同 api）。
+     * 重复 key 会让 Compose 惰性列表抛 key 冲突，且 siteMap 后写覆盖会导致收藏/历史串源。
+     * 保留首条原 key，后续重复项改为 key#2、key#3…，源本身一条都不丢。
+     */
+    private fun uniqueSiteKeys(sites: List<SiteConfig>, warnings: MutableList<String>): List<SiteConfig> {
+        val seen = HashSet<String>(sites.size)
+        var renamed = 0
+        return sites.map { site ->
+            if (seen.add(site.key)) return@map site
+            var n = 2
+            var candidate = "${site.key}#$n"
+            while (!seen.add(candidate)) {
+                n++
+                candidate = "${site.key}#$n"
+            }
+            renamed++
+            site.copy(key = candidate)
+        }.also {
+            if (renamed > 0) {
+                warnings += "$renamed 个站点 key 与前面的站点重复，已在本地重命名（key#2、key#3…）"
+            }
+        }
     }
 
     /** 解析单条 site；返回 null 表示该条非法 */

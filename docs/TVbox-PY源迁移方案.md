@@ -284,3 +284,47 @@ release 包 R8 + 正式 keystore 验证；体积与 ABI 分叉核对；`-PWITH_P
 ---
 
 > 本文为静态代码追踪结论（2026-11-12），未运行 Gradle 构建、未修改业务代码、未提交、未切换分支。P0 的兼容性结论以实机构建结果为准，若与本文 R1/R2/R3 判断不符，须回来修订本文后再进入 P1。
+
+---
+
+## 9. 实施状态（2026-11-13）
+
+### 9.1 分支与版本偏离
+
+- 实施分支 `mobile-mini`（基于方案基线 `e4cecb31` 之后的 `3d2c2acb`），未新建分支；`OwnTV_Core` / `vendor/OwnTV_Core` 未改动。
+- **Chaquopy 取 `17.2.0`（方案原定 17.1.0）**：17.2.0 是首个声明支持 AGP 9 的版本，实测在 AGP `9.4.0` / Kotlin `2.4.20` / compileSdk 37 / `configuration-cache=true` 下构建通过，R1 风险未触发，无需降 AGP。
+- 四项待拍板决策全部按建议落地：引入 `WITH_PY` 双包开关、保留 `armeabi-v7a` 并锁 Python 3.11、新增 `pyClient()`、本地路径严格 SAF-only。
+
+### 9.2 P0–P4 完成情况
+
+| 阶段 | 内容 | 状态 |
+|---|---|---|
+| P0 | Chaquopy 接线（版本目录、根/模块插件、`WITH_PY` / `PY_X86_64`、按 flavor 的 ABI、`src/py`↔`src/nopy` 源集、`proguard-chaquopy.pro`） | 完成 |
+| P1 | `base/{__init__,loader,spider}.py`（import 改为 `tv.own.owntv.mobile.tvbox.engine.py.PyHost`）、`PyHost`、`OkHttpProvider.pyClient()`、`FileUtil.pyDir()` | 完成 |
+| P2 | `PyEngine`（LRU 12、惰性 CPython 启动）、`PySpider`（五接口 + `PY_EXECUTOR(8)` + `Floors` + `runGuarded`）、`PyEngineHolder` 双实现、JVM/androidTest 用例 | 完成 |
+| P3 | `SiteConfig.apiIsPy/isPySite/isSupported/unsupportedReason`、`TvboxConfigRepository` 导入分流 / `upsertSite` / `ensurePyFile` / 下载与本地落盘 / 纯函数 | 完成 |
+| P4 | `TvboxModule` 注册 `PyEngineHolder` 并追加 `engines`、R8 keep、i18n 登记 | 完成 |
+| P5 | 发布加固、真机全链路、精简包灰显实测 | 部分（构建门禁已过，真机项未执行） |
+
+### 9.3 与方案不一致的两处实现细节（已核实为 AGP 9 必需）
+
+1. **源集挂载必须同时写 `java.srcDirs` 与 `kotlin.srcDirs`**：AGP 9 内置 Kotlin 走 `KotlinSourceSet`，只追加 `java.srcDirs` 时 `src/py` 不会进入 kotlinc，表现为 `Unresolved reference 'PyEngineHolder'`。
+2. **`saveConfig` 拆出 `saveConfigLocked`**：`upsertSite` 需要"锁内再落库"，Mutex 不可重入，直接调 `saveConfig` 会死锁。
+
+### 9.4 已完成的门禁与验证
+
+- `:app:assembleStandardDebug`：成功（APK 约 122 MB，含 arm64-v8a / armeabi-v7a 的 CPython 与 pip 三件套）。
+- `:app:assembleStandardRelease`：成功（R8 + `proguard-chaquopy.pro`；产物 unsigned，因本机 release keystore 未配置）。
+- `:app:assembleX86_64Debug -PPY_X86_64=true`：成功，APK 内含 `lib/x86_64/libpython3.11.so`（模拟器联调用）。
+- `:app:compileStandardDebugKotlin -PWITH_PY=false`：成功，精简包只编译 `src/nopy` 的桩，`engine/py` 无产物（R10 成立）。
+- `:app:testStandardDebugUnitTest`：441 用例 0 失败；`PyImportTest` / `PyEngineRoutingTest` / `PyResultContractTest` 全过。
+- `:app:compileStandardDebugAndroidTestKotlin`：成功（`PyEngineInstrumentedTest` / `PyHostInstrumentedTest` 可编译）。
+- `:app:lintStandardDebug`：`0 errors`。
+- `verifyI18nLiterals`：通过（新增技术/日志字面量已按既有 `log` / `technical` / `uri` / `file-path` / `regex` 口径登记）。
+
+### 9.5 尚未执行的验收项
+
+- 真机 / 模拟器 `connectedStandardDebugAndroidTest`（CPython 运行时用例、`PyHost.fetch` 契约）未执行。
+- P4 的全链路真机回归（导入含 py 站点的配置 → 首页 / 详情 / 选集 / 播放 / 聚合搜索 / 收藏与继续观看）未执行。
+- release 真机起播、`WITH_PY=false` 精简包 py 源灰显文案、16 KB 页设备 `dlopen` 均未实测（本机设备 `PAGE_SIZE=4096`，走不到 16 KB 分支，与 JS 迁移结论一致）。
+- 导入期 py 源预热未做（沿用惰性启动，首个 py 源 obtain 时启动 CPython，避免进冷启关键路径）。

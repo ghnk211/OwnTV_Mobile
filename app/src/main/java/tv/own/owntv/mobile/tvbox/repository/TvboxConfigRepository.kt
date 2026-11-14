@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import tv.own.owntv.mobile.BuildConfig
 import tv.own.owntv.mobile.tvbox.config.model.SiteConfig
 import tv.own.owntv.mobile.tvbox.config.model.TvBoxConfig
 import tv.own.owntv.mobile.tvbox.config.parser.ConfigParser
@@ -394,12 +395,91 @@ class TvboxConfigRepository(
         )
     }
 
-    /** SAF 本地文件导入统一入口 */
+    /** SAF 本地文件导入统一入口（.py 脚本按内容/扩展名分流） */
     suspend fun importLocalFile(uri: Uri): ImportResult = withContext(Dispatchers.IO) {
         val text = FileUtil.readTextFromUri(context, uri)
             ?: return@withContext ImportResult.Failure("无法读取所选文件（权限不足或文件已移动）")
         val name = displayNameOf(uri) ?: uri.lastPathSegment?.substringAfterLast('/')
-        importFromText(text, name, activate = true)
+        // .py 不是配置：ConfigParser 对根节点非 JSON 对象必然报错，这里先分流。
+        // 识别顺序：扩展名优先，其次内容嗅探（部分 SAF Provider 的 lastPathSegment
+        // 不带扩展名，如 `msf:1234`）。
+        if (isPyFileName(name) || looksLikePyScript(text)) {
+            importPyScript(text, name)
+        } else {
+            importFromText(text, name, activate = true)
+        }
+    }
+
+    /**
+     * 导入 Python 脚本：校验 → 落盘 `files/tvbox/py/local/{md5}.py` → 合成站点 → 并入激活配置。
+     *
+     * 合成站点 `api` 必须是 `file://` 绝对路径且以 `.py` 结尾 —— 站点路由只认后缀，
+     * `content://` 形态的 URI 基本不以 `.py` 结尾，会让站点路由回 jar/JS 失败。
+     *
+     * 导入期**不做脚本预加载**：`load_spider` 会执行脚本顶层代码（可能联网/长耗时），
+     * 结构问题（无 Spider 类等）留到首次加载时由 PyEngine 记账并计入源健康。
+     */
+    private suspend fun importPyScript(text: String, fileName: String?): ImportResult =
+        withContext(Dispatchers.IO) {
+            if (!BuildConfig.WITH_PY) {
+                return@withContext ImportResult.Failure(
+                    "本版本为精简包，不含 Python 引擎；请安装完整包后再导入 .py 采集源",
+                )
+            }
+            if (!isValidPyText(text)) {
+                return@withContext ImportResult.Failure("所选文件不是 Python 源码（空文件或网页落地页）")
+            }
+            val md5 = Md5Util.md5(text)
+            val target = File(File(FileUtil.pyDir(context), "local"), "$md5.py")
+            if (!target.exists() && !FileUtil.writeText(target, text)) {
+                return@withContext ImportResult.Failure("脚本落盘失败：${target.name}")
+            }
+            val site = SiteConfig(
+                key = pySiteKey(md5),
+                name = pyDisplayName(fileName, md5),
+                type = 3,
+                api = "file://${target.absolutePath}",
+                searchable = 1,
+            )
+            TbLog.i("导入 py 采集源：%s → %s", site.name, target.name)
+            upsertSite(site)
+        }
+
+    /**
+     * 把单站点并入当前激活配置（同 key 覆盖）；无激活配置时新建一份只含该源的配置。
+     *
+     * 不另建一份独立配置再切换：那会让用户原有源"看起来弄丢"（虽可切回），体验成本更高。
+     */
+    private suspend fun upsertSite(site: SiteConfig): ImportResult = mutex.withLock {
+        val meta = activeMeta()
+        val base = _activeConfig.value ?: meta?.let { loadFromCache(it, allowStale = true) }
+        if (meta == null || base == null) {
+            val fresh = TvBoxConfig(sites = listOf(site))
+            if (!saveConfigLocked(fresh, site.name, null, "py", activate = true)) {
+                return@withLock ImportResult.Failure("配置入库失败")
+            }
+            return@withLock ImportResult.Success(
+                configId = prefs.activeConfigId,
+                siteCount = 1,
+                warnings = emptyList(),
+                spiderDownloading = false,
+            )
+        }
+        val merged = base.copy(sites = base.sites.filterNot { it.key == site.key } + site)
+        FileUtil.writeText(File(FileUtil.configDir(context), "${meta.id}.json"), encodeConfig(merged))
+        // ConfigMeta 的 siteCount 是列表页展示值，必须跟着合并后的规模走
+        val list = loadIndexLocked().map {
+            if (it.id == meta.id) it.copy(siteCount = merged.sites.size) else it
+        }
+        persistIndexLocked(list)
+        applyConfig(merged)
+        onConfigsChanged()
+        ImportResult.Success(
+            configId = meta.id,
+            siteCount = 1,
+            warnings = emptyList(),
+            spiderDownloading = false,
+        )
     }
 
     /** 查询 SAF 的真实文件名（失败/无权限时返回 null，由调用方回退） */
@@ -421,6 +501,22 @@ class TvboxConfigRepository(
         source: String,
         activate: Boolean,
     ): Boolean = mutex.withLock {
+        saveConfigLocked(config, name, url, source, activate)
+    }
+
+    /**
+     * 已持锁版本的 [saveConfig]。
+     *
+     * 供 [upsertSite] 这类"锁内还要再落库"的路径复用：Mutex 不可重入，
+     * 在 `mutex.withLock { ... }` 里直接调 [saveConfig] 会死锁。
+     */
+    private suspend fun saveConfigLocked(
+        config: TvBoxConfig,
+        name: String,
+        url: String?,
+        source: String,
+        activate: Boolean,
+    ): Boolean {
         val id = prefs.nextConfigId
         prefs.nextConfigId = id + 1
         val list = loadIndexLocked()
@@ -439,7 +535,7 @@ class TvboxConfigRepository(
             applyConfig(config)
         }
         onConfigsChanged()
-        true
+        return true
     }
 
     private fun applyConfig(config: TvBoxConfig) {
@@ -839,6 +935,133 @@ class TvboxConfigRepository(
     private fun isValidJarFile(f: File): Boolean =
         f.isFile && f.name.endsWith(".jar", true) && f.length() > 0 && looksLikeJarFile(f)
 
+    // ---------------- Python 脚本就绪 ----------------
+
+    /**
+     * 确保站点 py 脚本就绪，返回**本次生效的脚本文件**（docs/TVbox-PY源迁移方案.md §2.4 第 6 点）。
+     *
+     * 两条通道与 spider jar 同构：
+     * - 本地形态（`./js/ss/x.py` 导入时已由 fixContentPath 改写、`/sdcard/…`、`clan://…`）
+     * - 远端 URL：`net.getText` 下载落盘。
+     *
+     * 落盘名 `files/tvbox/py/{md5(api)}.py` —— 与 jar 的 md5 命名同一套路，文件名即身份。
+     * py 脚本没有 md5 声明，故命中缓存即复用。**返回精确文件**而不是目录里随便一个。
+     */
+    suspend fun ensurePyFile(site: SiteConfig): File? {
+        val api = site.api.takeIf { it.isNotBlank() } ?: return null
+        val dir = FileUtil.pyDir(context)
+        // 直接导入的合成站点：api 就是 files/tvbox/py/local 里我们落盘的脚本本身，
+        // 直通返回，不再走 materializeLocalPy 复制出第二份。
+        if (api.startsWith("file://")) {
+            val direct = File(api.removePrefix("file://"))
+            if (direct.isFile && direct.parentFile?.name == "local" && isValidPyFile(direct)) {
+                return direct
+            }
+        }
+
+        // 相对地址使用点兜底：按活跃配置来源 URL 解析（对齐 ensureSiteJar 的 resolveAgainst）。
+        val resolved = LocalSourceResolver.resolveAgainst(api, activeSourceUrl())
+
+        // 本地/局域网形态分流（clan://<host>/ 本质是 http，归下载通道）
+        when (val local = LocalSourceResolver.parse(resolved)) {
+            is LocalSource.RemoteClan -> return downloadPy(local.httpUrl, site, dir)
+            is LocalSource.LocalFile, is LocalSource.Content ->
+                return materializeLocalPy(resolved, site, local, File(dir, "local"))
+
+            null -> Unit // http(s)/其他 → 下载通道
+        }
+        return downloadPy(resolved, site, dir)
+    }
+
+    /**
+     * 本地 py 脚本拷进私有目录（复刻 [materializeLocalJar] 的判定口径）。
+     * @return 落盘后的脚本文件；读不到/内容非法返回 null
+     */
+    private fun materializeLocalPy(
+        raw: String,
+        site: SiteConfig,
+        src: LocalSource,
+        dir: File,
+    ): File? {
+        val target = File(dir, "${Md5Util.md5(raw)}.py")
+        if (target.exists() && isValidPyFile(target)) {
+            TbLog.i("本地 py 脚本已缓存：%s", target.name)
+            return target
+        }
+        return when (val r = LocalSourceResolver.read(context, src, localTreeUri())) {
+            is LocalRead.Ok -> {
+                val text = r.bytes.toString(Charsets.UTF_8)
+                if (!isValidPyText(text)) {
+                    TbLog.e(
+                        "本地 py 脚本内容非法（%d 字节）：%s —— 请确认选的是 .py 文件",
+                        r.bytes.size, raw,
+                    )
+                    return null
+                }
+                if (FileUtil.writeText(target, text)) {
+                    TbLog.i("本地 py 脚本已就位：%s（%d 字节）", target.name, r.bytes.size)
+                    target
+                } else {
+                    TbLog.e("本地 py 脚本落盘失败：%s", target.absolutePath)
+                    null
+                }
+            }
+
+            is LocalRead.Fail -> {
+                TbLog.w("本地 py 脚本读取失败（%s）：%s", r.kind, r.message)
+                null
+            }
+        }
+    }
+
+    /**
+     * 远端 py 脚本下载。
+     * @return 落盘后的脚本文件；下载失败/内容是 HTML 落地页返回 null
+     */
+    private suspend fun downloadPy(url: String, site: SiteConfig, dir: File): File? {
+        val target = File(dir, "${Md5Util.md5(url)}.py")
+        if (target.exists() && isValidPyFile(target)) {
+            TbLog.i("py 脚本缓存命中：%s", target.name)
+            return target
+        }
+        val resp = net.getText(
+            url,
+            site.key,
+            headers = site.header?.toHeaderMap(),
+            timeoutMs = 30_000,
+        )
+        if (!resp.isSuccess) {
+            TbLog.w("py 脚本下载失败 %s（%s）", url, resp.error)
+            return null
+        }
+        if (!isValidPyText(resp.body)) {
+            TbLog.e(
+                "py 脚本下载内容不是 Python 源码（%d 字节，疑似 HTML 落地页），已丢弃：%s",
+                resp.body.length, url,
+            )
+            return null
+        }
+        return if (FileUtil.writeText(target, resp.body)) {
+            TbLog.i("py 脚本已缓存：%s（%d 字节）", target.name, resp.body.length)
+            target
+        } else {
+            TbLog.e("py 脚本落盘失败：%s", target.absolutePath)
+            null
+        }
+    }
+
+    /** 是否是"能交给 CPython 加载"的脚本文件（存在 + 合法文本） */
+    private fun isValidPyFile(f: File): Boolean =
+        f.isFile && f.length() > 0 && isValidPyText(FileUtil.readText(f).orEmpty())
+
+    /**
+     * 脚本文本合法性：非空且不是 HTML 落地页。
+     * HTTP 200 的错误页/落地页会被当脚本存下来，CPython 加载时报 SyntaxError，
+     * 用户完全看不出是下载环节的问题。
+     */
+    private fun isValidPyText(text: String): Boolean =
+        text.isNotBlank() && !HtmlGuard.looksLikeHtml(text)
+
     /**
      * spider jar 下载。多候选依次兜底；并发由 [jarDownloadMutex] 去重。
      * @return 成功落盘的 jar 文件；全部候选失败返回 null。
@@ -1069,6 +1292,35 @@ class TvboxConfigRepository(
 
     companion object {
         private const val TAG = "ConfigRepo"
+
+        // ---------------- .py 本地导入的纯函数（抽成静态供 JVM 单测断言） ----------------
+
+        /** 是否声明为 .py 文件（SAF 有时拿不到扩展名，需配合 [looksLikePyScript]） */
+        internal fun isPyFileName(name: String?): Boolean = name?.endsWith(".py", true) == true
+
+        /**
+         * 内容嗅探：识别"单文件 Python Spider"。
+         * 保守规则：不是以 `{` 开头（排除 JSON 配置），且定义了模块级 `class Spider`。
+         */
+        internal fun looksLikePyScript(text: String): Boolean =
+            !text.trimStart().startsWith("{") && PY_SPIDER_CLASS.containsMatchIn(text)
+
+        /** 合成站点 key：脚本内容哈希，同一脚本重复导入天然去重 */
+        internal fun pySiteKey(md5: String): String = "py_" + md5.take(12)
+
+        /** 合成站点显示名：文件名去后缀优先，拿不到可读名字时用内容哈希兜底 */
+        internal fun pyDisplayName(fileName: String?, md5: String): String {
+            val raw = fileName?.substringAfterLast('/')?.trim().orEmpty()
+            val base = raw.substringBeforeLast('.', missingDelimiterValue = "").trim()
+            if (base.isNotBlank()) return base
+            // 无扩展名的可读文件名（部分 Provider 只给 "北京"）：直接用；
+            // SAF 不透明 id（"msf:1234"）与纯数字 id 一律拒绝，走哈希兜底
+            if (raw.isNotBlank() && !raw.contains(':') && !raw.all { it.isDigit() }) return raw
+            return "Python 源 ${md5.take(6)}"
+        }
+
+        /** 模块级 `class Spider` 定义（兼容缩进与裸类形态） */
+        private val PY_SPIDER_CLASS = Regex("""(^|\n)\s*class\s+Spider\b""")
     }
 }
 
